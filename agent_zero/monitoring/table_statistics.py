@@ -47,7 +47,7 @@ def get_table_stats(
                 count() AS c
             FROM system.columns
             WHERE database LIKE '{database_like}'
-            {' AND database NOT IN (\'system\', \'information_schema\', \'INFORMATION_SCHEMA\')' if exclude_system else ''}
+            {" AND database NOT IN ('system', 'information_schema', 'INFORMATION_SCHEMA')" if exclude_system else ""}
             GROUP BY ALL
         ),
         partitions AS (
@@ -58,7 +58,7 @@ def get_table_stats(
                 length(partition_name) AS partition_count
             FROM system.parts
             WHERE active AND database LIKE '{database_like}'
-            {' AND database NOT IN (\'system\', \'information_schema\', \'INFORMATION_SCHEMA\')' if exclude_system else ''}
+            {" AND database NOT IN ('system', 'information_schema', 'INFORMATION_SCHEMA')" if exclude_system else ""}
             GROUP BY ALL
         )
         SELECT
@@ -81,7 +81,7 @@ def get_table_stats(
         LEFT JOIN columns ON (t.database = columns.database) AND (t.name = columns.`table`)
         LEFT JOIN partitions ON (t.database = partitions.database) AND (t.name = partitions.`table`)
         WHERE t.database LIKE '{database_like}'
-        {' AND t.database NOT IN (\'system\', \'information_schema\', \'INFORMATION_SCHEMA\')' if exclude_system else ''}
+        {" AND t.database NOT IN ('system', 'information_schema', 'INFORMATION_SCHEMA')" if exclude_system else ""}
         """
     else:
         query = f"""
@@ -93,7 +93,7 @@ def get_table_stats(
                 count() AS c
             FROM system.columns
             WHERE database LIKE '{database_like}'
-            {' AND database NOT IN (\'system\', \'information_schema\', \'INFORMATION_SCHEMA\')' if exclude_system else ''}
+            {" AND database NOT IN ('system', 'information_schema', 'INFORMATION_SCHEMA')" if exclude_system else ""}
             GROUP BY ALL
         ),
         partitions AS (
@@ -104,7 +104,7 @@ def get_table_stats(
                 length(partition_name) AS partition_count
             FROM system.parts
             WHERE active AND database LIKE '{database_like}'
-            {' AND database NOT IN (\'system\', \'information_schema\', \'INFORMATION_SCHEMA\')' if exclude_system else ''}
+            {" AND database NOT IN ('system', 'information_schema', 'INFORMATION_SCHEMA')" if exclude_system else ""}
             GROUP BY ALL
         )
         SELECT
@@ -125,7 +125,7 @@ def get_table_stats(
         LEFT JOIN columns ON (t.database = columns.database) AND (t.name = columns.`table`)
         LEFT JOIN partitions ON (t.database = partitions.database) AND (t.name = partitions.`table`)
         WHERE t.database LIKE '{database_like}'
-        {' AND t.database NOT IN (\'system\', \'information_schema\', \'INFORMATION_SCHEMA\')' if exclude_system else ''}
+        {" AND t.database NOT IN ('system', 'information_schema', 'INFORMATION_SCHEMA')" if exclude_system else ""}
         """
 
     db_filter = f"matching '{database_like}'" if database_like != "%" else "all"
@@ -151,7 +151,7 @@ def get_table_stats(
             active_parts
         FROM system.tables
         WHERE database LIKE '{database_like}'
-        {' AND database NOT IN (\'system\', \'information_schema\', \'INFORMATION_SCHEMA\')' if exclude_system else ''}
+        {" AND database NOT IN ('system', 'information_schema', 'INFORMATION_SCHEMA')" if exclude_system else ""}
         """
         logger.info("Falling back to simplified table statistics query")
         return execute_query_with_retry(client, fallback_query)
