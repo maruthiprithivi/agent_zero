@@ -563,7 +563,7 @@ You can test GitHub Actions locally using [act](https://github.com/nektos/act):
    ```bash
    # On macOS
    brew install act
-   
+
    # On Linux
    curl https://raw.githubusercontent.com/nektos/act/master/install.sh | sudo bash
    ```
@@ -572,10 +572,10 @@ You can test GitHub Actions locally using [act](https://github.com/nektos/act):
    ```bash
    # Run CI test job
    ./scripts/test-actions.sh test
-   
+
    # Run CI lint job
    ./scripts/test-actions.sh lint
-   
+
    # Run publish job
    ./scripts/test-actions.sh deploy
    ```

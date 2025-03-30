@@ -1,16 +1,15 @@
 """Tests for the query_performance monitoring module."""
 
 import unittest
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock
 
-import clickhouse_connect
 from clickhouse_connect.driver.client import Client
 from clickhouse_connect.driver.exceptions import ClickHouseError
 
 from agent_zero.monitoring.query_performance import (
     get_current_processes,
-    get_query_duration_stats,
     get_normalized_query_stats,
+    get_query_duration_stats,
     get_query_kind_breakdown,
 )
 

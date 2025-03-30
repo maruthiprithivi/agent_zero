@@ -5,10 +5,10 @@ This module provides common utility functions used across the MCP server compone
 
 import logging
 import time
+from collections.abc import Callable
 from functools import wraps
-from typing import Any, Callable, Dict, List, Optional
+from typing import Any
 
-import clickhouse_connect
 from clickhouse_connect.driver.client import Client
 from clickhouse_connect.driver.exceptions import ClickHouseError
 
@@ -16,14 +16,14 @@ logger = logging.getLogger("mcp-clickhouse")
 
 
 def execute_query_with_retry(
-    client: Client, 
-    query: str, 
-    params: Optional[Dict[str, Any]] = None,
-    settings: Optional[Dict[str, Any]] = None,
+    client: Client,
+    query: str,
+    params: dict[str, Any] | None = None,
+    settings: dict[str, Any] | None = None,
     max_retries: int = 3,
     retry_delay: float = 1.0,
-    readonly: bool = True
-) -> List[Dict[str, Any]]:
+    readonly: bool = True,
+) -> list[dict[str, Any]]:
     """Execute a ClickHouse query with retry logic.
 
     Args:
@@ -43,18 +43,18 @@ def execute_query_with_retry(
     """
     if settings is None:
         settings = {}
-    
+
     # Enforce readonly mode by default for safety
     if readonly and "readonly" not in settings:
         settings["readonly"] = 1
-    
+
     # Disable retries if specified in settings
     if settings.get("disable_retries"):
         max_retries = 1
-    
+
     attempt = 0
     last_error = None
-    
+
     while attempt < max_retries:
         try:
             res = client.query(query, parameters=params, settings=settings)
@@ -71,13 +71,13 @@ def execute_query_with_retry(
             attempt += 1
             if attempt < max_retries:
                 logger.warning(
-                    f"Query failed (attempt {attempt}/{max_retries}): {str(e)}. Retrying in {retry_delay}s"
+                    f"Query failed (attempt {attempt}/{max_retries}): {e!s}. Retrying in {retry_delay}s"
                 )
                 time.sleep(retry_delay)
             else:
-                logger.error(f"Query failed after {max_retries} attempts: {str(e)}")
+                logger.error(f"Query failed after {max_retries} attempts: {e!s}")
                 raise
-    
+
     # This should never happen, but just in case
     if last_error:
         raise last_error
@@ -93,6 +93,7 @@ def log_execution_time(func: Callable) -> Callable:
     Returns:
         The decorated function
     """
+
     @wraps(func)
     def wrapper(*args, **kwargs):
         start_time = time.time()
@@ -104,9 +105,9 @@ def log_execution_time(func: Callable) -> Callable:
             return result
         except Exception as e:
             elapsed_time = time.time() - start_time
-            logger.error(f"Error executing {func.__name__} after {elapsed_time:.2f}s: {str(e)}")
+            logger.error(f"Error executing {func.__name__} after {elapsed_time:.2f}s: {e!s}")
             raise
-    
+
     return wrapper
 
 
@@ -120,5 +121,5 @@ def format_exception(e: Exception) -> str:
         A formatted error message
     """
     if isinstance(e, ClickHouseError):
-        return f"ClickHouse error: {str(e)}"
-    return f"Error: {str(e)}"
+        return f"ClickHouse error: {e!s}"
+    return f"Error: {e!s}"

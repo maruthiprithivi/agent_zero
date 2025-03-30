@@ -1,58 +1,27 @@
-import logging
-from typing import List, Optional, Sequence
-import concurrent.futures
 import atexit
+import concurrent.futures
+import logging
+from collections.abc import Sequence
 
 import clickhouse_connect
-from clickhouse_connect.driver.binding import quote_identifier, format_query_value
+from clickhouse_connect.driver.binding import format_query_value, quote_identifier
 from dotenv import load_dotenv
 from mcp.server.fastmcp import FastMCP
 
 from agent_zero.mcp_env import config
-from agent_zero.utils import execute_query_with_retry, format_exception
 from agent_zero.monitoring import (
-    # Query Performance
-    get_current_processes,
-    get_query_duration_stats,
-    get_normalized_query_stats,
-    get_query_kind_breakdown,
-    
-    # Resource Usage
-    get_memory_usage,
+    # Utility
     get_cpu_usage,
+    get_current_processes,
+    get_memory_usage,
+    get_normalized_query_stats,
+    get_query_duration_stats,
+    get_query_kind_breakdown,
+    # Error Analysis
     get_server_sizing,
     get_uptime,
-    
-    # Parts & Merges
-    get_parts_analysis,
-    get_current_merges,
-    get_merge_stats,
-    get_part_log_events,
-    get_partition_stats,
-    
-    # Error Analysis
-    get_recent_errors,
-    get_error_stack_traces,
-    get_text_log,
-    
-    # Insert Operations
-    get_async_insert_stats,
-    get_insert_written_bytes_distribution,
-    get_recent_insert_queries,
-    
-    # System Components
-    get_mv_query_stats,
-    get_blob_storage_stats,
-    get_s3queue_stats,
-    
-    # Table Statistics
-    get_table_stats,
-    get_table_inactive_parts,
-    
-    # Utility
-    generate_drop_tables_script,
-    get_user_defined_functions,
 )
+from agent_zero.utils import format_exception
 
 MCP_SERVER_NAME = "mcp-clickhouse"
 
@@ -81,7 +50,7 @@ mcp = FastMCP(MCP_SERVER_NAME, dependencies=deps)
 @mcp.tool()
 def list_databases():
     """List all databases in the ClickHouse server.
-    
+
     Returns:
         A list of database names.
     """
@@ -92,18 +61,18 @@ def list_databases():
         logger.info(f"Found {len(result) if isinstance(result, list) else 1} databases")
         return result
     except Exception as e:
-        logger.error(f"Error listing databases: {str(e)}")
+        logger.error(f"Error listing databases: {e!s}")
         return f"Error listing databases: {format_exception(e)}"
 
 
 @mcp.tool()
 def list_tables(database: str, like: str = None):
     """List all tables in a specified database.
-    
+
     Args:
         database: The name of the database.
         like: Optional filter pattern for table names.
-        
+
     Returns:
         A list of table information including schema details.
     """
@@ -142,10 +111,10 @@ def list_tables(database: str, like: str = None):
                 for i, col_name in enumerate(column_names):
                     column_dict[col_name] = row[i]
                 # Add comment from our pre-fetched comments
-                if table in column_comments and column_dict['name'] in column_comments[table]:
-                    column_dict['comment'] = column_comments[table][column_dict['name']]
+                if table in column_comments and column_dict["name"] in column_comments[table]:
+                    column_dict["comment"] = column_comments[table][column_dict["name"]]
                 else:
-                    column_dict['comment'] = None
+                    column_dict["comment"] = None
                 columns.append(column_dict)
 
             create_table_query = f"SHOW CREATE TABLE {database}.`{table}`"
@@ -173,16 +142,16 @@ def list_tables(database: str, like: str = None):
         logger.info(f"Found {len(tables)} tables")
         return tables
     except Exception as e:
-        logger.error(f"Error listing tables in database '{database}': {str(e)}")
+        logger.error(f"Error listing tables in database '{database}': {e!s}")
         return f"Error listing tables: {format_exception(e)}"
 
 
 def execute_query(query: str):
     """Execute a read-only SQL query.
-    
+
     Args:
         query: The SQL query to execute.
-        
+
     Returns:
         The query results as a list of dictionaries.
     """
@@ -206,10 +175,10 @@ def execute_query(query: str):
 @mcp.tool()
 def run_select_query(query: str):
     """Execute a read-only SELECT query against the ClickHouse database.
-    
+
     Args:
         query: The SQL query to execute (must be read-only).
-        
+
     Returns:
         The query results as a list of dictionaries.
     """
@@ -226,10 +195,10 @@ def run_select_query(query: str):
 
 def create_clickhouse_client():
     """Create and return a ClickHouse client connection.
-    
+
     Returns:
         A configured ClickHouse client instance.
-        
+
     Raises:
         Exception: If connection fails.
     """
@@ -249,7 +218,7 @@ def create_clickhouse_client():
         logger.info(f"Successfully connected to ClickHouse server version {version}")
         return client
     except Exception as e:
-        logger.error(f"Failed to connect to ClickHouse: {str(e)}")
+        logger.error(f"Failed to connect to ClickHouse: {e!s}")
         raise
 
 
@@ -257,13 +226,14 @@ def create_clickhouse_client():
 
 # Query Performance Tools
 
+
 @mcp.tool()
 def monitor_current_processes():
     """Get information about currently running processes on the ClickHouse cluster.
-    
+
     This function retrieves details about all currently running queries including resource usage,
     query type, and elapsed time.
-    
+
     Returns:
         A list of dictionaries with information about each running process.
     """
@@ -272,18 +242,18 @@ def monitor_current_processes():
     try:
         return get_current_processes(client)
     except Exception as e:
-        logger.error(f"Error monitoring current processes: {str(e)}")
+        logger.error(f"Error monitoring current processes: {e!s}")
         return f"Error monitoring current processes: {format_exception(e)}"
 
 
 @mcp.tool()
-def monitor_query_duration(query_kind: Optional[str] = None, days: int = 7):
+def monitor_query_duration(query_kind: str | None = None, days: int = 7):
     """Get query duration statistics grouped by hour.
-    
+
     Args:
         query_kind: Filter by specific query kind (e.g., 'Select', 'Insert'), or None for all queries.
         days: Number of days to look back in history (default: 7).
-        
+
     Returns:
         A list of dictionaries with hourly query statistics.
     """
@@ -293,18 +263,18 @@ def monitor_query_duration(query_kind: Optional[str] = None, days: int = 7):
     try:
         return get_query_duration_stats(client, query_kind, days)
     except Exception as e:
-        logger.error(f"Error monitoring query duration: {str(e)}")
+        logger.error(f"Error monitoring query duration: {e!s}")
         return f"Error monitoring query duration: {format_exception(e)}"
 
 
 @mcp.tool()
 def monitor_query_patterns(days: int = 2, limit: int = 50):
     """Identify the most resource-intensive query patterns.
-    
+
     Args:
         days: Number of days to look back in history (default: 2).
         limit: Maximum number of query patterns to return (default: 50).
-        
+
     Returns:
         A list of dictionaries with statistics for each query pattern.
     """
@@ -313,17 +283,17 @@ def monitor_query_patterns(days: int = 2, limit: int = 50):
     try:
         return get_normalized_query_stats(client, days, limit)
     except Exception as e:
-        logger.error(f"Error monitoring query patterns: {str(e)}")
+        logger.error(f"Error monitoring query patterns: {e!s}")
         return f"Error monitoring query patterns: {format_exception(e)}"
 
 
 @mcp.tool()
 def monitor_query_types(days: int = 7):
     """Get a breakdown of query types by hour.
-    
+
     Args:
         days: Number of days to look back in history (default: 7).
-        
+
     Returns:
         A list of dictionaries with hourly query type breakdowns.
     """
@@ -332,19 +302,20 @@ def monitor_query_types(days: int = 7):
     try:
         return get_query_kind_breakdown(client, days)
     except Exception as e:
-        logger.error(f"Error monitoring query types: {str(e)}")
+        logger.error(f"Error monitoring query types: {e!s}")
         return f"Error monitoring query types: {format_exception(e)}"
 
 
 # Resource Usage Tools
 
+
 @mcp.tool()
 def monitor_memory_usage(days: int = 7):
     """Get memory usage statistics over time by host.
-    
+
     Args:
         days: Number of days to look back in history (default: 7).
-        
+
     Returns:
         A list of dictionaries with memory usage statistics.
     """
@@ -353,17 +324,17 @@ def monitor_memory_usage(days: int = 7):
     try:
         return get_memory_usage(client, days)
     except Exception as e:
-        logger.error(f"Error monitoring memory usage: {str(e)}")
+        logger.error(f"Error monitoring memory usage: {e!s}")
         return f"Error monitoring memory usage: {format_exception(e)}"
 
 
 @mcp.tool()
 def monitor_cpu_usage(hours: int = 3):
     """Get CPU usage statistics over time.
-    
+
     Args:
         hours: Number of hours to look back in history (default: 3).
-        
+
     Returns:
         A list of dictionaries with CPU usage statistics.
     """
@@ -372,14 +343,14 @@ def monitor_cpu_usage(hours: int = 3):
     try:
         return get_cpu_usage(client, hours)
     except Exception as e:
-        logger.error(f"Error monitoring CPU usage: {str(e)}")
+        logger.error(f"Error monitoring CPU usage: {e!s}")
         return f"Error monitoring CPU usage: {format_exception(e)}"
 
 
 @mcp.tool()
 def get_cluster_sizing():
     """Get server sizing information for all nodes in the cluster.
-    
+
     Returns:
         A list of dictionaries with server sizing information.
     """
@@ -388,17 +359,17 @@ def get_cluster_sizing():
     try:
         return get_server_sizing(client)
     except Exception as e:
-        logger.error(f"Error getting cluster sizing: {str(e)}")
+        logger.error(f"Error getting cluster sizing: {e!s}")
         return f"Error getting cluster sizing: {format_exception(e)}"
 
 
 @mcp.tool()
 def monitor_uptime(days: int = 7):
     """Get server uptime statistics.
-    
+
     Args:
         days: Number of days to look back in history (default: 7).
-        
+
     Returns:
         A list of dictionaries with uptime statistics.
     """
@@ -407,5 +378,5 @@ def monitor_uptime(days: int = 7):
     try:
         return get_uptime(client, days)
     except Exception as e:
-        logger.error(f"Error monitoring uptime: {str(e)}")
+        logger.error(f"Error monitoring uptime: {e!s}")
         return f"Error monitoring uptime: {format_exception(e)}"

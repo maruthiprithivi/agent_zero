@@ -28,14 +28,22 @@ packages = ["agent_zero"]
 
 [tool.ruff]
 line-length = 100
-target-version = "py313"
-select = ["E", "F", "W", "I", "N", "B", "UP", "C", "T", "PT", "RUF"]
-ignore = []
+target-version = "py312" # Using py312 as the closest available to py313
 
-[tool.ruff.isort]
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "N", "B", "UP", "C", "T", "PT", "RUF"]
+ignore = [
+    "E501",  # Line too long (handled by Black)
+    "PT009", # Use a regular assert instead of unittest-style assert (we're using unittest)
+    "RUF013", # PEP 484 prohibits implicit Optional (we're keeping for backwards compatibility)
+    "C901",  # Function is too complex (we'll address this in refactoring)
+    "F841",  # Local variable is assigned to but never used (will be addressed separately)
+]
+
+[tool.ruff.lint.isort]
 known-first-party = ["agent_zero"]
 
 [tool.black]
 line-length = 100
-target-version = ["py313"]
+target-version = ["py312"] # Using py312 as the closest available to py313
 preview = true

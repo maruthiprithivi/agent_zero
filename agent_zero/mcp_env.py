@@ -4,9 +4,8 @@ This module handles all environment variable configuration with sensible default
 and type conversion.
 """
 
-from dataclasses import dataclass
 import os
-from typing import Optional
+from dataclasses import dataclass
 
 
 @dataclass
@@ -61,7 +60,7 @@ class ClickHouseConfig:
         return os.environ["CLICKHOUSE_PASSWORD"]
 
     @property
-    def database(self) -> Optional[str]:
+    def database(self) -> str | None:
         """Get the default database name if set."""
         return os.getenv("CLICKHOUSE_DATABASE")
 
@@ -133,9 +132,7 @@ class ClickHouseConfig:
                 missing_vars.append(var)
 
         if missing_vars:
-            raise ValueError(
-                f"Missing required environment variables: {', '.join(missing_vars)}"
-            )
+            raise ValueError(f"Missing required environment variables: {', '.join(missing_vars)}")
 
 
 # Global instance for easy access
