@@ -22,14 +22,18 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
 
-      - name: Install UV
+      - name: Install and configure UV
         run: |
-          curl -sSf https://install.determinate.systems/uv | python - install
-          echo "$HOME/.cargo/bin" >> $GITHUB_PATH
+          # Install UV with pip (more reliable than the curl method)
+          pip install uv
+          # Verify UV installation
+          uv --version
 
       - name: Install dependencies
         run: |
-          uv pip install --system ".[dev]"
+          # Install the package and dev dependencies
+          uv pip install -e .
+          uv pip install pytest
 
       - name: Run tests
         run: |
@@ -45,12 +49,14 @@ jobs:
         with:
           python-version: "3.13"
 
-      - name: Install UV
+      - name: Install and configure UV
         run: |
-          curl -sSf https://install.determinate.systems/uv | python - install
-          echo "$HOME/.cargo/bin" >> $GITHUB_PATH
+          # Install UV with pip (more reliable than the curl method)
+          pip install uv
+          # Verify UV installation
+          uv --version
 
-      - name: Install dependencies
+      - name: Install linting tools
         run: |
           uv pip install ruff black
 
