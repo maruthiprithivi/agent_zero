@@ -10,7 +10,7 @@ from typing import Any
 from clickhouse_connect.driver.client import Client
 from clickhouse_connect.driver.exceptions import ClickHouseError
 
-from agent_zero.utils import execute_query_with_retry, log_execution_time
+from agent_one.utils import execute_query_with_retry, log_execution_time
 
 logger = logging.getLogger("mcp-clickhouse")
 

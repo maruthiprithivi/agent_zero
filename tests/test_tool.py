@@ -3,9 +3,9 @@ from unittest.mock import MagicMock, patch
 
 from dotenv import load_dotenv
 
-from agent_zero import list_databases, list_tables, run_select_query
-from agent_zero.monitoring.query_performance import get_current_processes, get_query_duration_stats
-from agent_zero.monitoring.resource_usage import get_memory_usage, get_server_sizing
+from agent_one import list_databases, list_tables, run_select_query
+from agent_one.monitoring.query_performance import get_current_processes, get_query_duration_stats
+from agent_one.monitoring.resource_usage import get_memory_usage, get_server_sizing
 from tests.utils import create_mock_result
 
 load_dotenv()
@@ -74,7 +74,7 @@ class TestClickhouseTools(unittest.TestCase):
 
     def setUp(self):
         # Create a patcher for create_clickhouse_client
-        self.client_patcher = patch("agent_zero.mcp_server.create_clickhouse_client")
+        self.client_patcher = patch("agent_one.mcp_server.create_clickhouse_client")
         self.mock_create_client = self.client_patcher.start()
         self.mock_create_client.return_value = self.client
 
@@ -121,7 +121,7 @@ class TestClickhouseTools(unittest.TestCase):
         ]
 
         # Mock the get_table_info method
-        with patch("agent_zero.mcp_server.list_tables") as mock_list:
+        with patch("agent_one.mcp_server.list_tables") as mock_list:
             mock_list.return_value = mock_result
 
             # Call the method under test and verify
@@ -167,7 +167,7 @@ class TestClickhouseTools(unittest.TestCase):
         ]
 
         # Mock the get_table_info method
-        with patch("agent_zero.mcp_server.list_tables") as mock_list:
+        with patch("agent_one.mcp_server.list_tables") as mock_list:
             mock_list.return_value = mock_result
 
             # Call the method under test with like parameter
@@ -188,7 +188,7 @@ class TestClickhouseTools(unittest.TestCase):
         )
 
         # Mock execute_query function to handle the actual run_select_query function
-        with patch("agent_zero.mcp_server.execute_query") as mock_execute:
+        with patch("agent_one.mcp_server.execute_query") as mock_execute:
             mock_execute.return_value = [{"id": 1, "name": "Alice"}, {"id": 2, "name": "Bob"}]
 
             query = f"SELECT * FROM {self.test_db}.{self.test_table}"
@@ -245,7 +245,7 @@ class TestClickhouseTools(unittest.TestCase):
         ]
 
         # Mock the list_tables method directly
-        with patch("agent_zero.mcp_server.list_tables") as mock_list:
+        with patch("agent_one.mcp_server.list_tables") as mock_list:
             mock_list.return_value = mock_result
 
             # Call the method under test
@@ -299,7 +299,7 @@ class TestMonitoringTools(unittest.TestCase):
         )
 
         # Set up client patcher
-        self.client_patcher = patch("agent_zero.mcp_server.create_clickhouse_client")
+        self.client_patcher = patch("agent_one.mcp_server.create_clickhouse_client")
         self.mock_create_client = self.client_patcher.start()
         self.mock_create_client.return_value = self.mock_client
 

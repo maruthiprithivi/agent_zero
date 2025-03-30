@@ -6,7 +6,7 @@ from unittest.mock import MagicMock, patch
 from clickhouse_connect.driver.client import Client
 from clickhouse_connect.driver.exceptions import ClickHouseError
 
-from agent_zero.monitoring.resource_usage import (
+from agent_one.monitoring.resource_usage import (
     get_cpu_usage,
     get_memory_usage,
     get_server_sizing,
@@ -70,7 +70,7 @@ class TestResourceUsage(unittest.TestCase):
         self.assertIn("(now() - 21600)", query)  # 6 * 3600 = 21600
 
         # Test error handling by patching execute_query_with_retry
-        with patch("agent_zero.monitoring.resource_usage.execute_query_with_retry") as mock_execute:
+        with patch("agent_one.monitoring.resource_usage.execute_query_with_retry") as mock_execute:
             mock_execute.side_effect = ClickHouseError("Complex query failed")
             result = get_cpu_usage(self.mock_client)
             self.assertEqual(len(result), 0)  # Should return empty list

@@ -1,4 +1,4 @@
-from agent_zero.mcp_server import (
+from agent_one.mcp_server import (
     create_clickhouse_client,
     list_databases,
     list_tables,

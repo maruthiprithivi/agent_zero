@@ -1,18 +1,18 @@
-# Agent Zero: ClickHouse Monitoring MCP Server
+# Agent One: ClickHouse Monitoring MCP Server
 
-Agent Zero is a Model Context Protocol (MCP) server for monitoring, analyzing, and managing ClickHouse databases. It enables AI assistants like Claude to perform sophisticated database operations, health checks, and troubleshooting on ClickHouse clusters. And more...
+Agent One is a Model Context Protocol (MCP) server for monitoring, analyzing, and managing ClickHouse databases. It enables AI assistants like Claude to perform sophisticated database operations, health checks, and troubleshooting on ClickHouse clusters. And more...
 
 > **Note**: This project is currently in version 0.1.0 (early development).
 
 [![Python 3.13+](https://img.shields.io/badge/python-3.13+-blue.svg)](https://www.python.org/downloads/)
-[![Version](https://img.shields.io/badge/version-0.1.0-brightgreen.svg)](https://github.com/maruthi-sw/agent-zero)
+[![Version](https://img.shields.io/badge/version-0.1.0-brightgreen.svg)](https://github.com/maruthi-sw/agent-one)
 [![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](LICENSE)
 
-![Agent Zero](images/agent_zero.jpg)
+![Agent One](images/agent_zero.jpg)
 
 ## 🌟 Key Features
 
-Agent Zero enables AI assistants to:
+Agent One enables AI assistants to:
 
 - **Query Performance Analysis**: Track slow queries, execution patterns, and bottlenecks
 - **Resource Monitoring**: Monitor memory, CPU, and disk usage across the cluster
@@ -44,7 +44,7 @@ Agent Zero enables AI assistants to:
 
 ### Dependencies
 
-Agent Zero relies on the following libraries:
+Agent One relies on the following libraries:
 
 - **mcp[cli]**: Core Model Context Protocol implementation (>=1.4.1)
 - **clickhouse-connect**: ClickHouse client library (>=0.8.15)
@@ -59,20 +59,20 @@ Agent Zero relies on the following libraries:
 ### Using pip
 
 ```bash
-pip install agent-zero
+pip install agent-one
 ```
 
 ### Manual Installation
 
 ```bash
-git clone https://github.com/maruthiprithivi/agent_zero.git
-cd agentzero
+git clone https://github.com/maruthiprithivi/agent_one.git
+cd agentone
 pip install -e .
 ```
 
 ### Environment Variables
 
-Agent Zero requires the following environment variables:
+Agent One requires the following environment variables:
 
 ```bash
 # Required
@@ -101,14 +101,14 @@ You can set these variables in your environment or use a `.env` file.
    - Windows: `%APPDATA%\Claude\claude_desktop_config.json`
    - Linux: `~/.config/Claude/claude_desktop_config.json`
 
-2. Add the Agent Zero MCP server:
+2. Add the Agent One MCP server:
 
 ```json
 {
   "mcpServers": {
-    "agent-zero": {
+    "agent-one": {
       "command": "/path/to/your/python",
-      "args": ["-m", "agent_zero.main"],
+      "args": ["-m", "agent_one.main"],
       "env": {
         "CLICKHOUSE_HOST": "your-clickhouse-host",
         "CLICKHOUSE_USER": "your-username",
@@ -206,7 +206,7 @@ Analyze my table parts and suggest optimization opportunities
 The project is organized as follows:
 
 ```
-agent_zero/
+agent_one/
 ├── __init__.py                # Package exports
 ├── main.py                    # Entry point for the MCP server
 ├── mcp_env.py                 # Environment configuration
@@ -234,7 +234,7 @@ agent_zero/
 
 ## 🏗️ Architecture
 
-Agent Zero follows a layered architecture:
+Agent One follows a layered architecture:
 
 1. **MCP Interface Layer** (`mcp_server.py`): Exposes functionality to Claude through the MCP protocol
 2. **Monitoring Layer** (`monitoring/`): Specialized tools for different monitoring aspects
@@ -275,7 +275,7 @@ Data flows as follows:
 
 ## ⚙️ Environment Configuration
 
-Agent Zero uses a typed configuration system for ClickHouse connection settings via the `ClickHouseConfig` class in `mcp_env.py`.
+Agent One uses a typed configuration system for ClickHouse connection settings via the `ClickHouseConfig` class in `mcp_env.py`.
 
 ### Required Variables
 
@@ -295,7 +295,7 @@ Agent Zero uses a typed configuration system for ClickHouse connection settings 
 ### Configuration Usage
 
 ```python
-from agent_zero.mcp_env import config
+from agent_one.mcp_env import config
 
 # Access configuration properties
 host = config.host
@@ -313,8 +313,8 @@ client_config = config.get_client_config()
 1. Clone the repository:
 
 ```bash
-git clone https://github.com/maruthiprithivi/agent_zero.git
-cd agent_zero
+git clone https://github.com/maruthiprithivi/agent_one.git
+cd agent_one
 ```
 
 2. Create a virtual environment:
@@ -357,14 +357,14 @@ EOF
 2. Implement your monitoring function with proper error handling:
 
 ```python
-# agent_zero/monitoring/your_module.py
+# agent_one/monitoring/your_module.py
 import logging
 from typing import Dict, List, Optional, Union, Any
 
 from clickhouse_connect.driver.client import Client
 from clickhouse_connect.driver.exceptions import ClickHouseError
 
-from agent_zero.utils import execute_query_with_retry, log_execution_time
+from agent_one.utils import execute_query_with_retry, log_execution_time
 
 logger = logging.getLogger("mcp-clickhouse")
 
@@ -410,7 +410,7 @@ def your_monitoring_function(
 3. **Export** your function in the module's `__init__.py`:
 
 ```python
-# agent_zero/monitoring/__init__.py
+# agent_one/monitoring/__init__.py
 from .your_module import your_monitoring_function
 
 __all__ = [
@@ -422,8 +422,8 @@ __all__ = [
 4. Add an MCP tool wrapper in `mcp_server.py`:
 
 ```python
-# agent_zero/mcp_server.py
-from agent_zero.monitoring import your_monitoring_function
+# agent_one/mcp_server.py
+from agent_one.monitoring import your_monitoring_function
 
 @mcp.tool()
 def monitor_your_feature(param1: str, param2: int = 10):
@@ -455,7 +455,7 @@ import unittest
 from clickhouse_connect.driver.client import Client
 from clickhouse_connect.driver.exceptions import ClickHouseError
 
-from agent_zero.monitoring.your_module import your_monitoring_function
+from agent_one.monitoring.your_module import your_monitoring_function
 from tests.utils import create_mock_result
 
 class TestYourModule(unittest.TestCase):
@@ -509,7 +509,7 @@ python -m pytest tests/test_query_performance.py
 To run with coverage:
 
 ```bash
-python -m pytest --cov=agent_zero
+python -m pytest --cov=agent_one
 ```
 
 ### Test Strategy
@@ -536,7 +536,7 @@ The `tests/utils.py` file provides helpful utilities:
 
 ## 🤝 Contributing
 
-Contributions to Agent Zero are welcome! Here's how to contribute:
+Contributions to Agent One are welcome! Here's how to contribute:
 
 1. Fork the repository
 2. Create a feature branch: `git checkout -b feature/my-new-feature`
@@ -548,7 +548,7 @@ Please follow the existing code style and add tests for any new functionality.
 
 ### Continuous Integration
 
-Agent Zero uses GitHub Actions for continuous integration:
+Agent One uses GitHub Actions for continuous integration:
 
 - **CI Workflow**: Automatically runs tests and linting on each push and pull request
 - **Publish Workflow**: Handles publishing to PyPI when a new release is created
@@ -560,6 +560,7 @@ These workflows help maintain code quality and simplify the release process.
 You can test GitHub Actions locally using [act](https://github.com/nektos/act):
 
 1. Install act:
+
    ```bash
    # On macOS
    brew install act
@@ -569,6 +570,7 @@ You can test GitHub Actions locally using [act](https://github.com/nektos/act):
    ```
 
 2. Run the test script:
+
    ```bash
    # Run CI test job
    ./scripts/test-actions.sh test
@@ -596,4 +598,4 @@ This project is licensed under the Apache License 2.0 - see the [LICENSE](LICENS
 
 ## 📞 Support
 
-If you encounter any issues or have questions, please file an issue on the [GitHub repository](https://github.com/maruthiprithivi/agent_zero/issues).
+If you encounter any issues or have questions, please file an issue on the [GitHub repository](https://github.com/maruthiprithivi/agent_one/issues).

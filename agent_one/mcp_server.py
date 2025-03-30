@@ -8,8 +8,8 @@ from clickhouse_connect.driver.binding import format_query_value, quote_identifi
 from dotenv import load_dotenv
 from mcp.server.fastmcp import FastMCP
 
-from agent_zero.mcp_env import config
-from agent_zero.monitoring import (
+from agent_one.mcp_env import config
+from agent_one.monitoring import (
     # Utility
     get_cpu_usage,
     get_current_processes,
@@ -21,7 +21,7 @@ from agent_zero.monitoring import (
     get_server_sizing,
     get_uptime,
 )
-from agent_zero.utils import format_exception
+from agent_one.utils import format_exception
 
 MCP_SERVER_NAME = "mcp-clickhouse"
 

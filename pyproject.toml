@@ -24,7 +24,7 @@ dev = [
 ]
 
 [tool.setuptools]
-packages = ["agent_zero"]
+packages = ["agent_one"]
 
 [tool.ruff]
 line-length = 100
@@ -41,7 +41,7 @@ ignore = [
 ]
 
 [tool.ruff.lint.isort]
-known-first-party = ["agent_zero"]
+known-first-party = ["agent_one"]
 
 [tool.black]
 line-length = 100
