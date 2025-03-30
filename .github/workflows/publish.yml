@@ -84,14 +84,14 @@ jobs:
           fi
 
           # Update pyproject.toml and README.md
-          python -c 'import re; version = "'"${version}"'"; \
-            with open("pyproject.toml", "r") as f: content = f.read(); \
-            content = re.sub(r"version = \"[^\"]+\"", f"version = \"{version}\"", content); \
-            with open("pyproject.toml", "w") as f: f.write(content); \
-            with open("README.md", "r") as f: content = f.read(); \
-            content = re.sub(r"version-[^-]+-brightgreen", f"version-{version}-brightgreen", content); \
-            content = re.sub(r"This project is currently in version [^)]+", f"This project is currently in version {version}", content); \
-            with open("README.md", "w") as f: f.write(content)'
+          python -c "import re; version = '${version}'; \
+            with open('pyproject.toml', 'r') as f: content = f.read(); \
+            content = re.sub(r'version = \"[^\"]+\"', f'version = \"{version}\"', content); \
+            with open('pyproject.toml', 'w') as f: f.write(content); \
+            with open('README.md', 'r') as f: content = f.read(); \
+            content = re.sub(r'version-[^-]+-brightgreen', f'version-{version}-brightgreen', content); \
+            content = re.sub(r'This project is currently in version [^)]+', f'This project is currently in version {version}', content); \
+            with open('README.md', 'w') as f: f.write(content)"
 
       - name: Build package
         run: |
