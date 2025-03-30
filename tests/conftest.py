@@ -15,13 +15,13 @@ if "CLICKHOUSE_PASSWORD" not in os.environ:
     os.environ["CLICKHOUSE_PASSWORD"] = "mock_password"
 
 
-@pytest.fixture()
+@pytest.fixture
 def no_retry_settings():
     """Fixture to provide settings that disable query retries."""
     return {"disable_retries": True}
 
 
-@pytest.fixture()
+@pytest.fixture
 def mock_clickhouse_client():
     """Fixture to provide a mock ClickHouse client."""
     from clickhouse_connect.driver.client import Client
