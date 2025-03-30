@@ -1,0 +1,113 @@
+name: Publish to PyPI
+
+on:
+  release:
+    types: [created]
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Version to publish (e.g., 0.1.0)"
+        required: false
+        default: ""
+      bump:
+        description: "Version bump type (major/minor/patch)"
+        required: false
+        default: "patch"
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # Required for version calculation
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Install UV
+        run: |
+          curl -sSf https://install.determinate.systems/uv | python - install
+          echo "$HOME/.cargo/bin" >> $GITHUB_PATH
+
+      - name: Install build dependencies
+        run: |
+          uv pip install build twine
+
+      - name: Calculate next version
+        if: github.event.inputs.version == ''
+        id: version
+        run: |
+          # Install python-semantic-release
+          uv pip install python-semantic-release
+
+          if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
+            # Use specified bump type
+            bump="${{ github.event.inputs.bump }}"
+          else
+            # Default to patch for releases
+            bump="patch"
+          fi
+
+          # Calculate next version
+          current_version=$(grep 'version = ' pyproject.toml | cut -d'"' -f2)
+          case $bump in
+            major)
+              next_version=$(echo $current_version | awk -F. '{print $1+1".0.0"}')
+              ;;
+            minor)
+              next_version=$(echo $current_version | awk -F. '{print $1"."$2+1".0"}')
+              ;;
+            patch)
+              next_version=$(echo $current_version | awk -F. '{print $1"."$2"."$3+1}')
+              ;;
+          esac
+          echo "next_version=$next_version" >> $GITHUB_OUTPUT
+
+      - name: Update versions
+        run: |
+          # Use provided version or calculated version
+          version="${{ github.event.inputs.version }}"
+          if [ -z "$version" ]; then
+            version="${{ steps.version.outputs.next_version }}"
+          fi
+
+          # Update pyproject.toml and README.md
+          python -c 'import re; version = "'"${version}"'"; \
+            with open("pyproject.toml", "r") as f: content = f.read(); \
+            content = re.sub(r"version = \"[^\"]+\"", f"version = \"{version}\"", content); \
+            with open("pyproject.toml", "w") as f: f.write(content); \
+            with open("README.md", "r") as f: content = f.read(); \
+            content = re.sub(r"version-[^-]+-brightgreen", f"version-{version}-brightgreen", content); \
+            content = re.sub(r"This project is currently in version [^)]+", f"This project is currently in version {version}", content); \
+            with open("README.md", "w") as f: f.write(content)'
+
+      - name: Build package
+        run: |
+          uv build
+
+      - name: Run tests before publishing
+        run: |
+          uv pip install --system .
+          uv pip install --system --dev-deps
+          python -m pytest
+
+      - name: Commit version updates
+        run: |
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+          git add pyproject.toml README.md
+          git commit -m "chore: bump version to ${version}"
+          git tag -a "v${version}" -m "Release v${version}"
+          git push origin HEAD:main
+          git push origin "v${version}"
+
+      - name: Publish to PyPI
+        if: success()
+        env:
+          TWINE_USERNAME: ${{ secrets.PYPI_USERNAME }}
+          TWINE_PASSWORD: ${{ secrets.PYPI_PASSWORD }}
+        run: |
+          twine upload dist/*
