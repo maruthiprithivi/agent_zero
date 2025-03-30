@@ -90,8 +90,7 @@ jobs:
 
       - name: Run tests before publishing
         run: |
-          uv pip install --system .
-          uv pip install --system --dev-deps
+          uv pip install --system ".[dev]"
           python -m pytest
 
       - name: Commit version updates

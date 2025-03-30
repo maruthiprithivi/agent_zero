@@ -2,9 +2,9 @@ name: CI
 
 on:
   push:
-    branches: [ main, master ]
+    branches: [main, master]
   pull_request:
-    branches: [ main, master ]
+    branches: [main, master]
   workflow_dispatch:
 
 jobs:
@@ -15,50 +15,49 @@ jobs:
         python-version: ["3.13"]
 
     steps:
-    - uses: actions/checkout@v4
-    
-    - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v5
-      with:
-        python-version: ${{ matrix.python-version }}
-        
-    - name: Install UV
-      run: |
-        curl -sSf https://install.determinate.systems/uv | python - install
-        echo "$HOME/.cargo/bin" >> $GITHUB_PATH
-        
-    - name: Install dependencies
-      run: |
-        uv pip install --system .
-        uv pip install --system --dev-deps
-        
-    - name: Run tests
-      run: |
-        python -m pytest
+      - uses: actions/checkout@v4
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install UV
+        run: |
+          curl -sSf https://install.determinate.systems/uv | python - install
+          echo "$HOME/.cargo/bin" >> $GITHUB_PATH
+
+      - name: Install dependencies
+        run: |
+          uv pip install --system ".[dev]"
+
+      - name: Run tests
+        run: |
+          python -m pytest
 
   lint:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v4
-    
-    - name: Set up Python
-      uses: actions/setup-python@v5
-      with:
-        python-version: '3.13'
-        
-    - name: Install UV
-      run: |
-        curl -sSf https://install.determinate.systems/uv | python - install
-        echo "$HOME/.cargo/bin" >> $GITHUB_PATH
-        
-    - name: Install dependencies
-      run: |
-        uv pip install ruff black
-        
-    - name: Lint with Ruff
-      run: |
-        ruff check .
-        
-    - name: Format check with Black
-      run: |
-        black --check .
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Install UV
+        run: |
+          curl -sSf https://install.determinate.systems/uv | python - install
+          echo "$HOME/.cargo/bin" >> $GITHUB_PATH
+
+      - name: Install dependencies
+        run: |
+          uv pip install ruff black
+
+      - name: Lint with Ruff
+        run: |
+          ruff check .
+
+      - name: Format check with Black
+        run: |
+          black --check .
