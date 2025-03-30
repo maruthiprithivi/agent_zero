@@ -5,9 +5,13 @@ import pytest
 from unittest.mock import patch, MagicMock
 
 # Set up mock environment variables for tests
-os.environ["CLICKHOUSE_HOST"] = "mock_host"
-os.environ["CLICKHOUSE_USER"] = "mock_user"
-os.environ["CLICKHOUSE_PASSWORD"] = "mock_password"
+# This allows tests to run even if the actual env vars aren't set
+if "CLICKHOUSE_HOST" not in os.environ:
+    os.environ["CLICKHOUSE_HOST"] = "mock_host"
+if "CLICKHOUSE_USER" not in os.environ:
+    os.environ["CLICKHOUSE_USER"] = "mock_user"
+if "CLICKHOUSE_PASSWORD" not in os.environ:
+    os.environ["CLICKHOUSE_PASSWORD"] = "mock_password"
 
 @pytest.fixture
 def no_retry_settings():
@@ -20,4 +24,4 @@ def mock_clickhouse_client():
     from clickhouse_connect.driver.client import Client
     
     mock_client = MagicMock(spec=Client)
-    return mock_client 
+    return mock_client

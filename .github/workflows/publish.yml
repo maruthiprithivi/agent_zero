@@ -34,14 +34,21 @@ jobs:
           # Verify UV installation
           uv --version
 
-      - name: Install build dependencies
+      - name: Create virtual environment and install build dependencies
         run: |
+          # Create a virtual environment
+          uv venv
+          # Activate the virtual environment
+          . .venv/bin/activate
+          # Install build tools
           uv pip install build twine
 
       - name: Calculate next version
         if: github.event.inputs.version == ''
         id: version
         run: |
+          # Activate the virtual environment
+          . .venv/bin/activate
           # Install python-semantic-release
           uv pip install python-semantic-release
 
@@ -88,12 +95,19 @@ jobs:
 
       - name: Build package
         run: |
+          # Activate the virtual environment
+          . .venv/bin/activate
+          # Build the package
           uv build
 
       - name: Run tests before publishing
         run: |
+          # Activate the virtual environment
+          . .venv/bin/activate
+          # Install the package in development mode and test dependencies
           uv pip install -e .
           uv pip install pytest
+          # Run tests
           python -m pytest
 
       - name: Commit version updates
@@ -112,4 +126,7 @@ jobs:
           TWINE_USERNAME: ${{ secrets.PYPI_USERNAME }}
           TWINE_PASSWORD: ${{ secrets.PYPI_PASSWORD }}
         run: |
+          # Activate the virtual environment
+          . .venv/bin/activate
+          # Upload to PyPI
           twine upload dist/*

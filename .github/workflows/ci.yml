@@ -29,14 +29,21 @@ jobs:
           # Verify UV installation
           uv --version
 
-      - name: Install dependencies
+      - name: Create virtual environment and install dependencies
         run: |
+          # Create a virtual environment
+          uv venv
+          # Activate the virtual environment
+          . .venv/bin/activate
           # Install the package and dev dependencies
           uv pip install -e .
           uv pip install pytest
 
       - name: Run tests
         run: |
+          # Activate the virtual environment
+          . .venv/bin/activate
+          # Run tests
           python -m pytest
 
   lint:
@@ -56,14 +63,25 @@ jobs:
           # Verify UV installation
           uv --version
 
-      - name: Install linting tools
+      - name: Create virtual environment and install linting tools
         run: |
+          # Create a virtual environment
+          uv venv
+          # Activate the virtual environment
+          . .venv/bin/activate
+          # Install linting tools
           uv pip install ruff black
 
       - name: Lint with Ruff
         run: |
+          # Activate the virtual environment
+          . .venv/bin/activate
+          # Run Ruff
           ruff check .
 
       - name: Format check with Black
         run: |
+          # Activate the virtual environment
+          . .venv/bin/activate
+          # Run Black
           black --check .

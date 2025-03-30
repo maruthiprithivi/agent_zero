@@ -555,6 +555,33 @@ Agent Zero uses GitHub Actions for continuous integration:
 
 These workflows help maintain code quality and simplify the release process.
 
+#### Testing GitHub Actions Locally
+
+You can test GitHub Actions locally using [act](https://github.com/nektos/act):
+
+1. Install act:
+   ```bash
+   # On macOS
+   brew install act
+   
+   # On Linux
+   curl https://raw.githubusercontent.com/nektos/act/master/install.sh | sudo bash
+   ```
+
+2. Run the test script:
+   ```bash
+   # Run CI test job
+   ./scripts/test-actions.sh test
+   
+   # Run CI lint job
+   ./scripts/test-actions.sh lint
+   
+   # Run publish job
+   ./scripts/test-actions.sh deploy
+   ```
+
+The script sets up the necessary configuration for act to run the workflows successfully.
+
 ## 📄 License
 
 This project is licensed under the Apache License 2.0 - see the [LICENSE](LICENSE) file for details.
