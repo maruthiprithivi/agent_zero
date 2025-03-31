@@ -54,7 +54,7 @@ jobs:
 
       - name: Build package
         run: |
-          uv pip install --upgrade build
+          source .venv/bin/activate
           python -m build
 
       - name: Publish to PyPI
