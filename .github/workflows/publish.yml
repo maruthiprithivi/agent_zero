@@ -115,10 +115,30 @@ jobs:
 
       - name: Inspect wheel metadata
         run: |
-          uv pip install wheel pkginfo
-          for wheel in dist/*.whl; do
-            echo "Inspecting $wheel"
-            uv run python -c "import pkginfo; wh = pkginfo.Wheel('dist/agent_one-0.0.1a0-py3-none-any.whl'); print(wh.name, wh.version)"
+          # Activate venv if needed (uv run might handle this, but explicit is safer)
+          source .venv/bin/activate
+          uv pip install --upgrade wheel pkginfo # Ensure tools are present
+          echo "Inspecting generated wheel(s):"
+          # Use find to robustly get the wheel file regardless of exact version/build tags
+          find dist -name "agent_one*.whl" -print0 | while IFS= read -r -d $'\0' wheel; do
+            echo "--- Inspecting: $wheel ---"
+            # Use python -m pkginfo which is good at parsing METADATA
+            # Use || true to prevent workflow failure if pkginfo errors, but still show output
+            uv run python -m pkginfo "$wheel" | grep -E '^Name:|^Version:' || echo "ERROR: pkginfo failed or Name/Version missing for $wheel"
+
+            # Optional deeper debug: Unpack and show METADATA
+            echo "--- Attempting to show METADATA file for $wheel ---"
+            # Create a temp dir, unpack, cat METADATA, clean up
+            rm -rf temp_wheel_inspect
+            uv run wheel unpack "$wheel" -d temp_wheel_inspect >> /dev/null # Suppress verbose wheel output
+            METADATA_FILE=$(find temp_wheel_inspect -name METADATA)
+            if [ -f "$METADATA_FILE" ]; then
+              cat "$METADATA_FILE"
+            else
+              echo "ERROR: Could not find METADATA file within unpacked wheel $wheel"
+            fi
+            rm -rf temp_wheel_inspect
+            echo "---------------------------"
           done
 
       - name: Install build dependencies
