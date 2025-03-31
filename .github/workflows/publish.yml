@@ -118,14 +118,12 @@ jobs:
       - name: Run tests
         run: uv run pytest
 
-      - name: Debug package structure
+      - name: Debug version update
         run: |
-          echo "Contents of project directory:"
-          ls -la
-          echo "Contents of agent_one directory:"
-          ls -la agent_one
-          echo "Checking for __init__.py:"
-          [ -f agent_one/__init__.py ] && echo "Present" || echo "Missing!"
+          echo "Contents of __init__.py:"
+          cat agent_one/__init__.py
+          echo -e "\nContents of pyproject.toml version line:"
+          grep '^version =' pyproject.toml
 
       - name: Clean build artifacts
         run: rm -rf dist build *.egg-info
