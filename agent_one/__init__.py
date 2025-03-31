@@ -1,8 +1,6 @@
 """Agent One package for ClickHouse database management."""
 
-__version__ = (
-    "0.0.0"  # Default version, will be overridden by the version set in the tag during build
-)
+__version__ = "0.0.0"  # Default version, will be overridden by the version set in the tag during build
 
 from agent_one.mcp_server import (
     create_clickhouse_client,
