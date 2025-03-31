@@ -54,12 +54,19 @@ jobs:
           version="${version#v}"
 
           # Update pyproject.toml - ensure proper formatting
-          sed -i 's/^name = .*/name = "agent_one"/' pyproject.toml
-          sed -i 's/^version = .*/version = "'"${version}"'"/' pyproject.toml
+          # sed -i 's/^name = .*/name = "agent_one"/' pyproject.toml
+          # sed -i 's/^version = .*/version = "'"${version}"'"/' pyproject.toml
 
-          # Update __init__.py - ensure version exists
-          mkdir -p agent_one
-          echo '__version__ = "'"${version}"'"' > agent_one/__init__.py
+          # Update __init__.py
+          sed -i 's/__version__ = "[^"]*"/__version__ = "'"${version}"'"/' agent_one/__init__.py
+
+          # Make sure __init__.py exists with version if it doesn't already
+          if [ ! -f agent_one/__init__.py ]; then
+            mkdir -p agent_one
+            echo '"""Agent One package for ClickHouse database management."""' > agent_one/__init__.py
+            echo '' >> agent_one/__init__.py
+            echo '__version__ = "'"${version}"'"' >> agent_one/__init__.py
+          fi
 
           # Update README.md if it contains version badges or references
           if grep -q "version-" README.md || grep -q "currently in version" README.md; then
