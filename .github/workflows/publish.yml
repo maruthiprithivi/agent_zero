@@ -22,13 +22,15 @@ jobs:
         with:
           fetch-depth: 0 # Important to fetch all history for tags
 
-      - name: Get latest tag
+      - name: Get version from tag
         id: get_tag
-        run: echo "TAG=$(git describe --tags --abbrev=0)" >> $GITHUB_OUTPUT
-
-      - name: Update version in pyproject.toml
         run: |
-          sed -i 's/version = "0.0.0"/version = "${{ steps.get_tag.outputs.TAG }}"/' pyproject.toml
+          TAG=${GITHUB_REF#refs/tags/}
+          echo "TAG=${TAG}" >> $GITHUB_OUTPUT
+
+      - name: Set version in __init__.py
+        run: |
+          echo "__version__ = '${{ steps.get_tag.outputs.TAG }}'" > agent_one/__init__.py
 
       - name: Set up Python
         uses: actions/setup-python@v4
