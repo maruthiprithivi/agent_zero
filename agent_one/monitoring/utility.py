@@ -10,7 +10,7 @@ from clickhouse_connect.driver.exceptions import ClickHouseError
 
 from agent_one.utils import execute_query_with_retry, log_execution_time
 
-logger = logging.getLogger("agent-zero")
+logger = logging.getLogger("agent_one")
 
 
 @log_execution_time
