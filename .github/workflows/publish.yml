@@ -44,7 +44,9 @@ jobs:
 
       - name: Install dependencies with UV
         run: |
-          uv pip install --python=python build setuptools wheel
+          uv venv .venv
+          source .venv/bin/activate
+          uv pip install build setuptools wheel
           uv pip install -e . --no-deps  # Install package without dependencies first
           uv pip install "clickhouse-connect>=0.8.15"  # Install critical dep explicitly
           uv pip install .  # Install remaining deps from pyproject.toml
