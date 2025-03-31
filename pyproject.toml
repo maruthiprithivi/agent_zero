@@ -1,7 +1,7 @@
 [project]
 name = "agent_one"
-version = "0.1.0"
-# Removed dynamic version as it's causing issues
+dynamic = ["version"]
+# Using dynamic version from __version__ in __init__.py
 description = "Model Context Protocol (MCP) server for monitoring, analyzing, and managing ClickHouse databases"
 readme = "README.md"
 requires-python = ">=3.13"
@@ -36,7 +36,8 @@ packages = ["agent_one", "agent_one.monitoring"]
 [tool.setuptools.package-data]
 agent_one = ["py.typed"]
 
-# Removed dynamic version configuration as we're using static version in [project] section
+[tool.setuptools.dynamic]
+version = {attr = "agent_one.__version__"}
 
 [tool.ruff]
 line-length = 100
