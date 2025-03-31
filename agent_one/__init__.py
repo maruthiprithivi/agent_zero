@@ -9,4 +9,4 @@ __all__ = ["create_clickhouse_client", "list_databases", "list_tables", "run_sel
 
 """Agent One package for ClickHouse database management."""
 
-__version__ = "0.1.0"
+__version__ = "0.0.0"
