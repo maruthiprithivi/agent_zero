@@ -47,16 +47,13 @@ jobs:
             echo "VERSION=${{ steps.get_tag.outputs.TAG }}" >> $GITHUB_OUTPUT
           fi
 
-      - name: Update version in pyproject.toml, __init__.py, and README.md
+      - name: Update version in __init__.py and README.md
         run: |
           version="${{ steps.version.outputs.VERSION }}"
           # Remove 'v' prefix if present
           version="${version#v}"
 
-          # Update pyproject.toml with the correct version
-          sed -i 's/^version = "[^"]*"/version = "'"${version}"'"/' pyproject.toml
-
-          # Update __init__.py
+          # Update __init__.py with the correct version
           sed -i 's/__version__ = "[^"]*"/__version__ = "'"${version}"'"/' agent_one/__init__.py
 
           # Make sure __init__.py exists with version if it doesn't already
@@ -75,8 +72,8 @@ jobs:
 
           # Debug information
           echo "Updated version to ${version}"
-          echo "pyproject.toml version line:"
-          grep "^version" pyproject.toml
+          echo "Dynamic version configuration in pyproject.toml:"
+          grep -A 2 "dynamic" pyproject.toml
           echo "__init__.py version line:"
           grep "__version__" agent_one/__init__.py
 
@@ -148,7 +145,7 @@ jobs:
           git config --local user.name "github-actions[bot]"
           git lfs track "*.png" "*.jpg" "*.jpeg" "*.gif"
           git add .gitattributes
-          git add pyproject.toml README.md
+          git add agent_one/__init__.py README.md
           git commit -m "chore: bump version to ${{ steps.version.outputs.VERSION }}"
           git tag -a "v${{ steps.version.outputs.VERSION }}" -m "Release v${{ steps.version.outputs.VERSION }}"
           git push origin HEAD:main
