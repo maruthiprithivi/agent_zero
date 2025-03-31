@@ -1,219 +1,54 @@
-name: Publish to PyPI
+name: Build and Publish Package
 
 on:
   release:
     types: [created]
-  workflow_dispatch:
-    inputs:
-      version:
-        description: "Version to publish (e.g., 0.1.0)"
-        required: false
-        default: ""
 
 jobs:
   build-n-publish:
-    name: Build and Publish to PyPI
+    name: Build and Publish Package
     runs-on: ubuntu-latest
+
     permissions:
-      id-token: write
+      id-token: write # For PyPI publishing
       contents: read
+
     strategy:
       matrix:
-        python-version:
-          - "3.11"
-          - "3.12"
-          - "3.13"
-    steps:
-      - name: Setup Git LFS
-        run: |
-          sudo apt-get install git-lfs
-          git lfs install
+        python-version: ["3.10", "3.11", "3.12"] # Adjust based on your supported versions
 
+    steps:
       - uses: actions/checkout@v4
         with:
-          fetch-depth: 0
-          lfs: true
+          fetch-depth: 0 # Important to fetch all history for tags
 
       - name: Get latest tag
         id: get_tag
+        run: echo "TAG=$(git describe --tags --abbrev=0)" >> $GITHUB_OUTPUT
+
+      - name: Update version in pyproject.toml
         run: |
-          echo "TAG=$(git describe --tags --abbrev=0)" >> $GITHUB_OUTPUT
-          echo "Echoing TAG=${{ steps.get_tag.outputs.TAG }}"
-
-      - name: Set version from tag or input
-        id: version
-        run: |
-          if [ "${{ github.event_name }}" == "workflow_dispatch" ] && [ -n "${{ github.event.inputs.version }}" ]; then
-            echo "VERSION=${{ github.event.inputs.version }}" >> $GITHUB_OUTPUT
-          else
-            echo "Not workflow_dispatch, using tag: VERSION=${{ steps.get_tag.outputs.TAG }}" >> $GITHUB_OUTPUT
-          fi
-
-      - name: Update version in pyproject.toml and __init__.py
-        run: |
-          version="${{ steps.version.outputs.VERSION }}"
-          version="${version#v}"  # Remove 'v' prefix
-
-          # Update pyproject.toml
-          sed -i 's/^version = .*/version = "'"${version}"'"/' pyproject.toml
-
-          # Update __init__.py
-          sed -i 's/__version__ = .*/__version__ = "'"${version}"'"/' agent_one/__init__.py
-      # - name: Update version in pyproject.toml
-      #   run: |
-      #     sed -i 's/version = "0.0.0"/version = "${{ steps.get_tag.outputs.TAG }}"/' pyproject.toml
-
-      # - name: Update version in __init__.py and README.md
-      #   run: |
-      #     version="${{ steps.version.outputs.VERSION }}"
-      #     # Remove 'v' prefix if present
-      #     version="${version#v}"
-
-      #     # Update __init__.py with the correct version
-      #     sed -i 's/__version__ = "[^"]*"/__version__ = "'"${version}"'"/' agent_one/__init__.py
-
-      #     # Make sure __init__.py exists with version if it doesn't already
-      #     if [ ! -f agent_one/__init__.py ]; then
-      #       mkdir -p agent_one
-      #       echo '"""Agent One package for ClickHouse database management."""' > agent_one/__init__.py
-      #       echo '' >> agent_one/__init__.py
-      #       echo '__version__ = "'"${version}"'"' >> agent_one/__init__.py
-      #     fi
-
-      #     # Update README.md if it contains version badges or references
-      #     if grep -q "version-" README.md || grep -q "currently in version" README.md; then
-      #       sed -i 's/version-[^-]*-brightgreen/version-'"${version}"'-brightgreen/g' README.md
-      #       sed -i 's/This project is currently in version [^)]\+/This project is currently in version '"${version}"'/g' README.md
-      #     fi
-
-      #     # Debug information
-      #     echo "Updated version to ${version}"
-      #     echo "Dynamic version configuration in pyproject.toml:"
-      #     grep -A 2 "dynamic" pyproject.toml
-      #     echo "__init__.py version line:"
-      #     grep "__version__" agent_one/__init__.py
-
-      - name: Debug version update
-        run: |
-          echo "Contents of __init__.py:"
-          cat agent_one/__init__.py
-          echo "Contents of pyproject.toml:"
-          grep -E 'name|version' pyproject.toml
-            - name: Install uv
-              uses: astral-sh/setup-uv@v3
+          sed -i 's/version = "0.0.0"/version = "${{ steps.get_tag.outputs.TAG }}"/' pyproject.toml
 
       - name: Set up Python
-        run: uv python install ${{ matrix.python-version }}
-
-      - name: Create Virtual Environment
-        run: uv venv
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ matrix.python-version }}
 
       - name: Install dependencies
         run: |
-          if [ -f pyproject.toml ]; then
-            uv pip install -e .
-          fi
-          uv pip install build pytest
+          python -m pip install --upgrade pip
+          pip install build pytest
+          pip install -e .
 
       - name: Run tests
-        run: uv run pytest
-
-      - name: Debug version update
-        run: |
-          echo "Contents of __init__.py:"
-          cat agent_one/__init__.py
-          echo -e "\nContents of pyproject.toml version line:"
-          grep '^version =' pyproject.toml
-
-      - name: Clean build artifacts
-        run: rm -rf dist build *.egg-info
-
-      - name: Install build dependencies
-        run: |
-          source .venv/bin/activate
-          # Install all build-related dependencies with explicit versions
-          uv pip install --upgrade pip build==1.2.0 wheel>=0.43.0 setuptools>=69.2.0 pytest>=8.0.0 twine>=5.0.0
-          # Also install packaging and pkginfo explicitly
-          uv pip install packaging>=24.0 pkginfo>=1.12.0
+        run: pytest
 
       - name: Build package
-        run: |
-          source .venv/bin/activate
-          # Explicitly set environment variables that might be needed
-          export PYTHONPATH=$PWD
-          # Verbose build to see what's happening
-          python -m pip install --upgrade build
-          python -m build --sdist --wheel --verbose
-          echo "Build complete - checking dist contents:"
-          ls -la dist/
-
-      - name: Debug package metadata
-        run: |
-          source .venv/bin/activate
-          # Install pkginfo for detailed metadata inspection
-          uv pip install pkginfo
-          # Inspect the wheel metadata in detail
-          python -c "
-          import pkginfo
-          import glob
-          import json
-          import sys
-
-          # Find the wheel file
-          wheel_files = glob.glob('dist/*.whl')
-          if not wheel_files:
-              print('No wheel files found!')
-              sys.exit(1)
-
-          # Load metadata
-          wheel = pkginfo.get_metadata(wheel_files[0])
-
-          # Print all metadata as JSON for debugging
-          metadata = {k: getattr(wheel, k) for k in dir(wheel) if not k.startswith('_') and not callable(getattr(wheel, k))}
-          print('WHEEL METADATA:')
-          print(json.dumps(metadata, indent=2, default=str))
-
-          # Check critical fields
-          required_fields = ['name', 'version']
-          missing = [field for field in required_fields if not getattr(wheel, field, None)]
-          if missing:
-              print(f'ERROR: Missing required fields: {missing}')
-              sys.exit(1)
-          else:
-              print(f'SUCCESS: Package name={wheel.name}, version={wheel.version}')
-          "
-
-      - name: Validate package with Twine
-        run: |
-          source .venv/bin/activate
-          python -m twine check dist/*
-
-      - name: Install and test the built package
-        run: |
-          source .venv/bin/activate
-          pip install dist/*.whl
-          # Set dummy environment variables for testing import
-          export CLICKHOUSE_HOST="localhost"
-          export CLICKHOUSE_USER="test_user"
-          export CLICKHOUSE_PASSWORD="test_password"
-          # Import the package to verify it's installable
-          python -c "import agent_one; print(f'Successfully imported agent_one version {agent_one.__version__}')"
+        run: python -m build
 
       - name: Publish to PyPI
-        if: matrix.python-version == '3.13'
+        if: matrix.python-version == '3.13' # Only publish once
         uses: pypa/gh-action-pypi-publish@v1.8.10
         with:
           password: ${{ secrets.PYPI_API_TOKEN }}
-
-      - name: Commit version updates
-        if: matrix.python-version == '3.13' && github.event_name == 'workflow_dispatch' && github.event.inputs.version != ''
-        run: |
-          git config --local user.email "github-actions[bot]@users.noreply.github.com"
-          git config --local user.name "github-actions[bot]"
-          git lfs track "*.png" "*.jpg" "*.jpeg" "*.gif"
-          git add .gitattributes
-          git add agent_one/__init__.py README.md
-          git commit -m "chore: bump version to ${{ steps.version.outputs.VERSION }}"
-          git tag -a "v${{ steps.version.outputs.VERSION }}" -m "Release v${{ steps.version.outputs.VERSION }}"
-          git push origin HEAD:main
-          git push origin "v${{ steps.version.outputs.VERSION }}"
