@@ -5,9 +5,9 @@ description = "Model Context Protocol (MCP) server for monitoring, analyzing, an
 readme = "README.md"
 requires-python = ">=3.13"
 authors = [
-    {name = "Your Name", email = "your.email@example.com"},  # Add your author info
+    {name = "Maruthi Prithivi", email = "maruthiprithivi@gmail.com"},  # Add your author info
 ]
-license = {text = "MIT"}  # Add your license info
+license = {text = "Apache-2.0"}  # Add your license info
 dependencies = [
     "aiohttp>=3.11.14",
     "clickhouse-connect>=0.8.15",
