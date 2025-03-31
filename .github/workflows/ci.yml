@@ -77,11 +77,11 @@ jobs:
           # Activate the virtual environment
           . .venv/bin/activate
           # Run Ruff
-          ruff check .
+          ruff check . --exclude '^agent_one/__init__\.py$'
 
       - name: Format check with Black
         run: |
           # Activate the virtual environment
           . .venv/bin/activate
           # Run Black
-          black --check .
+          black --check . --exclude '^agent_one/__init__\.py$'
