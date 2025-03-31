@@ -15,6 +15,7 @@ dependencies = [
     "clickhouse-connect>=0.8.15",
     "mcp[cli]>=1.4.1",
     "pkginfo>=1.12.1.2",
+    "pre-commit>=4.2.0",
     "prometheus-client>=0.21.1",
     "pydantic>=2.10.6",
     "python-dotenv>=1.0.1",
@@ -71,5 +72,5 @@ target-version = ["py312"] # Using py312 as the closest available to py313
 preview = true
 
 [build-system]
-requires = ["setuptools>=61.0", "wheel"]  # Update to newer setuptools
+requires = ["setuptools>=78.1.0", "wheel"]  # Update to newer setuptools
 build-backend = "setuptools.build_meta"
