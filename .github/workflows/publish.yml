@@ -53,9 +53,8 @@ jobs:
           # Remove 'v' prefix if present
           version="${version#v}"
 
-          # Update pyproject.toml - ensure proper formatting
-          # sed -i 's/^name = .*/name = "agent_one"/' pyproject.toml
-          # sed -i 's/^version = .*/version = "'"${version}"'"/' pyproject.toml
+          # Update pyproject.toml with the correct version
+          sed -i 's/^version = "[^"]*"/version = "'"${version}"'"/' pyproject.toml
 
           # Update __init__.py
           sed -i 's/__version__ = "[^"]*"/__version__ = "'"${version}"'"/' agent_one/__init__.py
@@ -73,6 +72,13 @@ jobs:
             sed -i 's/version-[^-]*-brightgreen/version-'"${version}"'-brightgreen/g' README.md
             sed -i 's/This project is currently in version [^)]\+/This project is currently in version '"${version}"'/g' README.md
           fi
+
+          # Debug information
+          echo "Updated version to ${version}"
+          echo "pyproject.toml version line:"
+          grep "^version" pyproject.toml
+          echo "__init__.py version line:"
+          grep "__version__" agent_one/__init__.py
 
       - name: Install uv
         uses: astral-sh/setup-uv@v3
@@ -105,51 +111,29 @@ jobs:
       - name: Clean build artifacts
         run: rm -rf dist build *.egg-info
 
-      - name: Build package with verbose output
-        run: |
-          uv pip install --upgrade build wheel setuptools>=61.0
-          # Add explicit build system configuration
-          uv run python -m build --sdist --wheel --verbose --config-setting=--global-option="--verbose"
-          echo "Build complete - checking dist contents:"
-          ls -la dist/
-
-      - name: Inspect wheel metadata
-        run: |
-          # Activate venv if needed (uv run might handle this, but explicit is safer)
-          source .venv/bin/activate
-          uv pip install --upgrade wheel pkginfo # Ensure tools are present
-          echo "Inspecting generated wheel(s):"
-          # Use find to robustly get the wheel file regardless of exact version/build tags
-          find dist -name "agent_one*.whl" -print0 | while IFS= read -r -d $'\0' wheel; do
-            echo "--- Inspecting: $wheel ---"
-            # Use python -m pkginfo which is good at parsing METADATA
-            # Use || true to prevent workflow failure if pkginfo errors, but still show output
-            uv run python -m pkginfo "$wheel" | grep -E '^Name:|^Version:' || echo "ERROR: pkginfo failed or Name/Version missing for $wheel"
-
-            # Optional deeper debug: Unpack and show METADATA
-            echo "--- Attempting to show METADATA file for $wheel ---"
-            # Create a temp dir, unpack, cat METADATA, clean up
-            rm -rf temp_wheel_inspect
-            uv run wheel unpack "$wheel" -d temp_wheel_inspect >> /dev/null # Suppress verbose wheel output
-            METADATA_FILE=$(find temp_wheel_inspect -name METADATA)
-            if [ -f "$METADATA_FILE" ]; then
-              cat "$METADATA_FILE"
-            else
-              echo "ERROR: Could not find METADATA file within unpacked wheel $wheel"
-            fi
-            rm -rf temp_wheel_inspect
-            echo "---------------------------"
-          done
-
       - name: Install build dependencies
         run: |
-          uv pip install --upgrade pip
-          uv pip install build wheel setuptools>=61.0 pytest
+          source .venv/bin/activate
+          uv pip install --upgrade pip build wheel setuptools>=61.0 pytest twine
 
       - name: Build package
         run: |
-          uv run python -m build --sdist --wheel
-          uv run python -m pip install dist/*.whl  # Test installation
+          source .venv/bin/activate
+          python -m build --sdist --wheel
+          echo "Build complete - checking dist contents:"
+          ls -la dist/
+
+      - name: Validate package with Twine
+        run: |
+          source .venv/bin/activate
+          python -m twine check dist/*
+
+      - name: Install and test the built package
+        run: |
+          source .venv/bin/activate
+          pip install dist/*.whl
+          # Import the package to verify it's installable
+          python -c "import agent_one; print(f'Successfully imported agent_one version {agent_one.__version__}')"
 
       - name: Publish to PyPI
         if: matrix.python-version == '3.13'

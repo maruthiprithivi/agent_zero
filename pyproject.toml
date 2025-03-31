@@ -1,14 +1,14 @@
 [project]
 name = "agent_one"
-# version = "0.1.0"
-dynamic = ["version"]
+version = "0.1.0"
+# Removed dynamic version as it's causing issues
 description = "Model Context Protocol (MCP) server for monitoring, analyzing, and managing ClickHouse databases"
 readme = "README.md"
 requires-python = ">=3.13"
 authors = [
-    {name = "Maruthi Prithivi", email = "maruthiprithivi@gmail.com"},  # Add your author info
+    {name = "Maruthi Prithivi", email = "maruthiprithivi@gmail.com"},
 ]
-license = {text = "Apache-2.0"}  # Add your license info
+license = "Apache-2.0"
 dependencies = [
     "aiohttp>=3.11.14",
     "clickhouse-connect>=0.8.15",
@@ -31,13 +31,12 @@ dev = [
 ]
 
 [tool.setuptools]
-packages = ["agent_one"]
+packages = ["agent_one", "agent_one.monitoring"]
 
 [tool.setuptools.package-data]
 agent_one = ["py.typed"]
 
-[tool.setuptools.dynamic]
-version = {attr = "agent_one.__version__"}
+# Removed dynamic version configuration as we're using static version in [project] section
 
 [tool.ruff]
 line-length = 100

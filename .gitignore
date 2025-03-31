@@ -180,3 +180,4 @@ cython_debug/
 .vscode/
 .DS_Store
 CLAUDE.md
+.secrets
