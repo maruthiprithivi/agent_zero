@@ -111,14 +111,56 @@ jobs:
       - name: Install build dependencies
         run: |
           source .venv/bin/activate
-          uv pip install --upgrade pip build wheel setuptools>=61.0 pytest twine
+          # Install all build-related dependencies with explicit versions
+          uv pip install --upgrade pip build==1.2.0 wheel>=0.43.0 setuptools>=69.2.0 pytest>=8.0.0 twine>=5.0.0
+          # Also install packaging and pkginfo explicitly
+          uv pip install packaging>=24.0 pkginfo>=1.12.0
 
       - name: Build package
         run: |
           source .venv/bin/activate
-          python -m build --sdist --wheel
+          # Explicitly set environment variables that might be needed
+          export PYTHONPATH=$PWD
+          # Verbose build to see what's happening
+          python -m build --sdist --wheel --verbose
           echo "Build complete - checking dist contents:"
           ls -la dist/
+
+      - name: Debug package metadata
+        run: |
+          source .venv/bin/activate
+          # Install pkginfo for detailed metadata inspection
+          uv pip install pkginfo
+          # Inspect the wheel metadata in detail
+          python -c "
+          import pkginfo
+          import glob
+          import json
+          import sys
+
+          # Find the wheel file
+          wheel_files = glob.glob('dist/*.whl')
+          if not wheel_files:
+              print('No wheel files found!')
+              sys.exit(1)
+
+          # Load metadata
+          wheel = pkginfo.get_metadata(wheel_files[0])
+
+          # Print all metadata as JSON for debugging
+          metadata = {k: getattr(wheel, k) for k in dir(wheel) if not k.startswith('_') and not callable(getattr(wheel, k))}
+          print('WHEEL METADATA:')
+          print(json.dumps(metadata, indent=2, default=str))
+
+          # Check critical fields
+          required_fields = ['name', 'version']
+          missing = [field for field in required_fields if not getattr(wheel, field, None)]
+          if missing:
+              print(f'ERROR: Missing required fields: {missing}')
+              sys.exit(1)
+          else:
+              print(f'SUCCESS: Package name={wheel.name}, version={wheel.version}')
+          "
 
       - name: Validate package with Twine
         run: |

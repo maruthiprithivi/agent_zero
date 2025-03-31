@@ -8,7 +8,7 @@ requires-python = ">=3.13"
 authors = [
     {name = "Maruthi Prithivi", email = "maruthiprithivi@gmail.com"},
 ]
-license = "Apache-2.0"
+license = {text = "Apache-2.0"}
 dependencies = [
     "aiohttp>=3.11.14",
     "clickhouse-connect>=0.8.15",
@@ -30,8 +30,16 @@ dev = [
     "black>=23.12.1",
 ]
 
+[project.urls]
+Homepage = "https://github.com/maruthiprithivi/agent_one"
+Documentation = "https://github.com/maruthiprithivi/agent_one/blob/main/README.md"
+"Bug Tracker" = "https://github.com/maruthiprithivi/agent_one/issues"
+
 [tool.setuptools]
 packages = ["agent_one", "agent_one.monitoring"]
+package-dir = {"" = "."}
+# Explicitly include specific packages
+include-package-data = true
 
 [tool.setuptools.package-data]
 agent_one = ["py.typed"]
