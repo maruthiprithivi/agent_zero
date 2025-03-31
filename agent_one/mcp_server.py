@@ -85,12 +85,18 @@ def list_tables(database: str, like: str = None):
         result = client.command(query)
 
         # Get all table comments in one query
-        table_comments_query = f"SELECT name, comment FROM system.tables WHERE database = {format_query_value(database)}"
+        table_comments_query = (
+            "SELECT name, comment FROM system.tables WHERE database ="
+            f" {format_query_value(database)}"
+        )
         table_comments_result = client.query(table_comments_query)
         table_comments = {row[0]: row[1] for row in table_comments_result.result_rows}
 
         # Get all column comments in one query
-        column_comments_query = f"SELECT table, name, comment FROM system.columns WHERE database = {format_query_value(database)}"
+        column_comments_query = (
+            "SELECT table, name, comment FROM system.columns WHERE database ="
+            f" {format_query_value(database)}"
+        )
         column_comments_result = client.query(column_comments_query)
         column_comments = {}
         for row in column_comments_result.result_rows:

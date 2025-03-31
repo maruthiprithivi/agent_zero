@@ -47,3 +47,7 @@ known-first-party = ["agent_one"]
 line-length = 100
 target-version = ["py312"] # Using py312 as the closest available to py313
 preview = true
+
+[build-system]
+requires = ["setuptools>=42", "wheel"]
+build-backend = "setuptools.build_meta"

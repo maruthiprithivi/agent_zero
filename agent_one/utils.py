@@ -71,7 +71,8 @@ def execute_query_with_retry(
             attempt += 1
             if attempt < max_retries:
                 logger.warning(
-                    f"Query failed (attempt {attempt}/{max_retries}): {e!s}. Retrying in {retry_delay}s"
+                    f"Query failed (attempt {attempt}/{max_retries}): {e!s}. Retrying in"
+                    f" {retry_delay}s"
                 )
                 time.sleep(retry_delay)
             else:

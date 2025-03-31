@@ -135,7 +135,8 @@ def get_mv_deduplicated_blocks(
     """
 
     logger.info(
-        f"Retrieving deduplicated blocks for materialized view '{view_name}' for the past {days} days"
+        f"Retrieving deduplicated blocks for materialized view '{view_name}' for the past"
+        f" {days} days"
     )
 
     try:

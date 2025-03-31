@@ -194,7 +194,8 @@ def get_table_inactive_parts(
     db_filter = f"matching '{database_like}'" if database_like != "%" else "all"
     table_filter = f"matching '{table_like}'" if table_like != "%" else "all"
     logger.info(
-        f"Retrieving inactive parts for {db_filter} databases and {table_filter} tables (limit: {limit})"
+        f"Retrieving inactive parts for {db_filter} databases and {table_filter} tables (limit:"
+        f" {limit})"
     )
 
     try:

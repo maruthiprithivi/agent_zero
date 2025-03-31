@@ -238,7 +238,8 @@ def get_recent_insert_queries(
     """
 
     logger.info(
-        f"Retrieving recent insert queries for the past {days} days (limit: {limit}, min_count: {min_count})"
+        f"Retrieving recent insert queries for the past {days} days (limit: {limit}, min_count:"
+        f" {min_count})"
     )
 
     try:

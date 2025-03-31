@@ -258,7 +258,8 @@ def create_monitoring_views(client: Client) -> bool:
         try:
             client.command(view_definition, settings={"allow_ddl": 1})
             logger.info(
-                f"Created/updated view: {view_definition.split('CREATE OR REPLACE VIEW ')[1].split(' ')[0]}"
+                "Created/updated view:"
+                f" {view_definition.split('CREATE OR REPLACE VIEW ')[1].split(' ')[0]}"
             )
         except ClickHouseError as e:
             logger.error(f"Error creating view: {e!s}")

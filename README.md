@@ -8,7 +8,7 @@ Agent One is a Model Context Protocol (MCP) server for monitoring, analyzing, an
 [![Version](https://img.shields.io/badge/version-0.1.0-brightgreen.svg)](https://github.com/maruthi-sw/agent-one)
 [![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](LICENSE)
 
-![Agent One](images/agent_zero.jpg)
+![Agent One](images/agent_one.png)
 
 ## 🌟 Key Features
 
@@ -70,7 +70,7 @@ cd agentone
 pip install -e .
 ```
 
-### Environment Variables
+### Environment Variables (This is not required while using Claude Desktop)
 
 Agent One requires the following environment variables:
 
@@ -86,7 +86,7 @@ CLICKHOUSE_SECURE=true  # Default: true
 CLICKHOUSE_VERIFY=true  # Default: true
 CLICKHOUSE_CONNECT_TIMEOUT=30  # Default: 30 seconds
 CLICKHOUSE_SEND_RECEIVE_TIMEOUT=300  # Default: 300 seconds
-CLICKHOUSE_DATABASE=default_db  # Default: None
+CLICKHOUSE_DATABASE=default  # Default: None
 ```
 
 You can set these variables in your environment or use a `.env` file.
