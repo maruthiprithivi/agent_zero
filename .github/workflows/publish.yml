@@ -36,7 +36,9 @@ jobs:
 
       - name: Get latest tag
         id: get_tag
-        run: echo "TAG=$(git describe --tags --abbrev=0)" >> $GITHUB_OUTPUT
+        run: |
+          echo "TAG=$(git describe --tags --abbrev=0)" >> $GITHUB_OUTPUT
+          echo "Echoing TAG=${{ steps.get_tag.outputs.TAG }}"
 
       - name: Set version from tag or input
         id: version
@@ -44,38 +46,41 @@ jobs:
           if [ "${{ github.event_name }}" == "workflow_dispatch" ] && [ -n "${{ github.event.inputs.version }}" ]; then
             echo "VERSION=${{ github.event.inputs.version }}" >> $GITHUB_OUTPUT
           else
-            echo "VERSION=${{ steps.get_tag.outputs.TAG }}" >> $GITHUB_OUTPUT
+            echo "Not workflow_dispatch, using tag: VERSION=${{ steps.get_tag.outputs.TAG }}" >> $GITHUB_OUTPUT
           fi
-
-      - name: Update version in __init__.py and README.md
+      - name: Update version in pyproject.toml
         run: |
-          version="${{ steps.version.outputs.VERSION }}"
-          # Remove 'v' prefix if present
-          version="${version#v}"
+          sed -i 's/version = "0.0.0"/version = "${{ steps.get_tag.outputs.TAG }}"/' pyproject.toml
 
-          # Update __init__.py with the correct version
-          sed -i 's/__version__ = "[^"]*"/__version__ = "'"${version}"'"/' agent_one/__init__.py
+      # - name: Update version in __init__.py and README.md
+      #   run: |
+      #     version="${{ steps.version.outputs.VERSION }}"
+      #     # Remove 'v' prefix if present
+      #     version="${version#v}"
 
-          # Make sure __init__.py exists with version if it doesn't already
-          if [ ! -f agent_one/__init__.py ]; then
-            mkdir -p agent_one
-            echo '"""Agent One package for ClickHouse database management."""' > agent_one/__init__.py
-            echo '' >> agent_one/__init__.py
-            echo '__version__ = "'"${version}"'"' >> agent_one/__init__.py
-          fi
+      #     # Update __init__.py with the correct version
+      #     sed -i 's/__version__ = "[^"]*"/__version__ = "'"${version}"'"/' agent_one/__init__.py
 
-          # Update README.md if it contains version badges or references
-          if grep -q "version-" README.md || grep -q "currently in version" README.md; then
-            sed -i 's/version-[^-]*-brightgreen/version-'"${version}"'-brightgreen/g' README.md
-            sed -i 's/This project is currently in version [^)]\+/This project is currently in version '"${version}"'/g' README.md
-          fi
+      #     # Make sure __init__.py exists with version if it doesn't already
+      #     if [ ! -f agent_one/__init__.py ]; then
+      #       mkdir -p agent_one
+      #       echo '"""Agent One package for ClickHouse database management."""' > agent_one/__init__.py
+      #       echo '' >> agent_one/__init__.py
+      #       echo '__version__ = "'"${version}"'"' >> agent_one/__init__.py
+      #     fi
 
-          # Debug information
-          echo "Updated version to ${version}"
-          echo "Dynamic version configuration in pyproject.toml:"
-          grep -A 2 "dynamic" pyproject.toml
-          echo "__init__.py version line:"
-          grep "__version__" agent_one/__init__.py
+      #     # Update README.md if it contains version badges or references
+      #     if grep -q "version-" README.md || grep -q "currently in version" README.md; then
+      #       sed -i 's/version-[^-]*-brightgreen/version-'"${version}"'-brightgreen/g' README.md
+      #       sed -i 's/This project is currently in version [^)]\+/This project is currently in version '"${version}"'/g' README.md
+      #     fi
+
+      #     # Debug information
+      #     echo "Updated version to ${version}"
+      #     echo "Dynamic version configuration in pyproject.toml:"
+      #     grep -A 2 "dynamic" pyproject.toml
+      #     echo "__init__.py version line:"
+      #     grep "__version__" agent_one/__init__.py
 
       - name: Install uv
         uses: astral-sh/setup-uv@v3
