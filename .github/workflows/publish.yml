@@ -47,7 +47,7 @@ jobs:
             echo "VERSION=${{ steps.get_tag.outputs.TAG }}" >> $GITHUB_OUTPUT
           fi
 
-      - name: Update version in pyproject.toml and README.md
+      - name: Update version in pyproject.toml, __init__.py, and README.md
         run: |
           version="${{ steps.version.outputs.VERSION }}"
           # Remove 'v' prefix if present
@@ -55,6 +55,17 @@ jobs:
 
           # Update pyproject.toml
           sed -i 's/version = "[^"]*"/version = "'"${version}"'"/' pyproject.toml
+
+          # Update __init__.py
+          sed -i 's/__version__ = "[^"]*"/__version__ = "'"${version}"'"/' agent_one/__init__.py
+
+          # Make sure __init__.py exists with version if it doesn't already
+          if [ ! -f agent_one/__init__.py ]; then
+            mkdir -p agent_one
+            echo '"""Agent One package for ClickHouse database management."""' > agent_one/__init__.py
+            echo '' >> agent_one/__init__.py
+            echo '__version__ = "'"${version}"'"' >> agent_one/__init__.py
+          fi
 
           # Update README.md if it contains version badges or references
           if grep -q "version-" README.md || grep -q "currently in version" README.md; then
@@ -81,8 +92,32 @@ jobs:
       - name: Run tests
         run: uv run pytest
 
+      - name: Debug package structure
+        run: |
+          echo "Contents of project directory:"
+          ls -la
+          echo "Contents of agent_one directory:"
+          ls -la agent_one
+          echo "Checking for __init__.py:"
+          [ -f agent_one/__init__.py ] && echo "Present" || echo "Missing!"
+
       - name: Clean build artifacts
-        run: rm -rf dist build
+        run: rm -rf dist build *.egg-info
+
+      - name: Build package with verbose output
+        run: |
+          uv pip install --upgrade build wheel setuptools>=61.0
+          uv run python -m build --sdist --wheel --verbose
+          echo "Build complete - checking dist contents:"
+          ls -la dist/
+
+      - name: Inspect wheel metadata
+        run: |
+          uv pip install wheel
+          for wheel in dist/*.whl; do
+            echo "Inspecting $wheel"
+            uv run python -c "from wheel.pkginfo import read_pkg_info_bytes; from zipfile import ZipFile; print(read_pkg_info_bytes(ZipFile('$wheel').read('*.dist-info/METADATA')))"
+          done
 
       - name: Install build dependencies
         run: |

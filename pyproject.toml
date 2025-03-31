@@ -30,6 +30,12 @@ dev = [
 [tool.setuptools]
 packages = ["agent_one"]
 
+[tool.setuptools.package-data]
+agent_one = ["py.typed"]
+
+[tool.setuptools.dynamic]
+version = {attr = "agent_one.__version__"}
+
 [tool.ruff]
 line-length = 100
 target-version = "py312" # Using py312 as the closest available to py313
