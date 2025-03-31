@@ -1,5 +1,5 @@
 [project]
-name = "agent-zero"
+name = "agent_one"
 version = "0.1.0"
 description = "Model Context Protocol (MCP) server for monitoring, analyzing, and managing ClickHouse databases"
 readme = "README.md"
