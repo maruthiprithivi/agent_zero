@@ -48,9 +48,20 @@ jobs:
           else
             echo "Not workflow_dispatch, using tag: VERSION=${{ steps.get_tag.outputs.TAG }}" >> $GITHUB_OUTPUT
           fi
-      - name: Update version in pyproject.toml
+
+      - name: Update version in pyproject.toml and __init__.py
         run: |
-          sed -i 's/version = "0.0.0"/version = "${{ steps.get_tag.outputs.TAG }}"/' pyproject.toml
+          version="${{ steps.version.outputs.VERSION }}"
+          version="${version#v}"  # Remove 'v' prefix
+
+          # Update pyproject.toml
+          sed -i 's/^version = .*/version = "'"${version}"'"/' pyproject.toml
+
+          # Update __init__.py
+          sed -i 's/__version__ = .*/__version__ = "'"${version}"'"/' agent_one/__init__.py
+      # - name: Update version in pyproject.toml
+      #   run: |
+      #     sed -i 's/version = "0.0.0"/version = "${{ steps.get_tag.outputs.TAG }}"/' pyproject.toml
 
       # - name: Update version in __init__.py and README.md
       #   run: |
@@ -82,8 +93,14 @@ jobs:
       #     echo "__init__.py version line:"
       #     grep "__version__" agent_one/__init__.py
 
-      - name: Install uv
-        uses: astral-sh/setup-uv@v3
+      - name: Debug version update
+        run: |
+          echo "Contents of __init__.py:"
+          cat agent_one/__init__.py
+          echo "Contents of pyproject.toml:"
+          grep -E 'name|version' pyproject.toml
+            - name: Install uv
+              uses: astral-sh/setup-uv@v3
 
       - name: Set up Python
         run: uv python install ${{ matrix.python-version }}
@@ -127,6 +144,7 @@ jobs:
           # Explicitly set environment variables that might be needed
           export PYTHONPATH=$PWD
           # Verbose build to see what's happening
+          python -m pip install --upgrade build
           python -m build --sdist --wheel --verbose
           echo "Build complete - checking dist contents:"
           ls -la dist/

@@ -1,6 +1,6 @@
 """Agent One package for ClickHouse database management."""
 
-__version__ = "0.1.0"
+__version__ = "0.0.0"
 
 from agent_one.mcp_server import (
     create_clickhouse_client,
