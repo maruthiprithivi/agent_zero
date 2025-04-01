@@ -60,6 +60,10 @@ Agent One relies on the following libraries:
 
 ```bash
 pip install agent-one
+
+OR
+
+uv pip install agent-one
 ```
 
 ### Manual Installation
@@ -328,10 +332,10 @@ source .venv/bin/activate  # On Windows: .venv\Scripts\activate
 
 ```bash
 # With uv (recommended)
-uv pip install -e . --dev-deps
+uv pip install -e .
 
 # With pip
-pip install -e .[dev]
+pip install -e .
 ```
 
 Development dependencies include:
