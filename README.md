@@ -59,11 +59,11 @@ Agent Zero relies on the following libraries:
 ### Using pip
 
 ```bash
-pip install agent-zero
+pip install ch-agent-zero
 
 OR
 
-uv pip install agent-zero
+uv pip install ch-agent-zero
 ```
 
 ### Manual Installation
@@ -112,7 +112,14 @@ You can set these variables in your environment or use a `.env` file.
   "mcpServers": {
     "agent-zero": {
       "command": "uv",
-      "args": ["run", "--with", "agent_zero", "--python", "3.13", "agent_zero"],
+      "args": [
+        "run",
+        "--with",
+        "ch_agent_zero",
+        "--python",
+        "3.13",
+        "ch_agent_zero"
+      ],
       "env": {
         "CLICKHOUSE_HOST": "your-clickhouse-host",
         "CLICKHOUSE_PORT": "8443",
