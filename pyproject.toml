@@ -1,7 +1,7 @@
 [project]
 name = "agent_one"
-# version = "0.0.0"
-dynamic = ["version"]
+version = "0.0.0"
+# dynamic = ["version"]
 # Using dynamic version from __version__ in __init__.py
 description = "Model Context Protocol (MCP) server for monitoring, analyzing, and managing ClickHouse databases"
 readme = "README.md"
@@ -12,6 +12,7 @@ authors = [
 license = {text = "Apache-2.0"}
 dependencies = [
     "aiohttp>=3.11.14",
+    "build>=1.2.2.post1",
     "clickhouse-connect>=0.8.15",
     "mcp[cli]>=1.4.1",
     "pkginfo>=1.12.1.2",
@@ -21,6 +22,7 @@ dependencies = [
     "python-dotenv>=1.0.1",
     "structlog>=25.2.0",
     "tenacity>=9.0.0",
+    "twine>=6.1.0",
     "uvicorn>=0.34.0",
     "wheel>=0.45.1",
 ]
@@ -72,5 +74,5 @@ target-version = ["py312"] # Using py312 as the closest available to py313
 preview = true
 
 [build-system]
-requires = ["setuptools>=78.1.0", "wheel"]  # Update to newer setuptools
+requires = ["setuptools>=65.0", "wheel<0.43"]  # Update to newer setuptools
 build-backend = "setuptools.build_meta"

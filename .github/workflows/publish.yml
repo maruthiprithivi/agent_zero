@@ -55,7 +55,10 @@ jobs:
       - name: Build package
         run: |
           source .venv/bin/activate
-          python -m build
+          python -m build --sdist --wheel
+          echo "Build successful"
+          ls -l dist
+          twine check dist/*
 
       - name: Publish to PyPI
         if: matrix.python-version == '3.13'
