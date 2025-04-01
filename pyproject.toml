@@ -39,6 +39,9 @@ Homepage = "https://github.com/maruthiprithivi/agent_zero"
 Documentation = "https://github.com/maruthiprithivi/agent_zero/blob/main/README.md"
 "Bug Tracker" = "https://github.com/maruthiprithivi/agent_zero/issues"
 
+[project.scripts]
+ch-agent-zero = "agent_zero.main:main"
+
 [tool.setuptools]
 packages = ["agent_zero", "agent_zero.monitoring"]
 package-dir = {"" = "."}
