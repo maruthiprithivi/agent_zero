@@ -77,11 +77,11 @@ jobs:
           # Activate the virtual environment
           . .venv/bin/activate
           # Run Ruff
-          ruff check agent_one --exclude '(^\.venv/)|(^.*agent_one/__init__\.py$)'
+          ruff check agent_zero --exclude '(^\.venv/)|(^.*agent_zero/__init__\.py$)'
 
       - name: Format check with Black
         run: |
           # Activate the virtual environment
           . .venv/bin/activate
           # Run Black
-          black --check agent_one --exclude '(^\.venv/)|(^.*agent_one/__init__\.py$)'
+          black --check agent_zero --exclude '(^\.venv/)|(^.*agent_zero/__init__\.py$)'

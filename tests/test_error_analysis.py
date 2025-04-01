@@ -6,7 +6,7 @@ from unittest.mock import MagicMock
 from clickhouse_connect.driver.client import Client
 from clickhouse_connect.driver.exceptions import ClickHouseError
 
-from agent_one.monitoring.error_analysis import (
+from agent_zero.monitoring.error_analysis import (
     get_error_stack_traces,
     get_recent_errors,
     get_text_log,

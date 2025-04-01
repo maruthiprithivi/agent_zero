@@ -7,10 +7,9 @@ in a ClickHouse database.
 import logging
 from typing import Any
 
+from agent_one.utils import execute_query_with_retry, log_execution_time
 from clickhouse_connect.driver.client import Client
 from clickhouse_connect.driver.exceptions import ClickHouseError
-
-from agent_one.utils import execute_query_with_retry, log_execution_time
 
 logger = logging.getLogger("mcp-clickhouse")
 

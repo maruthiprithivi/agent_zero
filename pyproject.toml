@@ -1,5 +1,5 @@
 [project]
-name = "agent_one"
+name = "agent_zero"
 # version = "0.0.0"
 dynamic = ["version"]
 # Using dynamic version from __version__ in __init__.py
@@ -35,21 +35,21 @@ dev = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/maruthiprithivi/agent_one"
-Documentation = "https://github.com/maruthiprithivi/agent_one/blob/main/README.md"
-"Bug Tracker" = "https://github.com/maruthiprithivi/agent_one/issues"
+Homepage = "https://github.com/maruthiprithivi/agent_zero"
+Documentation = "https://github.com/maruthiprithivi/agent_zero/blob/main/README.md"
+"Bug Tracker" = "https://github.com/maruthiprithivi/agent_zero/issues"
 
 [tool.setuptools]
-packages = ["agent_one", "agent_one.monitoring"]
+packages = ["agent_zero", "agent_zero.monitoring"]
 package-dir = {"" = "."}
 # Explicitly include specific packages
 include-package-data = true
 
 [tool.setuptools.package-data]
-agent_one = ["py.typed"]
+agent_zero = ["py.typed"]
 
 [tool.setuptools.dynamic]
-version = {attr = "agent_one.__version__"}
+version = {attr = "agent_zero.__version__"}
 
 [tool.ruff]
 line-length = 100
@@ -66,7 +66,7 @@ ignore = [
 ]
 
 [tool.ruff.lint.isort]
-known-first-party = ["agent_one"]
+known-first-party = ["agent_zero"]
 
 [tool.black]
 line-length = 100

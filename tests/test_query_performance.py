@@ -6,7 +6,7 @@ from unittest.mock import MagicMock
 from clickhouse_connect.driver.client import Client
 from clickhouse_connect.driver.exceptions import ClickHouseError
 
-from agent_one.monitoring.query_performance import (
+from agent_zero.monitoring.query_performance import (
     get_current_processes,
     get_normalized_query_stats,
     get_query_duration_stats,

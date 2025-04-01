@@ -1,4 +1,4 @@
-"""Test utilities for agent_one tests."""
+"""Test utilities for agent_zero tests."""
 
 from unittest.mock import MagicMock
 
