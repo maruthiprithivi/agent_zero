@@ -32,6 +32,10 @@ jobs:
         run: |
           sed -i "s/^__version__ = .*/__version__ = '${{ steps.get_tag.outputs.TAG }}'/" agent_one/__init__.py
 
+      - name: Check the version
+        run: |
+          cat agent_one/__init__.py
+
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
