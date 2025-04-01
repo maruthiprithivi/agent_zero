@@ -111,14 +111,36 @@ You can set these variables in your environment or use a `.env` file.
 {
   "mcpServers": {
     "agent-zero": {
+      "command": "ch-agent-zero",
+      "env": {
+        "CLICKHOUSE_HOST": "your-clickhouse-host",
+        "CLICKHOUSE_PORT": "8443",
+        "CLICKHOUSE_USER": "your-username",
+        "CLICKHOUSE_PASSWORD": "your-password",
+        "CLICKHOUSE_SECURE": "true",
+        "CLICKHOUSE_VERIFY": "true",
+        "CLICKHOUSE_CONNECT_TIMEOUT": "30",
+        "CLICKHOUSE_SEND_RECEIVE_TIMEOUT": "300"
+      }
+    }
+  }
+}
+```
+
+For users who prefer using uv, the following configuration can also be used:
+
+```json
+{
+  "mcpServers": {
+    "agent-zero": {
       "command": "uv",
       "args": [
         "run",
         "--with",
-        "ch_agent_zero",
+        "ch-agent-zero",
         "--python",
         "3.13",
-        "ch_agent_zero"
+        "ch-agent-zero"
       ],
       "env": {
         "CLICKHOUSE_HOST": "your-clickhouse-host",
