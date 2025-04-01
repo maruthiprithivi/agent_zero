@@ -1,7 +1,7 @@
 [project]
 name = "agent_one"
-version = "0.0.0"
-# dynamic = ["version"]
+# version = "0.0.0"
+dynamic = ["version"]
 # Using dynamic version from __version__ in __init__.py
 description = "Model Context Protocol (MCP) server for monitoring, analyzing, and managing ClickHouse databases"
 readme = "README.md"
