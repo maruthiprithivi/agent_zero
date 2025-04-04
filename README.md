@@ -58,11 +58,30 @@ Agent Zero relies on the following libraries:
 
 ### Using pip
 
+First, create and activate a virtual environment:
+
 ```bash
+# Create a new virtual environment
+python3 -m venv .venv
+
+# Activate the virtual environment
+# On macOS/Linux:
+source .venv/bin/activate
+# On Windows:
+.venv\Scripts\activate
+```
+
+Then install the package:
+
+```bash
+# Using pip
 pip install ch-agent-zero
 
-OR
+# OR using uv (recommended)
+# First install uv if you haven't already
+curl -LsSf https://astral.sh/uv/install.sh | sh
 
+# Then install the package
 uv pip install ch-agent-zero
 ```
 
@@ -99,19 +118,37 @@ You can set these variables in your environment or use a `.env` file.
 
 #### Claude Desktop Configuration
 
-1. Edit your Claude Desktop configuration file:
+1. Create and activate a virtual environment for Claude Desktop (recommended):
+
+```bash
+# Create a new virtual environment
+python3 -m venv ~/claude-desktop-env
+
+# Activate the virtual environment
+# On macOS/Linux:
+source ~/claude-desktop-env/bin/activate
+# On Windows:
+%USERPROFILE%\claude-desktop-env\Scripts\activate
+
+# Install the package in the virtual environment
+pip install ch-agent-zero
+# OR using uv
+uv pip install ch-agent-zero
+```
+
+2. Edit your Claude Desktop configuration file:
 
    - macOS: `~/Library/Application Support/Claude/claude_desktop_config.json`
    - Windows: `%APPDATA%\Claude\claude_desktop_config.json`
    - Linux: `~/.config/Claude/claude_desktop_config.json`
 
-2. Add the Agent Zero MCP server:
+3. Add the Agent Zero MCP server:
 
 ```json
 {
   "mcpServers": {
     "agent-zero": {
-      "command": "ch-agent-zero",
+      "command": "~/claude-desktop-env/bin/ch-agent-zero",
       "env": {
         "CLICKHOUSE_HOST": "your-clickhouse-host",
         "CLICKHOUSE_PORT": "8443",
@@ -133,7 +170,7 @@ For users who prefer using uv, the following configuration can also be used:
 {
   "mcpServers": {
     "agent-zero": {
-      "command": "uv",
+      "command": "~/claude-desktop-env/bin/uv",
       "args": [
         "run",
         "--with",
@@ -158,6 +195,8 @@ For users who prefer using uv, the following configuration can also be used:
 ```
 
 3. Restart Claude Desktop to apply the changes.
+
+> **Note**: Make sure to keep your virtual environment activated while using Claude Desktop with Agent Zero. If you close your terminal, you'll need to reactivate the virtual environment before using Claude Desktop again.
 
 ## 🔍 Usage Examples
 

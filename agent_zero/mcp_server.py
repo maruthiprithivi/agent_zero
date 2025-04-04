@@ -1,12 +1,22 @@
 import atexit
 import concurrent.futures
 import logging
+import os
+import sys
 from collections.abc import Sequence
 
 import clickhouse_connect
 from clickhouse_connect.driver.binding import format_query_value, quote_identifier
 from dotenv import load_dotenv
-from mcp.server.fastmcp import FastMCP
+
+try:
+    from mcp.server.fastmcp import FastMCP
+
+    logging.getLogger("agent_zero").debug("Successfully imported FastMCP")
+except ImportError as e:
+    logging.getLogger("agent_zero").error(f"Failed to import FastMCP: {e}")
+    sys.stderr.write(f"ERROR: Failed to import FastMCP: {e}\n")
+    sys.stderr.write(f"Python path: {sys.path}\n")
 
 from agent_zero.mcp_env import config
 from agent_zero.monitoring import (
@@ -37,6 +47,16 @@ SELECT_QUERY_TIMEOUT_SECS = 30
 
 load_dotenv()
 
+# Log environment information
+logger.debug(f"Environment variables: {os.environ.keys()}")
+try:
+    import pkg_resources
+
+    installed_packages = [f"{p.key}=={p.version}" for p in pkg_resources.working_set]
+    logger.debug(f"Installed packages: {installed_packages}")
+except Exception as e:
+    logger.error(f"Error listing packages: {e}")
+
 deps = [
     "clickhouse-connect",
     "python-dotenv",
@@ -44,7 +64,14 @@ deps = [
     "pip-system-certs",
 ]
 
-mcp = FastMCP(MCP_SERVER_NAME, dependencies=deps)
+try:
+    logger.debug(f"Creating FastMCP with server name: {MCP_SERVER_NAME}")
+    mcp = FastMCP(MCP_SERVER_NAME, dependencies=deps)
+    logger.debug("Successfully created FastMCP instance")
+except Exception as e:
+    logger.error(f"Error creating FastMCP instance: {e}", exc_info=True)
+    sys.stderr.write(f"ERROR: Failed to create FastMCP: {e}\n")
+    raise
 
 
 @mcp.tool()
