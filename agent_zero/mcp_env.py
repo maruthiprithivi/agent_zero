@@ -132,7 +132,25 @@ class ClickHouseConfig:
                 missing_vars.append(var)
 
         if missing_vars:
-            raise ValueError(f"Missing required environment variables: {', '.join(missing_vars)}")
+            # For development/debugging: use defaults when variables are missing
+            if os.environ.get("CH_AGENT_ZERO_DEBUG") == "1":
+                import logging
+
+                logger = logging.getLogger("ch-agent-zero")
+                logger.warning(
+                    f"Using default values for missing environment variables: {', '.join(missing_vars)}"
+                )
+                for var in missing_vars:
+                    if var == "CLICKHOUSE_HOST":
+                        os.environ[var] = "localhost"
+                    elif var == "CLICKHOUSE_USER":
+                        os.environ[var] = "default"
+                    elif var == "CLICKHOUSE_PASSWORD":
+                        os.environ[var] = ""
+            else:
+                raise ValueError(
+                    f"Missing required environment variables: {', '.join(missing_vars)}"
+                )
 
 
 # Global instance for easy access
