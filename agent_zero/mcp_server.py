@@ -21,15 +21,39 @@ except ImportError as e:
 from agent_zero.mcp_env import config
 from agent_zero.monitoring import (
     # Utility
+    generate_drop_tables_script,
+    # Insert Operations
+    get_async_insert_stats,
+    # System Components
+    get_blob_storage_stats,
+    # Resource Usage
     get_cpu_usage,
+    # Parts Merges
+    get_current_merges,
+    # Query Performance
     get_current_processes,
+    # Error Analysis
+    get_error_stack_traces,
+    get_insert_written_bytes_distribution,
     get_memory_usage,
+    get_merge_stats,
+    get_mv_query_stats,
     get_normalized_query_stats,
+    get_part_log_events,
+    get_partition_stats,
+    get_parts_analysis,
     get_query_duration_stats,
     get_query_kind_breakdown,
-    # Error Analysis
+    get_recent_errors,
+    get_recent_insert_queries,
+    get_s3queue_stats,
     get_server_sizing,
+    # Table Statistics
+    get_table_inactive_parts,
+    get_table_stats,
+    get_text_log,
     get_uptime,
+    get_user_defined_functions,
 )
 from agent_zero.utils import format_exception
 
@@ -413,3 +437,361 @@ def monitor_uptime(days: int = 7):
     except Exception as e:
         logger.error(f"Error monitoring uptime: {e!s}")
         return f"Error monitoring uptime: {format_exception(e)}"
+
+
+# Error Analysis Tools
+
+
+@mcp.tool()
+def monitor_recent_errors(days: int = 1):
+    """Get recent errors from ClickHouse system.errors table.
+
+    Args:
+        days: Number of days to look back in history (default: 1).
+
+    Returns:
+        A list of dictionaries with recent error information.
+    """
+    logger.info(f"Monitoring recent errors over the past {days} days")
+    client = create_clickhouse_client()
+    try:
+        return get_recent_errors(client, days)
+    except Exception as e:
+        logger.error(f"Error monitoring recent errors: {e!s}")
+        return f"Error monitoring recent errors: {format_exception(e)}"
+
+
+@mcp.tool()
+def monitor_error_stack_traces():
+    """Get error stack traces for logical errors in the system.
+
+    Returns:
+        A list of dictionaries with error stack trace information.
+    """
+    logger.info("Monitoring error stack traces")
+    client = create_clickhouse_client()
+    try:
+        return get_error_stack_traces(client)
+    except Exception as e:
+        logger.error(f"Error monitoring error stack traces: {e!s}")
+        return f"Error monitoring error stack traces: {format_exception(e)}"
+
+
+@mcp.tool()
+def view_text_log(limit: int = 100):
+    """Get recent entries from the text log.
+
+    Args:
+        limit: Maximum number of log entries to return (default: 100).
+
+    Returns:
+        A list of dictionaries with text log entries.
+    """
+    logger.info(f"Viewing text log (limit: {limit})")
+    client = create_clickhouse_client()
+    try:
+        return get_text_log(client, limit)
+    except Exception as e:
+        logger.error(f"Error viewing text log: {e!s}")
+        return f"Error viewing text log: {format_exception(e)}"
+
+
+# Insert Operations Tools
+
+
+@mcp.tool()
+def monitor_recent_insert_queries(days: int = 1, limit: int = 100):
+    """Get recent insert queries.
+
+    Args:
+        days: Number of days to look back in history (default: 1).
+        limit: Maximum number of queries to return (default: 100).
+
+    Returns:
+        A list of dictionaries with insert query information.
+    """
+    logger.info(f"Monitoring recent insert queries over the past {days} days (limit: {limit})")
+    client = create_clickhouse_client()
+    try:
+        return get_recent_insert_queries(client, days, limit)
+    except Exception as e:
+        logger.error(f"Error monitoring recent insert queries: {e!s}")
+        return f"Error monitoring recent insert queries: {format_exception(e)}"
+
+
+@mcp.tool()
+def monitor_async_insert_stats(days: int = 7):
+    """Get asynchronous insert statistics.
+
+    Args:
+        days: Number of days to look back in history (default: 7).
+
+    Returns:
+        A list of dictionaries with async insert statistics.
+    """
+    logger.info(f"Monitoring async insert stats over the past {days} days")
+    client = create_clickhouse_client()
+    try:
+        return get_async_insert_stats(client, days)
+    except Exception as e:
+        logger.error(f"Error monitoring async insert stats: {e!s}")
+        return f"Error monitoring async insert stats: {format_exception(e)}"
+
+
+@mcp.tool()
+def monitor_insert_bytes_distribution(days: int = 7):
+    """Get distribution of written bytes for insert operations.
+
+    Args:
+        days: Number of days to look back in history (default: 7).
+
+    Returns:
+        A list of dictionaries with insert bytes distribution statistics.
+    """
+    logger.info(f"Monitoring insert bytes distribution over the past {days} days")
+    client = create_clickhouse_client()
+    try:
+        return get_insert_written_bytes_distribution(client, days)
+    except Exception as e:
+        logger.error(f"Error monitoring insert bytes distribution: {e!s}")
+        return f"Error monitoring insert bytes distribution: {format_exception(e)}"
+
+
+# Parts Merges Tools
+
+
+@mcp.tool()
+def monitor_current_merges():
+    """Get information about currently running merge operations.
+
+    Returns:
+        A list of dictionaries with information about current merges.
+    """
+    logger.info("Monitoring current merges")
+    client = create_clickhouse_client()
+    try:
+        return get_current_merges(client)
+    except Exception as e:
+        logger.error(f"Error monitoring current merges: {e!s}")
+        return f"Error monitoring current merges: {format_exception(e)}"
+
+
+@mcp.tool()
+def monitor_merge_stats(days: int = 7):
+    """Get merge performance statistics.
+
+    Args:
+        days: Number of days to look back in history (default: 7).
+
+    Returns:
+        A list of dictionaries with merge statistics.
+    """
+    logger.info(f"Monitoring merge stats over the past {days} days")
+    client = create_clickhouse_client()
+    try:
+        return get_merge_stats(client, days)
+    except Exception as e:
+        logger.error(f"Error monitoring merge stats: {e!s}")
+        return f"Error monitoring merge stats: {format_exception(e)}"
+
+
+@mcp.tool()
+def monitor_part_log_events(days: int = 1, limit: int = 100):
+    """Get recent part log events.
+
+    Args:
+        days: Number of days to look back in history (default: 1).
+        limit: Maximum number of events to return (default: 100).
+
+    Returns:
+        A list of dictionaries with part log events.
+    """
+    logger.info(f"Monitoring part log events over the past {days} days (limit: {limit})")
+    client = create_clickhouse_client()
+    try:
+        return get_part_log_events(client, days, limit)
+    except Exception as e:
+        logger.error(f"Error monitoring part log events: {e!s}")
+        return f"Error monitoring part log events: {format_exception(e)}"
+
+
+@mcp.tool()
+def monitor_partition_stats(database: str, table: str):
+    """Get partition statistics for a specific table.
+
+    Args:
+        database: Database name.
+        table: Table name.
+
+    Returns:
+        A list of dictionaries with partition statistics.
+    """
+    logger.info(f"Monitoring partition stats for {database}.{table}")
+    client = create_clickhouse_client()
+    try:
+        return get_partition_stats(client, database, table)
+    except Exception as e:
+        logger.error(f"Error monitoring partition stats: {e!s}")
+        return f"Error monitoring partition stats: {format_exception(e)}"
+
+
+@mcp.tool()
+def monitor_parts_analysis(database: str, table: str):
+    """Get parts analysis for a specific table.
+
+    Args:
+        database: Database name.
+        table: Table name.
+
+    Returns:
+        A list of dictionaries with parts analysis.
+    """
+    logger.info(f"Monitoring parts analysis for {database}.{table}")
+    client = create_clickhouse_client()
+    try:
+        return get_parts_analysis(client, database, table)
+    except Exception as e:
+        logger.error(f"Error monitoring parts analysis: {e!s}")
+        return f"Error monitoring parts analysis: {format_exception(e)}"
+
+
+# System Components Tools
+
+
+@mcp.tool()
+def monitor_blob_storage_stats(days: int = 7):
+    """Get statistics for blob storage operations.
+
+    Args:
+        days: Number of days to look back in history (default: 7).
+
+    Returns:
+        A list of dictionaries with blob storage statistics.
+    """
+    logger.info(f"Monitoring blob storage stats over the past {days} days")
+    client = create_clickhouse_client()
+    try:
+        return get_blob_storage_stats(client, days)
+    except Exception as e:
+        logger.error(f"Error monitoring blob storage stats: {e!s}")
+        return f"Error monitoring blob storage stats: {format_exception(e)}"
+
+
+@mcp.tool()
+def monitor_materialized_view_stats(days: int = 7):
+    """Get statistics for materialized view queries.
+
+    Args:
+        days: Number of days to look back in history (default: 7).
+
+    Returns:
+        A list of dictionaries with materialized view query statistics.
+    """
+    logger.info(f"Monitoring materialized view stats over the past {days} days")
+    client = create_clickhouse_client()
+    try:
+        return get_mv_query_stats(client, days)
+    except Exception as e:
+        logger.error(f"Error monitoring materialized view stats: {e!s}")
+        return f"Error monitoring materialized view stats: {format_exception(e)}"
+
+
+@mcp.tool()
+def monitor_s3queue_stats(days: int = 7):
+    """Get statistics for S3 Queue operations.
+
+    Args:
+        days: Number of days to look back in history (default: 7).
+
+    Returns:
+        A list of dictionaries with S3 Queue statistics.
+    """
+    logger.info(f"Monitoring S3 Queue stats over the past {days} days")
+    client = create_clickhouse_client()
+    try:
+        return get_s3queue_stats(client, days)
+    except Exception as e:
+        logger.error(f"Error monitoring S3 Queue stats: {e!s}")
+        return f"Error monitoring S3 Queue stats: {format_exception(e)}"
+
+
+# Table Statistics Tools
+
+
+@mcp.tool()
+def monitor_table_stats(database: str, table: str = None):
+    """Get detailed statistics for tables.
+
+    Args:
+        database: Database name.
+        table: Table name (optional). If not provided, stats for all tables in the database are returned.
+
+    Returns:
+        A list of dictionaries with table statistics.
+    """
+    table_desc = f"{database}.{table}" if table else f"all tables in {database}"
+    logger.info(f"Monitoring stats for {table_desc}")
+    client = create_clickhouse_client()
+    try:
+        return get_table_stats(client, database, table)
+    except Exception as e:
+        logger.error(f"Error monitoring table stats: {e!s}")
+        return f"Error monitoring table stats: {format_exception(e)}"
+
+
+@mcp.tool()
+def monitor_table_inactive_parts(database: str, table: str):
+    """Get information about inactive parts for a table.
+
+    Args:
+        database: Database name.
+        table: Table name.
+
+    Returns:
+        A list of dictionaries with inactive parts information.
+    """
+    logger.info(f"Monitoring inactive parts for {database}.{table}")
+    client = create_clickhouse_client()
+    try:
+        return get_table_inactive_parts(client, database, table)
+    except Exception as e:
+        logger.error(f"Error monitoring table inactive parts: {e!s}")
+        return f"Error monitoring table inactive parts: {format_exception(e)}"
+
+
+# Utility Tools
+
+
+@mcp.tool()
+def generate_table_drop_script(database: str):
+    """Generate a script to drop all tables in a database.
+
+    Args:
+        database: Database name.
+
+    Returns:
+        A string containing SQL commands to drop all tables.
+    """
+    logger.info(f"Generating drop tables script for database {database}")
+    client = create_clickhouse_client()
+    try:
+        return generate_drop_tables_script(client, database)
+    except Exception as e:
+        logger.error(f"Error generating drop tables script: {e!s}")
+        return f"Error generating drop tables script: {format_exception(e)}"
+
+
+@mcp.tool()
+def list_user_defined_functions():
+    """Get information about user-defined functions.
+
+    Returns:
+        A list of dictionaries with user-defined function information.
+    """
+    logger.info("Listing user-defined functions")
+    client = create_clickhouse_client()
+    try:
+        return get_user_defined_functions(client)
+    except Exception as e:
+        logger.error(f"Error listing user-defined functions: {e!s}")
+        return f"Error listing user-defined functions: {format_exception(e)}"

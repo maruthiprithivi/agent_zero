@@ -1,59 +1,5 @@
 version = 1
-revision = 1
 requires-python = ">=3.13"
-
-[[package]]
-name = "agent-one"
-version = "0.0.0"
-source = { editable = "." }
-dependencies = [
-    { name = "aiohttp" },
-    { name = "build" },
-    { name = "clickhouse-connect" },
-    { name = "mcp", extra = ["cli"] },
-    { name = "pkginfo" },
-    { name = "pre-commit" },
-    { name = "prometheus-client" },
-    { name = "pydantic" },
-    { name = "python-dotenv" },
-    { name = "structlog" },
-    { name = "tenacity" },
-    { name = "twine" },
-    { name = "uvicorn" },
-    { name = "wheel" },
-]
-
-[package.dev-dependencies]
-dev = [
-    { name = "black" },
-    { name = "pytest" },
-    { name = "ruff" },
-]
-
-[package.metadata]
-requires-dist = [
-    { name = "aiohttp", specifier = ">=3.11.14" },
-    { name = "build", specifier = ">=1.2.2.post1" },
-    { name = "clickhouse-connect", specifier = ">=0.8.15" },
-    { name = "mcp", extras = ["cli"], specifier = ">=1.4.1" },
-    { name = "pkginfo", specifier = ">=1.12.1.2" },
-    { name = "pre-commit", specifier = ">=4.2.0" },
-    { name = "prometheus-client", specifier = ">=0.21.1" },
-    { name = "pydantic", specifier = ">=2.10.6" },
-    { name = "python-dotenv", specifier = ">=1.0.1" },
-    { name = "structlog", specifier = ">=25.2.0" },
-    { name = "tenacity", specifier = ">=9.0.0" },
-    { name = "twine", specifier = ">=6.1.0" },
-    { name = "uvicorn", specifier = ">=0.34.0" },
-    { name = "wheel", specifier = ">=0.45.1" },
-]
-
-[package.metadata.requires-dev]
-dev = [
-    { name = "black", specifier = ">=23.12.1" },
-    { name = "pytest", specifier = ">=8.3.5" },
-    { name = "ruff", specifier = ">=0.3.1" },
-]
 
 [[package]]
 name = "aiohappyeyeballs"
@@ -212,6 +158,58 @@ source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/11/74/539e56497d9bd1d484fd863dd69cbbfa653cd2aa27abfe35653494d85e94/cfgv-3.4.0.tar.gz", hash = "sha256:e52591d4c5f5dead8e0f673fb16db7949d2cfb3f7da4582893288f0ded8fe560", size = 7114 }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/c5/55/51844dd50c4fc7a33b653bfaba4c2456f06955289ca770a5dbd5fd267374/cfgv-3.4.0-py2.py3-none-any.whl", hash = "sha256:b7265b1f29fd3316bfcd2b330d63d024f2bfd8bcb8b0272f8e19a504856c48f9", size = 7249 },
+]
+
+[[package]]
+name = "ch-agent-zero"
+source = { editable = "." }
+dependencies = [
+    { name = "aiohttp" },
+    { name = "build" },
+    { name = "clickhouse-connect" },
+    { name = "mcp", extra = ["cli"] },
+    { name = "pkginfo" },
+    { name = "pre-commit" },
+    { name = "prometheus-client" },
+    { name = "pydantic" },
+    { name = "python-dotenv" },
+    { name = "structlog" },
+    { name = "tenacity" },
+    { name = "twine" },
+    { name = "uvicorn" },
+    { name = "wheel" },
+]
+
+[package.dev-dependencies]
+dev = [
+    { name = "black" },
+    { name = "pytest" },
+    { name = "ruff" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "aiohttp", specifier = ">=3.11.14" },
+    { name = "build", specifier = ">=1.2.2.post1" },
+    { name = "clickhouse-connect", specifier = ">=0.8.15" },
+    { name = "mcp", extras = ["cli"], specifier = ">=1.4.1" },
+    { name = "pkginfo", specifier = ">=1.12.1.2" },
+    { name = "pre-commit", specifier = ">=4.2.0" },
+    { name = "prometheus-client", specifier = ">=0.21.1" },
+    { name = "pydantic", specifier = ">=2.10.6" },
+    { name = "python-dotenv", specifier = ">=1.0.1" },
+    { name = "structlog", specifier = ">=25.2.0" },
+    { name = "tenacity", specifier = ">=9.0.0" },
+    { name = "twine", specifier = ">=6.1.0" },
+    { name = "uvicorn", specifier = ">=0.34.0" },
+    { name = "wheel", specifier = ">=0.45.1" },
+]
+
+[package.metadata.requires-dev]
+dev = [
+    { name = "black", specifier = ">=23.12.1" },
+    { name = "pytest", specifier = ">=8.3.5" },
+    { name = "ruff", specifier = ">=0.3.1" },
 ]
 
 [[package]]
