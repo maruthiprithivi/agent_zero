@@ -8,7 +8,7 @@ Agent Zero is a Model Context Protocol (MCP) server for monitoring, analyzing, a
 [![Version](https://img.shields.io/badge/version-0.1.0-brightgreen.svg)](https://github.com/maruthiprithivi/agent_zero)
 [![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](LICENSE)
 
-![Agent Zero](<[images/agent_zero.jpg](https://github.com/maruthiprithivi/agent_zero/blob/main/images/agent_zero.jpg)>)
+![Agent Zero](https://media.githubusercontent.com/media/maruthiprithivi/agent_zero/refs/heads/fix-mcp-entrypoint/images/agent_zero.jpg)
 
 ## 🌟 Key Features
 
