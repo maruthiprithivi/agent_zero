@@ -316,6 +316,207 @@ If you encounter issues:
 3. Check that all environment variables are correctly set
 4. Make sure the ClickHouse connection details are correct
 
+## 🚀 Deploying as a Standalone Server
+
+You can deploy Agent Zero as a standalone MCP server, allowing multiple MCP clients (like Claude Desktop or other AI assistants) to connect to it. This is useful in scenarios where:
+
+- You want to share a single Agent Zero instance across multiple users or devices
+- You're deploying in an enterprise environment with centralized services
+- You need to run the server on a different machine than your MCP clients
+
+### Standalone Server Deployment
+
+#### Step 1: Install Agent Zero
+
+First, install Agent Zero on the server machine:
+
+```bash
+# Create a virtual environment
+python3 -m venv /opt/agent-zero-env
+source /opt/agent-zero-env/bin/activate
+
+# Install Agent Zero
+pip install ch-agent-zero
+```
+
+#### Step 2: Create a Configuration File
+
+Create a configuration file for the server:
+
+```bash
+mkdir -p /etc/agent-zero
+cat > /etc/agent-zero/config.env << EOF
+CLICKHOUSE_HOST=your-clickhouse-host
+CLICKHOUSE_PORT=8443
+CLICKHOUSE_USER=your-username
+CLICKHOUSE_PASSWORD=your-password
+CLICKHOUSE_SECURE=true
+CLICKHOUSE_VERIFY=true
+CLICKHOUSE_CONNECT_TIMEOUT=30
+CLICKHOUSE_SEND_RECEIVE_TIMEOUT=300
+MCP_SERVER_HOST=0.0.0.0  # Listen on all interfaces
+MCP_SERVER_PORT=8505     # MCP server port
+EOF
+```
+
+#### Step 3: Create a Systemd Service (Linux)
+
+For a production deployment on Linux, create a systemd service:
+
+```bash
+cat > /etc/systemd/system/agent-zero.service << EOF
+[Unit]
+Description=Agent Zero MCP Server
+After=network.target
+
+[Service]
+ExecStart=/opt/agent-zero-env/bin/ch-agent-zero --host 0.0.0.0 --port 8505
+WorkingDirectory=/opt/agent-zero
+EnvironmentFile=/etc/agent-zero/config.env
+User=agent-zero
+Group=agent-zero
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
+EOF
+```
+
+Enable and start the service:
+
+```bash
+sudo systemctl daemon-reload
+sudo systemctl enable agent-zero
+sudo systemctl start agent-zero
+```
+
+#### Step 4: Verify the Service
+
+Check that the service is running:
+
+```bash
+sudo systemctl status agent-zero
+
+# Check the logs
+sudo journalctl -u agent-zero -f
+```
+
+You can also test the MCP server directly:
+
+```bash
+curl http://localhost:8505/mcp/info
+```
+
+#### Docker Deployment (Alternative)
+
+You can also deploy using Docker:
+
+```bash
+# Create a Dockerfile
+cat > Dockerfile << EOF
+FROM python:3.13-slim
+
+WORKDIR /app
+
+RUN pip install ch-agent-zero
+
+ENV CLICKHOUSE_HOST=your-clickhouse-host
+ENV CLICKHOUSE_PORT=8443
+ENV CLICKHOUSE_USER=your-username
+ENV CLICKHOUSE_PASSWORD=your-password
+ENV CLICKHOUSE_SECURE=true
+ENV CLICKHOUSE_VERIFY=true
+
+EXPOSE 8505
+
+CMD ["ch-agent-zero", "--host", "0.0.0.0", "--port", "8505"]
+EOF
+
+# Build and run the Docker image
+docker build -t agent-zero .
+docker run -d -p 8505:8505 --name agent-zero agent-zero
+```
+
+### Configuring MCP Clients to Use the Standalone Server
+
+#### Claude Desktop Configuration
+
+Edit your Claude Desktop configuration file:
+
+- macOS: `~/Library/Application Support/Claude/claude_desktop_config.json`
+- Windows: `%APPDATA%\Claude\claude_desktop_config.json`
+- Linux: `~/.config/Claude/claude_desktop_config.json`
+
+Add the following configuration to connect to your standalone server:
+
+```json
+{
+  "mcpServers": {
+    "agent-zero": {
+      "url": "http://your-server-ip:8505",
+      "disableCommandExecution": true
+    }
+  }
+}
+```
+
+Replace `your-server-ip` with the IP address or hostname of your standalone server.
+
+#### Other MCP Clients
+
+For other MCP clients, consult their documentation for how to configure external MCP servers. The key information you'll need to provide is:
+
+- MCP Server URL: `http://your-server-ip:8505`
+- Server name/identifier: `agent-zero` (or any name you prefer)
+
+#### Security Considerations for Standalone Deployment
+
+When deploying Agent Zero as a standalone server, consider these security measures:
+
+1. **Use HTTPS**: For production deployments, configure the server with HTTPS:
+
+   ```bash
+   ch-agent-zero --host 0.0.0.0 --port 8505 --ssl-certfile /path/to/cert.pem --ssl-keyfile /path/to/key.pem
+   ```
+
+2. **Implement Authentication**: Add basic authentication to protect your MCP server:
+
+   ```bash
+   ch-agent-zero --host 0.0.0.0 --port 8505 --auth-username admin --auth-password-file /path/to/password_file
+   ```
+
+3. **Firewall Rules**: Restrict access to the MCP server port (8505) to only trusted clients.
+
+4. **Reverse Proxy**: Consider placing the MCP server behind a reverse proxy like Nginx for additional security layers.
+
+#### Monitoring and Maintenance
+
+For production deployments, set up monitoring and maintenance:
+
+1. **Health Checks**: Configure health checks to monitor the MCP server status:
+
+   ```bash
+   # Check server health
+   curl http://your-server-ip:8505/health
+   ```
+
+2. **Logs**: Monitor the server logs for errors and performance issues:
+
+   ```bash
+   # If using systemd
+   journalctl -u agent-zero -f
+   ```
+
+3. **Metrics**: Agent Zero exposes Prometheus metrics at `/metrics`:
+
+   ```bash
+   # Get metrics
+   curl http://your-server-ip:8505/metrics
+   ```
+
+4. **Backup Configuration**: Regularly backup your server configuration files.
+
 ## 🔍 Usage Examples
 
 ### Basic Database Information
