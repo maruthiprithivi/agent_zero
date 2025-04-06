@@ -27,6 +27,11 @@ class ClickHouseConfig:
         CLICKHOUSE_CONNECT_TIMEOUT: Connection timeout in seconds (default: 30)
         CLICKHOUSE_SEND_RECEIVE_TIMEOUT: Send/receive timeout in seconds (default: 300)
         CLICKHOUSE_DATABASE: Default database to use (default: None)
+        CLICKHOUSE_ENABLE_QUERY_LOGGING: Enable detailed query logging (default: false)
+        CLICKHOUSE_LOG_QUERY_LATENCY: Log query execution times (default: false)
+        CLICKHOUSE_LOG_QUERY_ERRORS: Log query errors (default: true)
+        CLICKHOUSE_LOG_QUERY_WARNINGS: Log query warnings (default: true)
+        MCP_ENABLE_TRACING: Enable tracing for MCP server communications (default: false)
     """
 
     def __init__(self):
@@ -95,6 +100,46 @@ class ClickHouseConfig:
         Default: 300 (ClickHouse default)
         """
         return int(os.getenv("CLICKHOUSE_SEND_RECEIVE_TIMEOUT", "300"))
+
+    @property
+    def enable_query_logging(self) -> bool:
+        """Get whether detailed query logging is enabled.
+
+        Default: False
+        """
+        return os.getenv("CLICKHOUSE_ENABLE_QUERY_LOGGING", "false").lower() == "true"
+
+    @property
+    def log_query_latency(self) -> bool:
+        """Get whether query latency logging is enabled.
+
+        Default: False
+        """
+        return os.getenv("CLICKHOUSE_LOG_QUERY_LATENCY", "false").lower() == "true"
+
+    @property
+    def log_query_errors(self) -> bool:
+        """Get whether query error logging is enabled.
+
+        Default: True
+        """
+        return os.getenv("CLICKHOUSE_LOG_QUERY_ERRORS", "true").lower() == "true"
+
+    @property
+    def log_query_warnings(self) -> bool:
+        """Get whether query warning logging is enabled.
+
+        Default: True
+        """
+        return os.getenv("CLICKHOUSE_LOG_QUERY_WARNINGS", "true").lower() == "true"
+
+    @property
+    def enable_mcp_tracing(self) -> bool:
+        """Get whether MCP server tracing is enabled.
+
+        Default: False
+        """
+        return os.getenv("MCP_ENABLE_TRACING", "false").lower() == "true"
 
     def get_client_config(self) -> dict:
         """Get the configuration dictionary for clickhouse_connect client.

@@ -12,9 +12,13 @@ from typing import Any
 from clickhouse_connect.driver.client import Client
 from clickhouse_connect.driver.exceptions import ClickHouseError
 
+# Import the database logger
+from agent_zero.database_logger import log_query_execution
+
 logger = logging.getLogger("mcp-clickhouse")
 
 
+@log_query_execution
 def execute_query_with_retry(
     client: Client,
     query: str,

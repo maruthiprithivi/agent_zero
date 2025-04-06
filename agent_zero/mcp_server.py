@@ -3,6 +3,7 @@ import concurrent.futures
 import logging
 import os
 import sys
+import time
 from collections.abc import Sequence
 
 import clickhouse_connect
@@ -19,6 +20,7 @@ except ImportError as e:
     sys.stderr.write(f"Python path: {sys.path}\n")
 
 from agent_zero.mcp_env import config
+from agent_zero.mcp_tracer import trace_mcp_call
 from agent_zero.monitoring import (
     # Utility
     generate_drop_tables_script,
@@ -99,6 +101,7 @@ except Exception as e:
 
 
 @mcp.tool()
+@trace_mcp_call
 def list_databases():
     """List all databases in the ClickHouse server.
 
@@ -117,6 +120,7 @@ def list_databases():
 
 
 @mcp.tool()
+@trace_mcp_call
 def list_tables(database: str, like: str = None):
     """List all tables in a specified database.
 
@@ -214,7 +218,21 @@ def execute_query(query: str):
     """
     client = create_clickhouse_client()
     try:
+        # Import the database logger if needed
+        from agent_zero.database_logger import query_logger
+
+        # Log the query if query logging is enabled
+        if config.enable_query_logging:
+            query_logger.log_query(query, None, {"readonly": 1})
+
+        start_time = time.time()
         res = client.query(query, settings={"readonly": 1})
+
+        # Log query latency if enabled
+        if config.log_query_latency:
+            elapsed_time = time.time() - start_time
+            logger.info(f"Query executed in {elapsed_time:.4f}s")
+
         column_names = res.column_names
         rows = []
         for row in res.result_rows:
@@ -222,14 +240,24 @@ def execute_query(query: str):
             for i, col_name in enumerate(column_names):
                 row_dict[col_name] = row[i]
             rows.append(row_dict)
+
+        # Log the result if query logging is enabled
+        if config.enable_query_logging:
+            query_logger.log_query_result(len(rows))
+
         logger.info(f"Query returned {len(rows)} rows")
         return rows
     except Exception as err:
+        # Log the error if error logging is enabled
+        if config.log_query_errors:
+            query_logger.log_query_error(err, query)
+
         logger.error(f"Error executing query: {err}")
         return f"error running query: {format_exception(err)}"
 
 
 @mcp.tool()
+@trace_mcp_call
 def run_select_query(query: str):
     """Execute a read-only SELECT query against the ClickHouse database.
 
@@ -273,6 +301,12 @@ def create_clickhouse_client():
         # Test the connection
         version = client.server_version
         logger.info(f"Successfully connected to ClickHouse server version {version}")
+
+        # Enable instrumentation for logging if query logging is enabled
+        if config.enable_query_logging or config.log_query_latency or config.log_query_errors:
+            # Log a message indicating logging is active
+            logger.info("Database query logging is enabled")
+
         return client
     except Exception as e:
         logger.error(f"Failed to connect to ClickHouse: {e!s}")
@@ -285,6 +319,7 @@ def create_clickhouse_client():
 
 
 @mcp.tool()
+@trace_mcp_call
 def monitor_current_processes():
     """Get information about currently running processes on the ClickHouse cluster.
 
@@ -304,6 +339,7 @@ def monitor_current_processes():
 
 
 @mcp.tool()
+@trace_mcp_call
 def monitor_query_duration(query_kind: str | None = None, days: int = 7):
     """Get query duration statistics grouped by hour.
 
@@ -325,6 +361,7 @@ def monitor_query_duration(query_kind: str | None = None, days: int = 7):
 
 
 @mcp.tool()
+@trace_mcp_call
 def monitor_query_patterns(days: int = 2, limit: int = 50):
     """Identify the most resource-intensive query patterns.
 
@@ -345,6 +382,7 @@ def monitor_query_patterns(days: int = 2, limit: int = 50):
 
 
 @mcp.tool()
+@trace_mcp_call
 def monitor_query_types(days: int = 7):
     """Get a breakdown of query types by hour.
 
@@ -367,6 +405,7 @@ def monitor_query_types(days: int = 7):
 
 
 @mcp.tool()
+@trace_mcp_call
 def monitor_memory_usage(days: int = 7):
     """Get memory usage statistics over time by host.
 
@@ -386,6 +425,7 @@ def monitor_memory_usage(days: int = 7):
 
 
 @mcp.tool()
+@trace_mcp_call
 def monitor_cpu_usage(hours: int = 3):
     """Get CPU usage statistics over time.
 
@@ -405,6 +445,7 @@ def monitor_cpu_usage(hours: int = 3):
 
 
 @mcp.tool()
+@trace_mcp_call
 def get_cluster_sizing():
     """Get server sizing information for all nodes in the cluster.
 
@@ -421,6 +462,7 @@ def get_cluster_sizing():
 
 
 @mcp.tool()
+@trace_mcp_call
 def monitor_uptime(days: int = 7):
     """Get server uptime statistics.
 
@@ -443,6 +485,7 @@ def monitor_uptime(days: int = 7):
 
 
 @mcp.tool()
+@trace_mcp_call
 def monitor_recent_errors(days: int = 1):
     """Get recent errors from ClickHouse system.errors table.
 
@@ -462,6 +505,7 @@ def monitor_recent_errors(days: int = 1):
 
 
 @mcp.tool()
+@trace_mcp_call
 def monitor_error_stack_traces():
     """Get error stack traces for logical errors in the system.
 
@@ -478,6 +522,7 @@ def monitor_error_stack_traces():
 
 
 @mcp.tool()
+@trace_mcp_call
 def view_text_log(limit: int = 100):
     """Get recent entries from the text log.
 
@@ -500,6 +545,7 @@ def view_text_log(limit: int = 100):
 
 
 @mcp.tool()
+@trace_mcp_call
 def monitor_recent_insert_queries(days: int = 1, limit: int = 100):
     """Get recent insert queries.
 
@@ -520,6 +566,7 @@ def monitor_recent_insert_queries(days: int = 1, limit: int = 100):
 
 
 @mcp.tool()
+@trace_mcp_call
 def monitor_async_insert_stats(days: int = 7):
     """Get asynchronous insert statistics.
 
@@ -539,6 +586,7 @@ def monitor_async_insert_stats(days: int = 7):
 
 
 @mcp.tool()
+@trace_mcp_call
 def monitor_insert_bytes_distribution(days: int = 7):
     """Get distribution of written bytes for insert operations.
 
@@ -561,6 +609,7 @@ def monitor_insert_bytes_distribution(days: int = 7):
 
 
 @mcp.tool()
+@trace_mcp_call
 def monitor_current_merges():
     """Get information about currently running merge operations.
 
@@ -577,6 +626,7 @@ def monitor_current_merges():
 
 
 @mcp.tool()
+@trace_mcp_call
 def monitor_merge_stats(days: int = 7):
     """Get merge performance statistics.
 
@@ -596,6 +646,7 @@ def monitor_merge_stats(days: int = 7):
 
 
 @mcp.tool()
+@trace_mcp_call
 def monitor_part_log_events(days: int = 1, limit: int = 100):
     """Get recent part log events.
 
@@ -616,6 +667,7 @@ def monitor_part_log_events(days: int = 1, limit: int = 100):
 
 
 @mcp.tool()
+@trace_mcp_call
 def monitor_partition_stats(database: str, table: str):
     """Get partition statistics for a specific table.
 
@@ -636,6 +688,7 @@ def monitor_partition_stats(database: str, table: str):
 
 
 @mcp.tool()
+@trace_mcp_call
 def monitor_parts_analysis(database: str, table: str):
     """Get parts analysis for a specific table.
 
@@ -659,6 +712,7 @@ def monitor_parts_analysis(database: str, table: str):
 
 
 @mcp.tool()
+@trace_mcp_call
 def monitor_blob_storage_stats(days: int = 7):
     """Get statistics for blob storage operations.
 
@@ -678,6 +732,7 @@ def monitor_blob_storage_stats(days: int = 7):
 
 
 @mcp.tool()
+@trace_mcp_call
 def monitor_materialized_view_stats(days: int = 7):
     """Get statistics for materialized view queries.
 
@@ -697,6 +752,7 @@ def monitor_materialized_view_stats(days: int = 7):
 
 
 @mcp.tool()
+@trace_mcp_call
 def monitor_s3queue_stats(days: int = 7):
     """Get statistics for S3 Queue operations.
 
@@ -719,6 +775,7 @@ def monitor_s3queue_stats(days: int = 7):
 
 
 @mcp.tool()
+@trace_mcp_call
 def monitor_table_stats(database: str, table: str = None):
     """Get detailed statistics for tables.
 
@@ -740,6 +797,7 @@ def monitor_table_stats(database: str, table: str = None):
 
 
 @mcp.tool()
+@trace_mcp_call
 def monitor_table_inactive_parts(database: str, table: str):
     """Get information about inactive parts for a table.
 
@@ -763,6 +821,7 @@ def monitor_table_inactive_parts(database: str, table: str):
 
 
 @mcp.tool()
+@trace_mcp_call
 def generate_table_drop_script(database: str):
     """Generate a script to drop all tables in a database.
 
@@ -782,6 +841,7 @@ def generate_table_drop_script(database: str):
 
 
 @mcp.tool()
+@trace_mcp_call
 def list_user_defined_functions():
     """Get information about user-defined functions.
 
