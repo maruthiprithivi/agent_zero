@@ -90,9 +90,13 @@ class QueryLogger:
         logger.error(f"Query error: {error!s}")
         logger.error(f"Failed query: {query}")
 
-        # For ClickHouse errors, log additional details
+        # For ClickHouse errors, extract and log error details
         if isinstance(error, ClickHouseError):
-            logger.error(f"ClickHouse error code: {error.code}")
+            from agent_zero.utils import extract_clickhouse_error_info
+
+            error_info = extract_clickhouse_error_info(error)
+            if error_info:
+                logger.error(f"ClickHouse error details: {error_info}")
 
     def log_query_warning(self, warning: str, query: str) -> None:
         """Log a query warning.
