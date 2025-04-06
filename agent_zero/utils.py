@@ -4,6 +4,7 @@ This module provides common utility functions used across the MCP server compone
 """
 
 import logging
+import re
 import time
 from collections.abc import Callable
 from functools import wraps
@@ -12,9 +13,13 @@ from typing import Any
 from clickhouse_connect.driver.client import Client
 from clickhouse_connect.driver.exceptions import ClickHouseError
 
+# Import the database logger
+from agent_zero.database_logger import log_query_execution
+
 logger = logging.getLogger("mcp-clickhouse")
 
 
+@log_query_execution
 def execute_query_with_retry(
     client: Client,
     query: str,
@@ -124,3 +129,36 @@ def format_exception(e: Exception) -> str:
     if isinstance(e, ClickHouseError):
         return f"ClickHouse error: {e!s}"
     return f"Error: {e!s}"
+
+
+def extract_clickhouse_error_info(error: Exception) -> dict:
+    """Extract structured information from ClickHouse exceptions.
+
+    This function parses the string representation of a ClickHouse error
+    to extract error codes and other useful information.
+
+    Args:
+        error: The ClickHouse exception
+
+    Returns:
+        Dictionary with extracted error information
+    """
+    error_info = {"message": str(error)}
+
+    # Try to extract error code from the error message
+    # Common format: "Code: XXX. <error message>"
+    error_str = str(error)
+    code_match = re.search(r"Code:\s*(\d+)", error_str)
+    if code_match:
+        error_info["code"] = int(code_match.group(1))
+
+    # Try to extract other common patterns in ClickHouse errors
+    if "DB::Exception" in error_str:
+        error_info["type"] = "DB::Exception"
+
+    # Extract query ID if present
+    query_id_match = re.search(r"QueryID:\s*([a-f0-9-]+)", error_str)
+    if query_id_match:
+        error_info["query_id"] = query_id_match.group(1)
+
+    return error_info
