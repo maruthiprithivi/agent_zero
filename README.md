@@ -118,59 +118,50 @@ You can set these variables in your environment or use a `.env` file.
 
 #### Claude Desktop Configuration
 
-1. Create and activate a virtual environment for Claude Desktop (recommended):
+You can set up Agent Zero with Claude Desktop using either pip (traditional) or uv (recommended). Choose the method that works best for you.
+
+### Method 1: Using uv (Recommended)
+
+1. Install uv:
 
 ```bash
-# Create a new virtual environment
-python3 -m venv ~/claude-desktop-env
-
-# Activate the virtual environment
-# On macOS/Linux:
-source ~/claude-desktop-env/bin/activate
-# On Windows:
-%USERPROFILE%\claude-desktop-env\Scripts\activate
-
-# Install the package in the virtual environment
-pip install ch-agent-zero
-# OR using uv
-uv pip install ch-agent-zero
+# Install uv
+curl -LsSf https://astral.sh/uv/install.sh | sh
 ```
 
-2. Edit your Claude Desktop configuration file:
+2. Find your uv installation path:
 
-   - macOS: `~/Library/Application Support/Claude/claude_desktop_config.json`
-   - Windows: `%APPDATA%\Claude\claude_desktop_config.json`
-   - Linux: `~/.config/Claude/claude_desktop_config.json`
+**On macOS/Linux:**
 
-3. Add the Agent Zero MCP server:
+```bash
+# This will show your uv installation path
+which uv
+# Example output: /Users/username/.cargo/bin/uv
+```
+
+**On Windows:**
+
+```cmd
+# Open Command Prompt or PowerShell and run:
+where uv
+# Example output: C:\Users\username\.cargo\bin\uv.exe
+```
+
+3. Configure Claude Desktop with uv:
+
+Edit your Claude Desktop configuration file based on your OS:
+
+- macOS: `~/Library/Application Support/Claude/claude_desktop_config.json`
+- Windows: `%APPDATA%\Claude\claude_desktop_config.json`
+- Linux: `~/.config/Claude/claude_desktop_config.json`
+
+Add the following configuration (replace `<UV_PATH>` with the output from step 2):
 
 ```json
 {
   "mcpServers": {
     "agent-zero": {
-      "command": "~/claude-desktop-env/bin/ch-agent-zero",
-      "env": {
-        "CLICKHOUSE_HOST": "your-clickhouse-host",
-        "CLICKHOUSE_PORT": "8443",
-        "CLICKHOUSE_USER": "your-username",
-        "CLICKHOUSE_PASSWORD": "your-password",
-        "CLICKHOUSE_SECURE": "true",
-        "CLICKHOUSE_VERIFY": "true",
-        "CLICKHOUSE_CONNECT_TIMEOUT": "30",
-        "CLICKHOUSE_SEND_RECEIVE_TIMEOUT": "300"
-      }
-    }
-  }
-}
-```
-
-For users who prefer using uv, the following configuration can also be used:
-
-```json
-{
-  "mcpServers": {
-    "agent-zero": {
-      "command": "~/claude-desktop-env/bin/uv",
+      "command": "<UV_PATH>",
       "args": [
         "run",
         "--with",
@@ -194,9 +185,136 @@ For users who prefer using uv, the following configuration can also be used:
 }
 ```
 
-3. Restart Claude Desktop to apply the changes.
+### Method 2: Using pip with Virtual Environment
 
-> **Note**: Make sure to keep your virtual environment activated while using Claude Desktop with Agent Zero. If you close your terminal, you'll need to reactivate the virtual environment before using Claude Desktop again.
+1. Create and activate a virtual environment for Claude Desktop:
+
+**On macOS/Linux:**
+
+```bash
+# Create virtual environment
+python3 -m venv ~/claude-desktop-env
+
+# Activate virtual environment
+source ~/claude-desktop-env/bin/activate
+```
+
+**On Windows:**
+
+```cmd
+# Create virtual environment
+python -m venv %USERPROFILE%\claude-desktop-env
+
+# Activate virtual environment
+%USERPROFILE%\claude-desktop-env\Scripts\activate
+```
+
+2. Install Agent Zero in the virtual environment:
+
+```bash
+pip install ch-agent-zero
+```
+
+3. Find the ch-agent-zero installation path:
+
+**On macOS/Linux:**
+
+```bash
+# This will show your ch-agent-zero installation path
+which ch-agent-zero
+# Example output: /Users/username/claude-desktop-env/bin/ch-agent-zero
+```
+
+**On Windows:**
+
+```cmd
+# This will show your ch-agent-zero installation path
+where ch-agent-zero
+# Example output: C:\Users\username\claude-desktop-env\Scripts\ch-agent-zero.exe
+```
+
+4. Configure Claude Desktop with pip:
+
+Edit your Claude Desktop configuration file (same locations as mentioned above) and add:
+
+**For macOS/Linux:**
+
+```json
+{
+  "mcpServers": {
+    "agent-zero": {
+      "command": "<PATH_TO_YOUR_VENV>/bin/ch-agent-zero",
+      "env": {
+        "CLICKHOUSE_HOST": "your-clickhouse-host",
+        "CLICKHOUSE_PORT": "8443",
+        "CLICKHOUSE_USER": "your-username",
+        "CLICKHOUSE_PASSWORD": "your-password",
+        "CLICKHOUSE_SECURE": "true",
+        "CLICKHOUSE_VERIFY": "true",
+        "CLICKHOUSE_CONNECT_TIMEOUT": "30",
+        "CLICKHOUSE_SEND_RECEIVE_TIMEOUT": "300"
+      }
+    }
+  }
+}
+```
+
+**For Windows:**
+
+```json
+{
+  "mcpServers": {
+    "agent-zero": {
+      "command": "<PATH_TO_YOUR_VENV>/Scripts/ch-agent-zero.exe",
+      "env": {
+        "CLICKHOUSE_HOST": "your-clickhouse-host",
+        "CLICKHOUSE_PORT": "8443",
+        "CLICKHOUSE_USER": "your-username",
+        "CLICKHOUSE_PASSWORD": "your-password",
+        "CLICKHOUSE_SECURE": "true",
+        "CLICKHOUSE_VERIFY": "true",
+        "CLICKHOUSE_CONNECT_TIMEOUT": "30",
+        "CLICKHOUSE_SEND_RECEIVE_TIMEOUT": "300"
+      }
+    }
+  }
+}
+```
+
+> **Important Notes for Both Methods:**
+>
+> 1. Use the exact paths returned by the `which` or `where` commands
+> 2. On Windows, convert backslashes (`\`) to forward slashes (`/`) in the configuration file
+> 3. Make sure to replace `username` with your actual username in the paths
+> 4. The virtual environment path can be customized, but make sure to use the correct path in the configuration
+
+### Verification Steps
+
+After setting up either method:
+
+1. Verify the installation:
+
+```bash
+# Test the installation
+ch-agent-zero --version
+```
+
+2. Restart Claude Desktop to apply the changes
+
+3. Test the connection by asking Claude to perform a simple ClickHouse operation:
+
+```bash
+Show me the list of databases in my ClickHouse cluster
+```
+
+### Troubleshooting
+
+If you encounter issues:
+
+1. Verify that the paths in your configuration match the actual installation paths
+2. Ensure the virtual environment (if using pip) is activated when testing
+3. Check that all environment variables are correctly set
+4. Make sure the ClickHouse connection details are correct
 
 ## 🔍 Usage Examples
 
