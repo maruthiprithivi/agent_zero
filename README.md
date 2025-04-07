@@ -470,7 +470,7 @@ For other MCP clients, consult their documentation for how to configure external
 - MCP Server URL: `http://your-server-ip:8505`
 - Server name/identifier: `agent-zero` (or any name you prefer)
 
-#### Security Considerations for Standalone Deployment
+#### Security Considerations for Standalone Deployment **(Coming Soon)**
 
 When deploying Agent Zero as a standalone server, consider these security measures:
 
@@ -490,7 +490,7 @@ When deploying Agent Zero as a standalone server, consider these security measur
 
 4. **Reverse Proxy**: Consider placing the MCP server behind a reverse proxy like Nginx for additional security layers.
 
-#### Monitoring and Maintenance
+#### Monitoring and Maintenance **(Coming Soon)**
 
 For production deployments, set up monitoring and maintenance:
 
