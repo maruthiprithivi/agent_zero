@@ -2,10 +2,10 @@
 
 Agent Zero is a Model Context Protocol (MCP) server for monitoring, analyzing, and managing ClickHouse databases. It enables AI assistants like Claude to perform sophisticated database operations, health checks, and troubleshooting on ClickHouse clusters. And more...
 
-> **Note**: This project is currently in version 0.1.0 (early development).
+> **Note**: This project is currently in version 0.0.1x (early development).
 
 [![Python 3.13+](https://img.shields.io/badge/python-3.13+-blue.svg)](https://www.python.org/downloads/)
-[![Version](https://img.shields.io/badge/version-0.1.0-brightgreen.svg)](https://github.com/maruthiprithivi/agent_zero)
+[![Version](https://img.shields.io/badge/version-0.0.1x-brightgreen.svg)](https://github.com/maruthiprithivi/agent_zero)
 [![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](LICENSE)
 
 ![Agent Zero](https://media.githubusercontent.com/media/maruthiprithivi/agent_zero/refs/heads/fix-mcp-entrypoint/images/agent_zero.jpg)
