@@ -11,7 +11,7 @@ requires-python = ">=3.13"
 authors = [
     {name = "Maruthi Prithivi", email = "maruthiprithivi@gmail.com"},
 ]
-license = {text = "Apache-2.0"}
+license = "Apache-2.0"
 dependencies = [
     "aiohttp>=3.11.14",
     "build>=1.2.2.post1",
@@ -42,6 +42,12 @@ dev = [
     "pytest>=8.3.5",
     "black>=23.12.1",
 ]
+
+[tool.setuptools]
+packages = ["agent_zero"]
+
+[tool.setuptools.dynamic]
+version = {attr = "agent_zero.__version__"}
 
 [tool.pytest.ini_options]
 # Add the project root to the Python path
