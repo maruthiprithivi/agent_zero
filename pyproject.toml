@@ -16,6 +16,7 @@ dependencies = [
     "aiohttp>=3.11.14",
     "build>=1.2.2.post1",
     "clickhouse-connect>=0.8.15",
+    "fastapi>=0.115.12",
     "mcp[cli]>=1.4.1",
     "pkginfo>=1.12.1.2",
     "pre-commit>=4.2.0",
