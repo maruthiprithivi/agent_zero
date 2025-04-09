@@ -5,6 +5,7 @@ import os
 import sys
 import time
 from collections.abc import Sequence
+from typing import Dict, Any, Optional
 
 import clickhouse_connect
 from clickhouse_connect.driver.binding import format_query_value, quote_identifier
@@ -59,6 +60,10 @@ from agent_zero.monitoring import (
 )
 from agent_zero.utils import format_exception
 
+# Import monitoring utilities but don't set them up yet
+from agent_zero.monitoring_endpoints import setup_monitoring_endpoints
+from agent_zero.server_config import ServerConfig
+
 MCP_SERVER_NAME = "mcp-clickhouse"
 
 # Configure logging
@@ -98,6 +103,14 @@ except Exception as e:
     logger.error(f"Error creating FastMCP instance: {e}", exc_info=True)
     sys.stderr.write(f"ERROR: Failed to create FastMCP: {e}\n")
     raise
+
+# Extract the FastAPI app from the FastMCP instance to add custom endpoints
+app = getattr(mcp, "app", None)
+if app:
+    # Set up monitoring endpoints
+    setup_monitoring_endpoints(app, create_clickhouse_client=lambda: create_clickhouse_client())
+else:
+    logger.warning("Could not access FastAPI app from FastMCP, monitoring endpoints not set up")
 
 
 @mcp.tool()
@@ -855,3 +868,60 @@ def list_user_defined_functions():
     except Exception as e:
         logger.error(f"Error listing user-defined functions: {e!s}")
         return f"Error listing user-defined functions: {format_exception(e)}"
+
+
+# Customize run method to support our configurations
+_original_run = mcp.run
+
+
+def run(
+    host: str = "127.0.0.1",
+    port: int = 8505,
+    ssl_config: Dict[str, Any] = None,
+    server_config: Optional[ServerConfig] = None,
+    _uvicorn_run=None,
+    _setup_monitoring=None,
+):
+    """Run the MCP server with the specified configuration.
+
+    Args:
+        host: Host to bind to
+        port: Port to bind to
+        ssl_config: SSL configuration dictionary
+        server_config: Server configuration instance
+        _uvicorn_run: Function to use for running uvicorn (for testing)
+        _setup_monitoring: Function to use for setting up monitoring (for testing)
+    """
+    # Extract SSL arguments for uvicorn
+    ssl_args = {}
+    if ssl_config:
+        if "certfile" in ssl_config:
+            ssl_args["ssl_certfile"] = ssl_config["certfile"]
+        if "keyfile" in ssl_config:
+            ssl_args["ssl_keyfile"] = ssl_config["keyfile"]
+
+    # Use injected dependencies or import them
+    uvicorn_run = _uvicorn_run or __import__("uvicorn").run
+    setup_monitoring_endpoints_func = _setup_monitoring
+
+    if setup_monitoring_endpoints_func is None:
+        # Only import if not provided (for testing)
+        from agent_zero.monitoring_endpoints import setup_monitoring_endpoints as setup_func
+
+        setup_monitoring_endpoints_func = setup_func
+
+    # Setup monitoring endpoints if server_config is provided and app exists
+    if hasattr(mcp, "app"):
+        if server_config or not ssl_config:  # Setup if server_config provided or no SSL
+            setup_monitoring_endpoints_func(mcp.app, create_clickhouse_client)
+
+    # Run with uvicorn directly
+    return uvicorn_run("agent_zero.mcp_server:mcp.app", host=host, port=port, **ssl_args)
+
+
+# Replace the original run method with our customized version
+mcp.run = run
+
+# Set up monitoring endpoints for the MCP server
+if hasattr(mcp, "app"):
+    setup_monitoring_endpoints(mcp.app, create_clickhouse_client)

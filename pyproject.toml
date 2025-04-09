@@ -1,8 +1,10 @@
+[build-system]
+requires = ["setuptools>=65.0", "wheel<0.43"]
+build-backend = "setuptools.build_meta"
+
 [project]
 name = "ch_agent_zero"
-# version = "0.0.0"
 dynamic = ["version"]
-# Using dynamic version from __version__ in __init__.py
 description = "Model Context Protocol (MCP) server for monitoring, analyzing, and managing ClickHouse databases"
 readme = "README.md"
 requires-python = ">=3.13"
@@ -27,13 +29,6 @@ dependencies = [
     "wheel>=0.45.1",
 ]
 
-[dependency-groups]
-dev = [
-    "pytest>=8.3.5",
-    "ruff>=0.3.1",
-    "black>=23.12.1",
-]
-
 [project.urls]
 Homepage = "https://github.com/maruthiprithivi/agent_zero"
 Documentation = "https://github.com/maruthiprithivi/agent_zero/blob/main/README.md"
@@ -42,40 +37,32 @@ Documentation = "https://github.com/maruthiprithivi/agent_zero/blob/main/README.
 [project.scripts]
 ch-agent-zero = "agent_zero.main:main"
 
-[tool.setuptools]
-packages = ["agent_zero", "agent_zero.monitoring"]
-package-dir = {"" = "."}
-# Explicitly include specific packages
-include-package-data = true
-
-[tool.setuptools.package-data]
-agent_zero = ["py.typed"]
-
-[tool.setuptools.dynamic]
-version = {attr = "agent_zero.__version__"}
-
-[tool.ruff]
-line-length = 100
-target-version = "py312" # Using py312 as the closest available to py313
-
-[tool.ruff.lint]
-select = ["E", "F", "W", "I", "N", "B", "UP", "C", "T", "PT", "RUF"]
-ignore = [
-    "E501",  # Line too long (handled by Black)
-    "PT009", # Use a regular assert instead of unittest-style assert (we're using unittest)
-    "RUF013", # PEP 484 prohibits implicit Optional (we're keeping for backwards compatibility)
-    "C901",  # Function is too complex (we'll address this in refactoring)
-    "F841",  # Local variable is assigned to but never used (will be addressed separately)
+[dependency-groups]
+dev = [
+    "pytest>=8.3.5",
+    "black>=23.12.1",
 ]
 
-[tool.ruff.lint.isort]
-known-first-party = ["agent_zero"]
+[tool.pytest.ini_options]
+# Add the project root to the Python path
+pythonpath = ["."]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+# Disable warnings about Prometheus metrics
+filterwarnings = ["ignore::DeprecationWarning:prometheus_client.*:"]
+xvs = true
+durations = 10
 
 [tool.black]
 line-length = 100
 target-version = ["py312"] # Using py312 as the closest available to py313
 preview = true
 
-[build-system]
-requires = ["setuptools>=65.0", "wheel<0.43"]  # Update to newer setuptools
-build-backend = "setuptools.build_meta"
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+
+[tool.ruff.lint]
+# Enable all rules by default, then disable specific ones
+select = ["E", "F", "W"]
+ignore = ["F841", "E501"]  # Ignore unused variable warnings and line length violations

@@ -31,6 +31,7 @@ Agent Zero enables AI assistants to:
 - [Environment Configuration](#-environment-configuration)
 - [Development Guide](#-development-guide)
 - [Testing](#-testing)
+- [Documentation](#-documentation)
 - [Contributing](#-contributing)
 - [License](#-license)
 
@@ -1224,3 +1225,14 @@ This project is licensed under the Apache License 2.0 - see the [LICENSE](LICENS
 ## 📞 Support
 
 If you encounter any issues or have questions, please file an issue on the [GitHub repository](https://github.com/maruthiprithivi/agent_zero/issues).
+
+## 📚 Documentation
+
+All documentation is in the `/docs` directory:
+
+- [Documentation Index](/docs/README.md)
+- [Standalone Server](/docs/standalone-server.md)
+- [Logging](/docs/logging.md)
+- [Testing](/docs/testing/)
+
+For reference: [Command-line Arguments](/docs/standalone-server.md#command-line-reference), [Environment Variables](/docs/standalone-server.md#environment-variables-reference)
