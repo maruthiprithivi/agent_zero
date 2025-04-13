@@ -8,6 +8,11 @@ from clickhouse_connect.driver.exceptions import ClickHouseError
 
 from agent_zero.mcp_server import (
     get_cluster_sizing,
+    # Insert Operations
+    monitor_async_vs_sync_inserts,
+    # System Components
+    monitor_mv_deduplicated_blocks,
+    list_s3queue_with_names,
     # Resource Usage
     monitor_cpu_usage,
     # Query Performance
@@ -21,6 +26,13 @@ from agent_zero.mcp_server import (
     monitor_recent_errors,
     monitor_uptime,
     view_text_log,
+    # Table Statistics
+    list_recent_table_modifications,
+    list_largest_tables,
+    # Utility Tools
+    prewarm_cache,
+    analyze_thread_distribution,
+    setup_monitoring_views,
 )
 
 
@@ -318,3 +330,248 @@ class TestMCPMonitoringTools:
             result = view_text_log()
             assert isinstance(result, str)
             assert "Error viewing text log" in result
+
+    # Added tests for new tools
+
+    # Insert Operations Tests
+
+    def test_monitor_async_vs_sync_inserts(self):
+        """Test monitoring async vs sync insert counts."""
+        with patch("agent_zero.mcp_server.get_async_vs_sync_insert_counts") as mock_function:
+            # Mock successful execution
+            mock_data = [
+                {
+                    "ts": "2024-03-15 10:00:00",
+                    "num_insert": 100,
+                    "num_async_insert": 60,
+                    "num_sync_insert": 40,
+                },
+                {
+                    "ts": "2024-03-15 11:00:00",
+                    "num_insert": 150,
+                    "num_async_insert": 90,
+                    "num_sync_insert": 60,
+                },
+            ]
+            mock_function.return_value = mock_data
+            result = monitor_async_vs_sync_inserts()
+            assert result == mock_data
+            mock_function.assert_called_once_with(self.mock_client, 7)
+
+            # Test with parameters
+            mock_function.reset_mock()
+            result = monitor_async_vs_sync_inserts(days=14)
+            mock_function.assert_called_once_with(self.mock_client, 14)
+
+            # Test error handling
+            mock_function.side_effect = ClickHouseError("Test exception")
+            result = monitor_async_vs_sync_inserts()
+            assert isinstance(result, str)
+            assert "Error monitoring async vs. sync insert counts" in result
+
+    # System Components Tests
+
+    def test_monitor_mv_deduplicated_blocks(self):
+        """Test monitoring deduplicated blocks for a materialized view."""
+        with patch("agent_zero.mcp_server.get_mv_deduplicated_blocks") as mock_function:
+            # Mock successful execution
+            mock_data = [
+                {
+                    "event_time": "2024-03-15 10:00:00",
+                    "query_id": "123",
+                    "duplicated_blocks": 10,
+                    "written_rows": 1000,
+                },
+                {
+                    "event_time": "2024-03-15 11:00:00",
+                    "query_id": "456",
+                    "duplicated_blocks": 5,
+                    "written_rows": 500,
+                },
+            ]
+            mock_function.return_value = mock_data
+            result = monitor_mv_deduplicated_blocks("database.view_name")
+            assert result == mock_data
+            mock_function.assert_called_once_with(self.mock_client, "database.view_name", 7)
+
+            # Test with parameters
+            mock_function.reset_mock()
+            result = monitor_mv_deduplicated_blocks("database.view_name", days=14)
+            mock_function.assert_called_once_with(self.mock_client, "database.view_name", 14)
+
+            # Test error handling
+            mock_function.side_effect = ClickHouseError("Test exception")
+            result = monitor_mv_deduplicated_blocks("database.view_name")
+            assert isinstance(result, str)
+            assert "Error monitoring deduplicated blocks" in result
+
+    def test_list_s3queue_with_names(self):
+        """Test listing S3 queue entries with names."""
+        with patch("agent_zero.mcp_server.get_s3queue_with_names") as mock_function:
+            # Mock successful execution
+            mock_data = [
+                {
+                    "hostname": "host1",
+                    "database_uuid": "uuid1",
+                    "table_uuid": "uuid2",
+                    "database_name": "db1",
+                    "table_name": "table1",
+                },
+                {
+                    "hostname": "host2",
+                    "database_uuid": "uuid3",
+                    "table_uuid": "uuid4",
+                    "database_name": "db2",
+                    "table_name": "table2",
+                },
+            ]
+            mock_function.return_value = mock_data
+            result = list_s3queue_with_names()
+            assert result == mock_data
+            mock_function.assert_called_once_with(self.mock_client)
+
+            # Test error handling
+            mock_function.side_effect = ClickHouseError("Test exception")
+            result = list_s3queue_with_names()
+            assert isinstance(result, str)
+            assert "Error retrieving S3 queue entries with names" in result
+
+    # Table Statistics Tests
+
+    def test_list_recent_table_modifications(self):
+        """Test listing recently modified tables."""
+        with patch("agent_zero.mcp_server.get_recent_table_modifications") as mock_function:
+            # Mock successful execution
+            mock_data = [
+                {
+                    "database": "db1",
+                    "name": "table1",
+                    "engine": "MergeTree",
+                    "metadata_modification_time": "2024-03-15 10:00:00",
+                    "total_rows_": "1.00 million",
+                    "total_bytes_": "1.00 GB",
+                    "seconds_since_modification": 3600,
+                },
+                {
+                    "database": "db2",
+                    "name": "table2",
+                    "engine": "MergeTree",
+                    "metadata_modification_time": "2024-03-15 09:00:00",
+                    "total_rows_": "2.00 million",
+                    "total_bytes_": "2.00 GB",
+                    "seconds_since_modification": 7200,
+                },
+            ]
+            mock_function.return_value = mock_data
+            result = list_recent_table_modifications()
+            assert result == mock_data
+            mock_function.assert_called_once_with(self.mock_client, 7, True, 50)
+
+            # Test with parameters
+            mock_function.reset_mock()
+            result = list_recent_table_modifications(days=14, exclude_system=False, limit=100)
+            mock_function.assert_called_once_with(self.mock_client, 14, False, 100)
+
+            # Test error handling
+            mock_function.side_effect = ClickHouseError("Test exception")
+            result = list_recent_table_modifications()
+            assert isinstance(result, str)
+            assert "Error retrieving recently modified tables" in result
+
+    def test_list_largest_tables(self):
+        """Test listing largest tables by size."""
+        with patch("agent_zero.mcp_server.get_largest_tables") as mock_function:
+            # Mock successful execution
+            mock_data = [
+                {
+                    "database": "db1",
+                    "name": "table1",
+                    "engine": "MergeTree",
+                    "total_rows_": "10.00 million",
+                    "total_bytes_": "10.00 GB",
+                    "total_bytes": 10000000000,
+                },
+                {
+                    "database": "db2",
+                    "name": "table2",
+                    "engine": "MergeTree",
+                    "total_rows_": "5.00 million",
+                    "total_bytes_": "5.00 GB",
+                    "total_bytes": 5000000000,
+                },
+            ]
+            mock_function.return_value = mock_data
+            result = list_largest_tables()
+            assert result == mock_data
+            mock_function.assert_called_once_with(self.mock_client, True, 20)
+
+            # Test with parameters
+            mock_function.reset_mock()
+            result = list_largest_tables(exclude_system=False, limit=50)
+            mock_function.assert_called_once_with(self.mock_client, False, 50)
+
+            # Test error handling
+            mock_function.side_effect = ClickHouseError("Test exception")
+            result = list_largest_tables()
+            assert isinstance(result, str)
+            assert "Error retrieving largest tables" in result
+
+    # Utility Tools Tests
+
+    def test_prewarm_cache(self):
+        """Test prewarming cache on all replicas."""
+        with patch("agent_zero.mcp_server.prewarm_cache_on_all_replicas") as mock_function:
+            # Mock successful execution
+            mock_data = [{"sum(ignore(*))": 1}]
+            mock_function.return_value = mock_data
+            result = prewarm_cache("db1", "table1")
+            assert result == mock_data
+            mock_function.assert_called_once_with(self.mock_client, "db1", "table1")
+
+            # Test error handling
+            mock_function.side_effect = ClickHouseError("Test exception")
+            result = prewarm_cache("db1", "table1")
+            assert isinstance(result, str)
+            assert "Error prewarming cache" in result
+
+    def test_analyze_thread_distribution(self):
+        """Test analyzing thread name distribution."""
+        with patch("agent_zero.mcp_server.get_thread_name_distributions") as mock_function:
+            # Mock successful execution
+            mock_data = [
+                {"thread_name": "MergeTreeBackgroundExecutorService", "c": 1000},
+                {"thread_name": "HTTPHandler", "c": 800},
+            ]
+            mock_function.return_value = mock_data
+            start_time = "2024-03-15 00:00:00"
+            end_time = "2024-03-15 23:59:59"
+            result = analyze_thread_distribution(start_time, end_time)
+            assert result == mock_data
+            mock_function.assert_called_once_with(self.mock_client, start_time, end_time)
+
+            # Test error handling
+            mock_function.side_effect = ClickHouseError("Test exception")
+            result = analyze_thread_distribution(start_time, end_time)
+            assert isinstance(result, str)
+            assert "Error retrieving thread name distribution" in result
+
+    def test_setup_monitoring_views(self):
+        """Test setting up monitoring views."""
+        with patch("agent_zero.mcp_server.create_monitoring_views") as mock_function:
+            # Mock successful execution
+            mock_function.return_value = True
+            result = setup_monitoring_views()
+            assert result == "Successfully created/updated all monitoring views"
+            mock_function.assert_called_once_with(self.mock_client)
+
+            # Test failure scenario
+            mock_function.reset_mock()
+            mock_function.return_value = False
+            result = setup_monitoring_views()
+            assert result == "Failed to create/update some monitoring views"
+
+            # Test error handling
+            mock_function.side_effect = ClickHouseError("Test exception")
+            result = setup_monitoring_views()
+            assert isinstance(result, str)
+            assert "Error creating monitoring views" in result

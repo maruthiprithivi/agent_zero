@@ -14,6 +14,7 @@ from .insert_operations import (
     get_async_insert_stats,
     get_insert_written_bytes_distribution,
     get_recent_insert_queries,
+    get_async_vs_sync_insert_counts,
 )
 from .parts_merges import (
     get_current_merges,
@@ -38,14 +39,21 @@ from .system_components import (
     get_blob_storage_stats,
     get_mv_query_stats,
     get_s3queue_stats,
+    get_mv_deduplicated_blocks,
+    get_s3queue_with_names,
 )
 from .table_statistics import (
     get_table_inactive_parts,
     get_table_stats,
+    get_recent_table_modifications,
+    get_largest_tables,
 )
 from .utility import (
     generate_drop_tables_script,
     get_user_defined_functions,
+    prewarm_cache_on_all_replicas,
+    get_thread_name_distributions,
+    create_monitoring_views,
 )
 
 __all__ = [
@@ -75,4 +83,12 @@ __all__ = [
     "get_text_log",
     "get_uptime",
     "get_user_defined_functions",
+    "get_async_vs_sync_insert_counts",
+    "get_mv_deduplicated_blocks",
+    "get_s3queue_with_names",
+    "get_recent_table_modifications",
+    "get_largest_tables",
+    "prewarm_cache_on_all_replicas",
+    "get_thread_name_distributions",
+    "create_monitoring_views",
 ]

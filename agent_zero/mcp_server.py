@@ -27,8 +27,11 @@ from agent_zero.monitoring import (
     generate_drop_tables_script,
     # Insert Operations
     get_async_insert_stats,
+    get_async_vs_sync_insert_counts,
     # System Components
     get_blob_storage_stats,
+    get_mv_deduplicated_blocks,
+    get_s3queue_with_names,
     # Resource Usage
     get_cpu_usage,
     # Parts Merges
@@ -54,9 +57,15 @@ from agent_zero.monitoring import (
     # Table Statistics
     get_table_inactive_parts,
     get_table_stats,
+    get_recent_table_modifications,
+    get_largest_tables,
     get_text_log,
     get_uptime,
     get_user_defined_functions,
+    # Utility
+    prewarm_cache_on_all_replicas,
+    get_thread_name_distributions,
+    create_monitoring_views,
 )
 from agent_zero.utils import format_exception
 
@@ -618,6 +627,26 @@ def monitor_insert_bytes_distribution(days: int = 7):
         return f"Error monitoring insert bytes distribution: {format_exception(e)}"
 
 
+@mcp.tool()
+@trace_mcp_call
+def monitor_async_vs_sync_inserts(days: int = 7):
+    """Get hourly counts of asynchronous vs. synchronous insert operations.
+
+    Args:
+        days: Number of days to look back in history (default: 7)
+
+    Returns:
+        A list of dictionaries with hourly insert counts
+    """
+    logger.info(f"Monitoring async vs. sync insert counts for the past {days} days")
+    client = create_clickhouse_client()
+    try:
+        return get_async_vs_sync_insert_counts(client, days)
+    except Exception as e:
+        logger.error(f"Error monitoring async vs. sync insert counts: {e!s}")
+        return f"Error monitoring async vs. sync insert counts: {format_exception(e)}"
+
+
 # Parts Merges Tools
 
 
@@ -784,6 +813,46 @@ def monitor_s3queue_stats(days: int = 7):
         return f"Error monitoring S3 Queue stats: {format_exception(e)}"
 
 
+@mcp.tool()
+@trace_mcp_call
+def monitor_mv_deduplicated_blocks(view_name: str, days: int = 7):
+    """Get statistics about deduplicated blocks for a specific materialized view.
+
+    Args:
+        view_name: The name of the materialized view (format: database.view_name)
+        days: Number of days to look back in history (default: 7)
+
+    Returns:
+        A list of dictionaries with deduplicated blocks statistics
+    """
+    logger.info(
+        f"Monitoring deduplicated blocks for materialized view '{view_name}' for the past {days} days"
+    )
+    client = create_clickhouse_client()
+    try:
+        return get_mv_deduplicated_blocks(client, view_name, days)
+    except Exception as e:
+        logger.error(f"Error monitoring deduplicated blocks: {e!s}")
+        return f"Error monitoring deduplicated blocks: {format_exception(e)}"
+
+
+@mcp.tool()
+@trace_mcp_call
+def list_s3queue_with_names():
+    """Get S3 queue entries with database and table names.
+
+    Returns:
+        A list of dictionaries with S3 queue entries including database and table names
+    """
+    logger.info("Retrieving S3 queue entries with database and table names")
+    client = create_clickhouse_client()
+    try:
+        return get_s3queue_with_names(client)
+    except Exception as e:
+        logger.error(f"Error retrieving S3 queue entries with names: {e!s}")
+        return f"Error retrieving S3 queue entries with names: {format_exception(e)}"
+
+
 # Table Statistics Tools
 
 
@@ -830,6 +899,49 @@ def monitor_table_inactive_parts(database: str, table: str):
         return f"Error monitoring table inactive parts: {format_exception(e)}"
 
 
+@mcp.tool()
+@trace_mcp_call
+def list_recent_table_modifications(days: int = 7, exclude_system: bool = True, limit: int = 50):
+    """Get recently modified tables.
+
+    Args:
+        days: Number of days to look back (default: 7)
+        exclude_system: Whether to exclude system databases (default: True)
+        limit: Maximum number of tables to return (default: 50)
+
+    Returns:
+        A list of dictionaries with recently modified tables
+    """
+    logger.info(f"Retrieving tables modified in the last {days} days (limit: {limit})")
+    client = create_clickhouse_client()
+    try:
+        return get_recent_table_modifications(client, days, exclude_system, limit)
+    except Exception as e:
+        logger.error(f"Error retrieving recently modified tables: {e!s}")
+        return f"Error retrieving recently modified tables: {format_exception(e)}"
+
+
+@mcp.tool()
+@trace_mcp_call
+def list_largest_tables(exclude_system: bool = True, limit: int = 20):
+    """Get the largest tables by size.
+
+    Args:
+        exclude_system: Whether to exclude system databases (default: True)
+        limit: Maximum number of tables to return (default: 20)
+
+    Returns:
+        A list of dictionaries with the largest tables
+    """
+    logger.info(f"Retrieving the {limit} largest tables by size")
+    client = create_clickhouse_client()
+    try:
+        return get_largest_tables(client, exclude_system, limit)
+    except Exception as e:
+        logger.error(f"Error retrieving largest tables: {e!s}")
+        return f"Error retrieving largest tables: {format_exception(e)}"
+
+
 # Utility Tools
 
 
@@ -868,6 +980,69 @@ def list_user_defined_functions():
     except Exception as e:
         logger.error(f"Error listing user-defined functions: {e!s}")
         return f"Error listing user-defined functions: {format_exception(e)}"
+
+
+@mcp.tool()
+@trace_mcp_call
+def prewarm_cache(database: str, table: str):
+    """Prewarm the cache on all replicas.
+
+    Args:
+        database: The database name
+        table: The table name
+
+    Returns:
+        A list of dictionaries with the result of the prewarm operation
+    """
+    logger.info(f"Prewarming cache for table {database}.{table} on all replicas")
+    client = create_clickhouse_client()
+    try:
+        return prewarm_cache_on_all_replicas(client, database, table)
+    except Exception as e:
+        logger.error(f"Error prewarming cache: {e!s}")
+        return f"Error prewarming cache: {format_exception(e)}"
+
+
+@mcp.tool()
+@trace_mcp_call
+def analyze_thread_distribution(start_time: str, end_time: str):
+    """Get thread name distribution by host.
+
+    Args:
+        start_time: Start time in 'YYYY-MM-DD HH:MM:SS' format
+        end_time: End time in 'YYYY-MM-DD HH:MM:SS' format
+
+    Returns:
+        A list of dictionaries with thread name distribution
+    """
+    logger.info(f"Retrieving thread name distribution from {start_time} to {end_time}")
+    client = create_clickhouse_client()
+    try:
+        return get_thread_name_distributions(client, start_time, end_time)
+    except Exception as e:
+        logger.error(f"Error retrieving thread name distribution: {e!s}")
+        return f"Error retrieving thread name distribution: {format_exception(e)}"
+
+
+@mcp.tool()
+@trace_mcp_call
+def setup_monitoring_views():
+    """Create or update the monitoring views.
+
+    Returns:
+        True if all views were created/updated successfully, False otherwise
+    """
+    logger.info("Creating or updating monitoring views")
+    client = create_clickhouse_client()
+    try:
+        result = create_monitoring_views(client)
+        if result:
+            return "Successfully created/updated all monitoring views"
+        else:
+            return "Failed to create/update some monitoring views"
+    except Exception as e:
+        logger.error(f"Error creating monitoring views: {e!s}")
+        return f"Error creating monitoring views: {format_exception(e)}"
 
 
 # Customize run method to support our configurations
