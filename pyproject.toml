@@ -48,6 +48,8 @@ dev = [
 [tool.setuptools.packages.find]
 exclude = ["images", "tests"]
 
+[tool.setuptools.dynamic]
+version = {attr = "agent_zero.__version__"}
 
 [tool.pytest.ini_options]
 # Add the project root to the Python path
