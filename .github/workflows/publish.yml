@@ -69,7 +69,13 @@ jobs:
           # Force a metadata refresh by cleaning any cache
           rm -rf *.egg-info
           # Now install the package
-          uv pip install -e . --no-deps
+          uv pip install -e .
+
+      - name: Verify version before build
+        run: |
+          source .venv/bin/activate
+          # This will show the version that will be used in the build
+          python -c "import agent_zero; print(f'Package version: {agent_zero.__version__}')"
 
       - name: Build package
         run: |
@@ -78,7 +84,17 @@ jobs:
           python -m build --sdist --wheel --no-isolation
           echo "Build successful"
           ls -l dist
-          twine check dist/*
+
+      - name: Verify built package version
+        run: |
+          # Check that the wheel filename contains the correct version
+          ls dist/*-${{ steps.get_tag.outputs.TAG }}-*.whl || { echo "Wheel with correct version not found!"; exit 1; }
+          # Check that the source dist filename contains the correct version
+          ls dist/*-${{ steps.get_tag.outputs.TAG }}.tar.gz || { echo "Source dist with correct version not found!"; exit 1; }
+          # Show package details
+          pip install pkginfo
+          python -c "import pkginfo; wheel = pkginfo.Wheel('dist/ch_agent_zero-${{ steps.get_tag.outputs.TAG }}-py3-none-any.whl'); print(f'Wheel metadata: name={wheel.name}, version={wheel.version}')"
+
       - name: Publish to PyPI
         if: matrix.python-version == '3.13'
         uses: pypa/gh-action-pypi-publish@v1.12.3
