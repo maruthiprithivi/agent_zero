@@ -25,12 +25,23 @@ jobs:
       - name: Get version from tag
         id: get_tag
         run: |
-          TAG=${GITHUB_REF#refs/tags/}
+          # Determine raw tag name; for release events, GITHUB_REF_NAME may be set
+          if [ -n "${GITHUB_REF_NAME:-}" ]; then
+            RAW_TAG="${GITHUB_REF_NAME}"
+          else
+            RAW_TAG="${GITHUB_REF#refs/tags/}"
+          fi
+          # Strip leading 'v' if present (v1.2.3 → 1.2.3)
+          TAG="${RAW_TAG#v}"
           echo "TAG=${TAG}" >> $GITHUB_OUTPUT
 
       - name: Set version in __init__.py
         run: |
-          sed -i "s/^__version__ = .*/__version__ = '${{ steps.get_tag.outputs.TAG }}'/" agent_zero/__init__.py
+          # Inject the Git tag version into __init__.py
+          sed -i "s/^__version__ = .*/__version__ = \"${{ steps.get_tag.outputs.TAG }}\"/" agent_zero/__init__.py
+          # Print version to verify
+          echo "Updated version in __init__.py:"
+          cat agent_zero/__init__.py | grep "__version__"
 
       - name: Update version in README.md
         run: |
@@ -55,15 +66,18 @@ jobs:
           uv venv .venv
           source .venv/bin/activate
           uv pip install build setuptools wheel
-          uv pip install -e . --no-deps  # Install package without dependencies first
-          uv pip install "clickhouse-connect>=0.8.15"  # Install critical dep explicitly
-          uv pip install .  # Install remaining deps from pyproject.toml
-          uv pip install .[dev]  # Install development extras
+
+          # Force a metadata refresh by cleaning any cache
+          rm -rf *.egg-info
+
+          # Now install the package
+          uv pip install -e . --no-deps
 
       - name: Build package
         run: |
           source .venv/bin/activate
-          python -m build --sdist --wheel
+          # Use --no-isolation to pick up the updated __init__.py directly
+          python -m build --sdist --wheel --no-isolation
           echo "Build successful"
           ls -l dist
           twine check dist/*
