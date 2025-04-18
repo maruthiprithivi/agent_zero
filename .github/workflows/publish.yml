@@ -66,10 +66,8 @@ jobs:
           uv venv .venv
           source .venv/bin/activate
           uv pip install build setuptools wheel
-
           # Force a metadata refresh by cleaning any cache
           rm -rf *.egg-info
-
           # Now install the package
           uv pip install -e . --no-deps
 
