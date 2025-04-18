@@ -37,8 +37,11 @@ jobs:
 
       - name: Set version in __init__.py
         run: |
-          # Inject the Git tag version into __init__.py (use double quotes)
+          # Inject the Git tag version into __init__.py
           sed -i "s/^__version__ = .*/__version__ = \"${{ steps.get_tag.outputs.TAG }}\"/" agent_zero/__init__.py
+          # Print version to verify
+          echo "Updated version in __init__.py:"
+          cat agent_zero/__init__.py | grep "__version__"
 
       - name: Update version in README.md
         run: |
@@ -63,10 +66,12 @@ jobs:
           uv venv .venv
           source .venv/bin/activate
           uv pip install build setuptools wheel
-          uv pip install -e . --no-deps  # Install package without dependencies first
-          uv pip install "clickhouse-connect>=0.8.15"  # Install critical dep explicitly
-          uv pip install .  # Install remaining deps from pyproject.toml
-          uv pip install .[dev]  # Install development extras
+
+          # Force a metadata refresh by cleaning any cache
+          rm -rf *.egg-info
+
+          # Now install the package
+          uv pip install -e . --no-deps
 
       - name: Build package
         run: |
