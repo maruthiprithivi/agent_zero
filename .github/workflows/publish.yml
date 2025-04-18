@@ -25,7 +25,10 @@ jobs:
       - name: Get version from tag
         id: get_tag
         run: |
+          # Extract tag name (strip refs/tags/ prefix)
           TAG=${GITHUB_REF#refs/tags/}
+          # Strip leading 'v' in tag if present (e.g. 'v1.2.3' → '1.2.3')
+          TAG=${TAG#v}
           echo "TAG=${TAG}" >> $GITHUB_OUTPUT
 
       - name: Set version in __init__.py
