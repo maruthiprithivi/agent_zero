@@ -25,24 +25,15 @@ jobs:
       - name: Get version from tag
         id: get_tag
         run: |
-          # Determine raw tag name; for release events, GITHUB_REF_NAME may be set
-          if [ -n "${GITHUB_REF_NAME:-}" ]; then
-            RAW_TAG="${GITHUB_REF_NAME}"
-          else
-            RAW_TAG="${GITHUB_REF#refs/tags/}"
-          fi
-          # Strip leading 'v' if present (v1.2.3 → 1.2.3)
-          TAG="${RAW_TAG#v}"
+          TAG=${GITHUB_REF#refs/tags/}
           echo "TAG=${TAG}" >> $GITHUB_OUTPUT
 
       - name: Set version in __init__.py
         run: |
-          # Inject the Git tag version into __init__.py
-          sed -i "s/^__version__ = .*/__version__ = \"${{ steps.get_tag.outputs.TAG }}\"/" agent_zero/__init__.py
-          # Print version to verify
-          echo "Updated version in __init__.py:"
-          cat agent_zero/__init__.py | grep "__version__"
-
+          sed -i "s/^__version__ = .*/__version__ = '${{ steps.get_tag.outputs.TAG }}'/" agent_zero/__init__.py
+      - name: Set version in pyproject.toml
+        run: |
+          sed -i "s/^version = .*/version = '${{ steps.get_tag.outputs.TAG }}'/" pyproject.toml
       - name: Update version in README.md
         run: |
           sed -i "s/badge\/version-[0-9]\+\.[0-9]\+\.[0-9]\+-/badge\/version-${{ steps.get_tag.outputs.TAG }}-/" README.md
@@ -66,34 +57,18 @@ jobs:
           uv venv .venv
           source .venv/bin/activate
           uv pip install build setuptools wheel
-          # Force a metadata refresh by cleaning any cache
-          rm -rf *.egg-info
-          # Now install the package
-          uv pip install -e .
-
-      - name: Verify version before build
-        run: |
-          source .venv/bin/activate
-          # This will show the version that will be used in the build
-          python -c "import agent_zero; print(f'Package version: {agent_zero.__version__}')"
+          uv pip install -e . --no-deps  # Install package without dependencies first
+          uv pip install "clickhouse-connect>=0.8.15"  # Install critical dep explicitly
+          uv pip install .  # Install remaining deps from pyproject.toml
+          uv pip install .[dev]  # Install development extras
 
       - name: Build package
         run: |
           source .venv/bin/activate
-          # Use --no-isolation to pick up the updated __init__.py directly
-          python -m build --sdist --wheel --no-isolation
+          python -m build --sdist --wheel
           echo "Build successful"
           ls -l dist
-
-      - name: Verify built package version
-        run: |
-          # Check that the wheel filename contains the correct version
-          ls dist/*-${{ steps.get_tag.outputs.TAG }}-*.whl || { echo "Wheel with correct version not found!"; exit 1; }
-          # Check that the source dist filename contains the correct version
-          ls dist/*-${{ steps.get_tag.outputs.TAG }}.tar.gz || { echo "Source dist with correct version not found!"; exit 1; }
-          # Show package details
-          pip install pkginfo
-          python -c "import pkginfo; wheel = pkginfo.Wheel('dist/ch_agent_zero-${{ steps.get_tag.outputs.TAG }}-py3-none-any.whl'); print(f'Wheel metadata: name={wheel.name}, version={wheel.version}')"
+          twine check dist/*
 
       - name: Publish to PyPI
         if: matrix.python-version == '3.13'

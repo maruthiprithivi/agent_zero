@@ -4,7 +4,8 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "ch_agent_zero"
-dynamic = ["version"]
+version = "0.0.0"
+# dynamic = ["version"]
 description = "Model Context Protocol (MCP) server for monitoring, analyzing, and managing ClickHouse databases"
 readme = "README.md"
 requires-python = ">=3.13"
@@ -49,8 +50,8 @@ dev = [
 [tool.setuptools.packages.find]
 exclude = ["images", "tests"]
 
-[tool.setuptools.dynamic]
-version = {attr = "agent_zero.__version__"}
+# [tool.setuptools.dynamic]
+# version = {attr = "agent_zero.__version__"}
 
 [tool.pytest.ini_options]
 # Add the project root to the Python path
