@@ -90,9 +90,10 @@ load_dotenv()
 # Log environment information
 logger.debug(f"Environment variables: {os.environ.keys()}")
 try:
-    import pkg_resources
+    # Use importlib.metadata instead of deprecated pkg_resources
+    from importlib.metadata import distributions
 
-    installed_packages = [f"{p.key}=={p.version}" for p in pkg_resources.working_set]
+    installed_packages = [f"{dist.metadata['Name']}=={dist.version}" for dist in distributions()]
     logger.debug(f"Installed packages: {installed_packages}")
 except Exception as e:
     logger.error(f"Error listing packages: {e}")
@@ -120,6 +121,12 @@ if app:
     setup_monitoring_endpoints(app, create_clickhouse_client=lambda: create_clickhouse_client())
 else:
     logger.warning("Could not access FastAPI app from FastMCP, monitoring endpoints not set up")
+
+# Expose the app at the module level for uvicorn
+if hasattr(mcp, "app"):
+    app = mcp.app
+else:
+    logger.error("FastMCP instance does not have an app attribute")
 
 
 @mcp.tool()
@@ -1091,7 +1098,7 @@ def run(
             setup_monitoring_endpoints_func(mcp.app, create_clickhouse_client)
 
     # Run with uvicorn directly
-    return uvicorn_run("agent_zero.mcp_server:mcp.app", host=host, port=port, **ssl_args)
+    return uvicorn_run("agent_zero.mcp_server:app", host=host, port=port, **ssl_args)
 
 
 # Replace the original run method with our customized version
