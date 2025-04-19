@@ -43,6 +43,8 @@ jobs:
       - name: Check the version
         run: |
           cat agent_zero/__init__.py
+          echo "########################"
+          cat pyproject.toml
 
       - name: Set up Python
         uses: actions/setup-python@v4
