@@ -4,7 +4,7 @@ import argparse
 import logging
 import sys
 
-from .mcp_server import mcp
+from .mcp_server import run
 from .server_config import ServerConfig
 
 # Configure logging
@@ -78,7 +78,7 @@ def main():
             logger.info(f"Authentication is enabled for user: {auth_config['username']}")
 
         # Run the MCP server with the configuration
-        mcp.run(
+        run(
             host=server_config.host,
             port=server_config.port,
             ssl_config=ssl_config,
