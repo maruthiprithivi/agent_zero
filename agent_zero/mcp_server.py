@@ -1098,7 +1098,7 @@ def run(
             setup_monitoring_endpoints_func(mcp.app, create_clickhouse_client)
 
     # Run with uvicorn directly
-    return uvicorn_run("agent_zero.mcp_server:app", host=host, port=port, **ssl_args)
+    return uvicorn_run("agent_zero.mcp:app", host=host, port=port, **ssl_args)
 
 
 # Replace the original run method with our customized version
