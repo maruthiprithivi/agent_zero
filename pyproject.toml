@@ -56,8 +56,7 @@ exclude = ["images", "tests"]
 pythonpath = ["."]
 testpaths = ["tests"]
 python_files = ["test_*.py"]
-# Disable warnings about Prometheus metrics
-filterwarnings = ["ignore::DeprecationWarning:prometheus_client.*:"]
+# Remove prometheus warnings filter
 xvs = true
 durations = 10
 

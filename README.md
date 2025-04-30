@@ -8,7 +8,6 @@ Agent Zero is a Model Context Protocol (MCP) server for monitoring, analyzing, a
 >
 > - HTTP API endpoints for monitoring (/health, /metrics)
 > - Web-based dashboards and interfaces
-> - Prometheus metrics collection and export via HTTP
 > - Server-Sent Events (SSE) communication
 > - HTTP-based authentication
 >
@@ -35,13 +34,14 @@ Agent Zero enables AI assistants to:
 
 - [Installation & Setup](#-installation--setup)
 - [Usage Examples](#-usage-examples)
+- [Standalone Server](#-standalone-server)
 - [Project Structure](#-project-structure)
 - [Architecture](#-architecture)
 - [Module Breakdown](#-module-breakdown)
 - [Environment Configuration](#-environment-configuration)
+- [Logging and Tracing](#-logging-and-tracing)
 - [Development Guide](#-development-guide)
 - [Testing](#-testing)
-- [Documentation](#-documentation)
 - [Contributing](#-contributing)
 - [License](#-license)
 
@@ -330,8 +330,6 @@ If you encounter issues:
 3. Verify that the ClickHouse connection details are correct
 4. Make sure the paths in your configuration match the actual installation paths
 
-
-
 ## 🧰 Command-Line Usage
 
 Agent Zero can be used directly from the command line for testing or development purposes:
@@ -422,12 +420,158 @@ For comprehensive health checks:
 Run a complete health check on my ClickHouse cluster
 ```
 
-```
-Are there any performance issues or bottlenecks in my ClickHouse setup?
+## 🖥️ Standalone Server
+
+Agent Zero can be deployed as a standalone Model Context Protocol (MCP) server, allowing multiple clients (such as Claude Desktop or other AI assistants) to connect to it.
+
+### Key Features
+
+- **Command-line Configuration**: Customize host, port, and other settings via command line arguments
+- **SSL/TLS Support**: Secure your connections with SSL certificates
+- **Basic Authentication**: Protect your server with username/password authentication
+
+### Starting the Server
+
+#### Basic Usage
+
+```bash
+ch-agent-zero
 ```
 
+This starts the server on the default host (127.0.0.1) and port (8505).
+
+#### Custom Host and Port
+
+```bash
+ch-agent-zero --host 0.0.0.0 --port 8505
 ```
-Analyze my table parts and suggest optimization opportunities
+
+This starts the server listening on all interfaces (0.0.0.0) on port 8505.
+
+#### Environment Variables
+
+You can also use environment variables to configure the server:
+
+```bash
+# Server configuration
+export MCP_SERVER_HOST=0.0.0.0
+export MCP_SERVER_PORT=8505
+
+# ClickHouse connection
+export CLICKHOUSE_HOST=your-clickhouse-host
+export CLICKHOUSE_PORT=8443
+export CLICKHOUSE_USER=your-username
+export CLICKHOUSE_PASSWORD=your-password
+export CLICKHOUSE_SECURE=true
+export CLICKHOUSE_VERIFY=true
+
+# Start the server
+ch-agent-zero
+```
+
+### Security Features
+
+#### Enabling SSL/TLS
+
+To enable secure connections with SSL/TLS:
+
+```bash
+ch-agent-zero --ssl-certfile /path/to/cert.pem --ssl-keyfile /path/to/key.pem
+```
+
+You can also use environment variables:
+
+```bash
+export MCP_SSL_CERTFILE=/path/to/cert.pem
+export MCP_SSL_KEYFILE=/path/to/key.pem
+```
+
+#### Enabling Basic Authentication
+
+To protect your server with basic authentication:
+
+```bash
+# Option 1: Direct password (less secure)
+ch-agent-zero --auth-username admin --auth-password your-password
+
+# Option 2: Password file (more secure)
+echo "your-secure-password" > /path/to/password-file
+chmod 600 /path/to/password-file
+ch-agent-zero --auth-username admin --auth-password-file /path/to/password-file
+```
+
+You can also use environment variables:
+
+```bash
+export MCP_AUTH_USERNAME=admin
+export MCP_AUTH_PASSWORD=your-password
+# OR
+export MCP_AUTH_PASSWORD_FILE=/path/to/password-file
+```
+
+### Systemd Service (Linux)
+
+For production deployments on Linux, create a systemd service:
+
+```bash
+cat > /etc/systemd/system/agent-zero.service << EOF
+[Unit]
+Description=Agent Zero MCP Server
+After=network.target
+
+[Service]
+ExecStart=/opt/agent-zero-env/bin/ch-agent-zero --host 0.0.0.0 --port 8505 --auth-username admin --auth-password-file /etc/agent-zero/password.txt --ssl-certfile /etc/agent-zero/cert.pem --ssl-keyfile /etc/agent-zero/key.pem
+WorkingDirectory=/opt/agent-zero
+EnvironmentFile=/etc/agent-zero/config.env
+User=agent-zero
+Group=agent-zero
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
+EOF
+```
+
+Enable and start the service:
+
+```bash
+sudo systemctl daemon-reload
+sudo systemctl enable agent-zero
+sudo systemctl start agent-zero
+```
+
+### Docker Deployment
+
+You can also deploy Agent Zero in a Docker container:
+
+```dockerfile
+FROM python:3.13-slim
+
+WORKDIR /app
+
+# Install Agent Zero
+RUN pip install ch-agent-zero
+
+# Expose the default port
+EXPOSE 8505
+
+# Set environment variables (optional)
+ENV MCP_SERVER_HOST=0.0.0.0
+
+# Start the server
+CMD ["ch-agent-zero"]
+```
+
+Build and run:
+
+```bash
+docker build -t agent-zero .
+docker run -p 8505:8505 \
+  -e CLICKHOUSE_HOST=your-host \
+  -e CLICKHOUSE_USER=your-user \
+  -e CLICKHOUSE_PASSWORD=your-password \
+  agent-zero
 ```
 
 ## 📂 Project Structure
@@ -566,6 +710,57 @@ secure = config.secure
 # Get complete client configuration
 client_config = config.get_client_config()
 ```
+
+## 📝 Logging and Tracing
+
+Agent Zero provides detailed logging and tracing options for debugging and monitoring.
+
+### Database Query Logging
+
+Tracks database queries, execution times, errors, and warnings.
+
+| Environment Variable              | Description                   | Default |
+| --------------------------------- | ----------------------------- | ------- |
+| `CLICKHOUSE_ENABLE_QUERY_LOGGING` | Enable detailed query logging | `false` |
+| `CLICKHOUSE_LOG_QUERY_LATENCY`    | Log query execution times     | `false` |
+| `CLICKHOUSE_LOG_QUERY_ERRORS`     | Log query errors              | `true`  |
+| `CLICKHOUSE_LOG_QUERY_WARNINGS`   | Log query warnings            | `true`  |
+
+To enable:
+
+```bash
+# In shell
+export CLICKHOUSE_ENABLE_QUERY_LOGGING=true
+export CLICKHOUSE_LOG_QUERY_LATENCY=true
+
+# Or in .env file
+CLICKHOUSE_ENABLE_QUERY_LOGGING=true
+CLICKHOUSE_LOG_QUERY_LATENCY=true
+```
+
+### MCP Server Tracing
+
+Tracks MCP tool calls, request payloads, responses, and execution times.
+
+| Environment Variable | Description        | Default |
+| -------------------- | ------------------ | ------- |
+| `MCP_ENABLE_TRACING` | Enable MCP tracing | `false` |
+
+To enable:
+
+```bash
+# In shell
+export MCP_ENABLE_TRACING=true
+
+# Or in .env file
+MCP_ENABLE_TRACING=true
+```
+
+### Performance Considerations
+
+- Both logging systems can impact performance with high query volumes
+- Enable only when needed for debugging or monitoring
+- For production, consider enabling only error logging rather than full query logging
 
 ## 🛠️ Development Guide
 
@@ -719,27 +914,25 @@ def monitor_your_feature(param1: str, param2: int = 10):
 
 5. Write tests for your new functionality.
 
-### Testing
-
-To run tests:
-
-```bash
-# Run all tests
-python -m pytest
-
-# Run specific test files
-python -m pytest tests/test_query_performance.py
-
-# Run with coverage
-python -m pytest --cov=agent_zero
-
-# Show test durations
-python -m pytest --durations=10
-```
-
-When writing tests, use the stubs directory for mocking external dependencies.
-
 ## 🧪 Testing
+
+### Testing Strategy
+
+The tests are designed to validate the following aspects of the system:
+
+1. **Core MCP Functionality**: Testing the MCP server implementation and tool registration
+2. **ClickHouse Integration**: Testing the interaction with ClickHouse databases through the client
+3. **Monitoring Tools**: Testing the various monitoring tools for accuracy and performance
+4. **Configuration**: Testing the configuration handling and environment variable processing
+5. **Error Handling**: Testing the system's behavior when errors occur
+
+### Test Isolation
+
+The testing approach emphasizes test isolation to prevent tests from interfering with each other. This is achieved through:
+
+- **Mock ClickHouse Client**: Using mock clients to avoid actual database connections
+- **Environment Variable Isolation**: Resetting environment variables between tests
+- **Independent Test Fixtures**: Creating fresh fixtures for each test
 
 ### Running Tests
 
@@ -761,13 +954,20 @@ To run with coverage:
 python -m pytest --cov=agent_zero
 ```
 
-### Test Strategy
+### Test Organization
 
 Tests are organized to match the module structure and include:
 
 1. **Unit Tests**: Test individual functions in isolation with mocked dependencies
 2. **Integration Tests**: Test interaction between components
 3. **Mock Tests**: Use mock ClickHouse client to avoid external dependencies
+
+### Common Test Fixtures
+
+Common test fixtures are defined in `conftest.py` and include:
+
+- `no_retry_settings`: Fixture to disable query retries
+- `mock_clickhouse_client`: Fixture to provide a mock ClickHouse client
 
 ## 🤝 Contributing
 
@@ -784,14 +984,6 @@ Please follow the existing code style and add tests for any new functionality.
 ## 📄 License
 
 This project is licensed under the Apache License 2.0 - see the [LICENSE](LICENSE) file for details.
-
-## 📚 Documentation
-
-All documentation is in the `/docs` directory:
-
-- [Documentation Index](/docs/README.md)
-- [Logging](/docs/logging.md)
-- [Testing](/docs/testing/)
 
 ## 🔒 Security Considerations
 
