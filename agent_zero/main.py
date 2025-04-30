@@ -35,6 +35,19 @@ def main():
         "--auth-password-file", help="Path to file containing password for authentication"
     )
 
+    # Cursor IDE integration
+    cursor_group = parser.add_argument_group("Cursor IDE Integration")
+    cursor_group.add_argument(
+        "--cursor-mode",
+        choices=["agent", "ask", "edit"],
+        help="Cursor IDE mode to support (agent, ask, or edit)",
+    )
+    cursor_group.add_argument(
+        "--cursor-transport",
+        choices=["sse", "websocket"],
+        help="Transport to use with Cursor IDE (default: sse)",
+    )
+
     args = parser.parse_args()
 
     # Create ServerConfig with command-line overrides
@@ -49,6 +62,10 @@ def main():
         server_config_values["auth_password"] = args.auth_password
     if args.auth_password_file:
         server_config_values["auth_password_file"] = args.auth_password_file
+    if args.cursor_mode:
+        server_config_values["cursor_mode"] = args.cursor_mode
+    if args.cursor_transport:
+        server_config_values["cursor_transport"] = args.cursor_transport
 
     server_config = ServerConfig(**server_config_values)
 
@@ -63,6 +80,10 @@ def main():
         auth_config = server_config.get_auth_config()
         if auth_config:
             logger.info(f"Authentication is enabled for user: {auth_config['username']}")
+
+        # Log Cursor IDE mode if specified
+        if server_config.cursor_mode:
+            logger.info(f"Running in Cursor IDE mode: {server_config.cursor_mode}")
 
         # Run the MCP server with the configuration
         run(

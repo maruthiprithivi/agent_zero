@@ -126,3 +126,35 @@ class TestServerConfig:
         """Test that get_auth_config returns None when password file is not found."""
         config = ServerConfig(auth_username="testuser", auth_password_file="/nonexistent/file.txt")
         assert config.get_auth_config() is None
+
+    def test_default_cursor_mode(self):
+        """Test the default cursor mode."""
+        config = ServerConfig()
+        assert config.cursor_mode is None
+
+    def test_cursor_mode_from_env(self):
+        """Test getting the cursor mode from environment variables."""
+        os.environ["MCP_CURSOR_MODE"] = "agent"
+        config = ServerConfig()
+        assert config.cursor_mode == "agent"
+
+    def test_cursor_mode_from_args(self):
+        """Test getting the cursor mode from constructor arguments."""
+        config = ServerConfig(cursor_mode="ask")
+        assert config.cursor_mode == "ask"
+
+    def test_default_cursor_transport(self):
+        """Test the default cursor transport."""
+        config = ServerConfig()
+        assert config.cursor_transport == "sse"
+
+    def test_cursor_transport_from_env(self):
+        """Test getting the cursor transport from environment variables."""
+        os.environ["MCP_CURSOR_TRANSPORT"] = "websocket"
+        config = ServerConfig()
+        assert config.cursor_transport == "websocket"
+
+    def test_cursor_transport_from_args(self):
+        """Test getting the cursor transport from constructor arguments."""
+        config = ServerConfig(cursor_transport="websocket")
+        assert config.cursor_transport == "websocket"

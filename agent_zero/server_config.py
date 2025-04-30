@@ -23,6 +23,8 @@ class ServerConfig:
         MCP_AUTH_USERNAME: Basic auth username (default: None)
         MCP_AUTH_PASSWORD: Basic auth password (default: None)
         MCP_AUTH_PASSWORD_FILE: Path to file containing basic auth password (default: None)
+        MCP_CURSOR_MODE: Cursor IDE mode to support (default: None)
+        MCP_CURSOR_TRANSPORT: Transport to use with Cursor IDE (default: sse)
     """
 
     def __init__(self, **override_values):
@@ -81,6 +83,26 @@ class ServerConfig:
         if "auth_password_file" in self._override_values:
             return self._override_values["auth_password_file"]
         return os.getenv("MCP_AUTH_PASSWORD_FILE")
+
+    @property
+    def cursor_mode(self) -> str | None:
+        """Get the Cursor IDE mode.
+
+        Valid values: "agent", "ask", "edit", or None
+        """
+        if "cursor_mode" in self._override_values:
+            return self._override_values["cursor_mode"]
+        return os.getenv("MCP_CURSOR_MODE")
+
+    @property
+    def cursor_transport(self) -> str:
+        """Get the transport type to use with Cursor IDE.
+
+        Valid values: "sse", "websocket"
+        """
+        if "cursor_transport" in self._override_values:
+            return self._override_values["cursor_transport"]
+        return os.getenv("MCP_CURSOR_TRANSPORT", "sse")
 
     def get_ssl_config(self) -> dict | None:
         """Get the SSL configuration dictionary.

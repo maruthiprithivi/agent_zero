@@ -33,6 +33,8 @@ Agent Zero enables AI assistants to:
 
 - [Installation & Setup](#-installation--setup)
 - [Usage Examples](#-usage-examples)
+- [Claude Desktop Configuration](#configuring-claude-ai-assistant)
+- [Cursor IDE Configuration](#cursor-ide-configuration)
 - [Standalone Server](#-standalone-server)
 - [Project Structure](#-project-structure)
 - [Architecture](#-architecture)
@@ -131,6 +133,12 @@ CLICKHOUSE_LOG_QUERY_LATENCY=false    # Log query execution times
 CLICKHOUSE_LOG_QUERY_ERRORS=true      # Log query errors
 CLICKHOUSE_LOG_QUERY_WARNINGS=true    # Log query warnings
 MCP_ENABLE_TRACING=false              # Enable MCP communication tracing
+
+# MCP Server Configuration (Optional)
+MCP_SERVER_HOST=127.0.0.1             # Host to bind to
+MCP_SERVER_PORT=8505                  # Port to bind to
+MCP_CURSOR_MODE=agent                 # Cursor IDE mode (agent, ask, edit)
+MCP_CURSOR_TRANSPORT=sse              # Transport for Cursor IDE (sse, websocket)
 ```
 
 You can set these variables in your environment or use a `.env` file.
@@ -206,6 +214,76 @@ Add the following configuration (replace `<UV_PATH>` with the output from step 2
   }
 }
 ```
+
+### Cursor IDE Configuration
+
+Agent Zero can be integrated with Cursor IDE using the same uv-based approach recommended for Claude Desktop.
+
+#### Prerequisites
+
+1. Install uv:
+
+```bash
+curl -LsSf https://astral.sh/uv/install.sh | sh
+```
+
+2. Find your uv installation path:
+
+```bash
+which uv
+# Example output: /Users/username/.cargo/bin/uv
+```
+
+#### Adding Agent Zero to Cursor
+
+1. Open Cursor IDE settings
+2. Navigate to the MCP Servers section
+3. Add a new MCP server with the following configuration:
+
+```json
+{
+  "name": "agent-zero",
+  "command": "<UV_PATH>",
+  "args": [
+    "run",
+    "--with",
+    "ch-agent-zero",
+    "--python",
+    "3.13",
+    "ch-agent-zero",
+    "--cursor-mode",
+    "agent"
+  ],
+  "env": {
+    "CLICKHOUSE_HOST": "your-clickhouse-host",
+    "CLICKHOUSE_PORT": "8443",
+    "CLICKHOUSE_USER": "your-username",
+    "CLICKHOUSE_PASSWORD": "your-password",
+    "CLICKHOUSE_SECURE": "true",
+    "CLICKHOUSE_VERIFY": "true",
+    "CLICKHOUSE_CONNECT_TIMEOUT": "30",
+    "CLICKHOUSE_SEND_RECEIVE_TIMEOUT": "300",
+    "MCP_ENABLE_TRACING": "false"
+  }
+}
+```
+
+Replace `<UV_PATH>` with the full path to your uv installation.
+
+#### Cursor IDE Modes
+
+Agent Zero supports different Cursor IDE modes by changing the `--cursor-mode` argument:
+
+- **Agent Mode**: `--cursor-mode agent` - Provides full tool execution with all ClickHouse monitoring capabilities
+- **Ask Mode**: `--cursor-mode ask` - Offers information retrieval tools for analyzing ClickHouse performance
+- **Edit Mode**: `--cursor-mode edit` - Helps generate and modify ClickHouse queries
+
+#### Cursor Transport Options
+
+By default, Agent Zero uses the SSE (Server-Sent Events) transport for Cursor IDE. You can specify the transport with the `--cursor-transport` argument:
+
+- **SSE**: `--cursor-transport sse` (default)
+- **WebSocket**: `--cursor-transport websocket`
 
 ##### Method 2: Using pip with Virtual Environment
 
@@ -421,157 +499,53 @@ Run a complete health check on my ClickHouse cluster
 
 ## 🖥️ Standalone Server
 
-Agent Zero can be deployed as a standalone Model Context Protocol (MCP) server, allowing multiple clients (such as Claude Desktop or other AI assistants) to connect to it.
-
-### Key Features
-
-- **Command-line Configuration**: Customize host, port, and other settings via command line arguments
-- **SSL/TLS Support**: Secure your connections with SSL certificates
-- **Basic Authentication**: Protect your server with username/password authentication
-- **Transport Auto-Selection**: Automatically uses appropriate transport protocol based on configuration
-
-### Starting the Server
-
-#### Basic Usage
+You can run Agent Zero as a standalone server using the following command:
 
 ```bash
-ch-agent-zero
+ch-agent-zero [options]
 ```
 
-This starts the server on the default host (127.0.0.1) and port (8505).
+### Server Options
 
-#### Custom Host and Port
+| Option                 | Description                                         | Default   |
+| ---------------------- | --------------------------------------------------- | --------- |
+| `--host`               | Host to bind to                                     | 127.0.0.1 |
+| `--port`               | Port to bind to                                     | 8505      |
+| `--auth-username`      | Username for basic authentication                   | None      |
+| `--auth-password`      | Password for basic authentication                   | None      |
+| `--auth-password-file` | Path to file containing password for authentication | None      |
+
+### Cursor IDE Integration Options
+
+| Option               | Description                                       | Default |
+| -------------------- | ------------------------------------------------- | ------- |
+| `--cursor-mode`      | Cursor IDE mode (agent, ask, edit)                | None    |
+| `--cursor-transport` | Transport to use with Cursor IDE (sse, websocket) | sse     |
+
+### Examples
+
+Standard server:
 
 ```bash
-ch-agent-zero --host 0.0.0.0 --port 8505
+ch-agent-zero --host 0.0.0.0 --port 8080
 ```
 
-This starts the server listening on all interfaces (0.0.0.0) on port 8505. When using non-default host/port settings, the server automatically switches to Server-Sent Events (SSE) transport protocol.
-
-#### Environment Variables
-
-You can also use environment variables to configure the server:
+With authentication:
 
 ```bash
-# Server configuration
-export MCP_SERVER_HOST=0.0.0.0
-export MCP_SERVER_PORT=8505
-
-# ClickHouse connection
-export CLICKHOUSE_HOST=your-clickhouse-host
-export CLICKHOUSE_PORT=8443
-export CLICKHOUSE_USER=your-username
-export CLICKHOUSE_PASSWORD=your-password
-export CLICKHOUSE_SECURE=true
-export CLICKHOUSE_VERIFY=true
-
-# Start the server
-ch-agent-zero
+ch-agent-zero --auth-username admin --auth-password-file /path/to/password.txt
 ```
 
-### Security Features
-
-#### Enabling SSL/TLS
-
-To enable secure connections with SSL/TLS:
+For Cursor IDE in agent mode:
 
 ```bash
-ch-agent-zero --ssl-certfile /path/to/cert.pem --ssl-keyfile /path/to/key.pem
+ch-agent-zero --cursor-mode agent
 ```
 
-You can also use environment variables:
+For Cursor IDE with WebSocket transport:
 
 ```bash
-export MCP_SSL_CERTFILE=/path/to/cert.pem
-export MCP_SSL_KEYFILE=/path/to/key.pem
-```
-
-#### Enabling Basic Authentication
-
-To protect your server with basic authentication:
-
-```bash
-# Option 1: Direct password (less secure)
-ch-agent-zero --auth-username admin --auth-password your-password
-
-# Option 2: Password file (more secure)
-echo "your-secure-password" > /path/to/password-file
-chmod 600 /path/to/password-file
-ch-agent-zero --auth-username admin --auth-password-file /path/to/password-file
-```
-
-You can also use environment variables:
-
-```bash
-export MCP_AUTH_USERNAME=admin
-export MCP_AUTH_PASSWORD=your-password
-# OR
-export MCP_AUTH_PASSWORD_FILE=/path/to/password-file
-```
-
-### Systemd Service (Linux)
-
-For production deployments on Linux, create a systemd service:
-
-```bash
-cat > /etc/systemd/system/agent-zero.service << EOF
-[Unit]
-Description=Agent Zero MCP Server
-After=network.target
-
-[Service]
-ExecStart=/opt/agent-zero-env/bin/ch-agent-zero --host 0.0.0.0 --port 8505 --auth-username admin --auth-password-file /etc/agent-zero/password.txt --ssl-certfile /etc/agent-zero/cert.pem --ssl-keyfile /etc/agent-zero/key.pem
-WorkingDirectory=/opt/agent-zero
-EnvironmentFile=/etc/agent-zero/config.env
-User=agent-zero
-Group=agent-zero
-Restart=always
-RestartSec=5
-
-[Install]
-WantedBy=multi-user.target
-EOF
-```
-
-Enable and start the service:
-
-```bash
-sudo systemctl daemon-reload
-sudo systemctl enable agent-zero
-sudo systemctl start agent-zero
-```
-
-### Docker Deployment
-
-You can also deploy Agent Zero in a Docker container:
-
-```dockerfile
-FROM python:3.13-slim
-
-WORKDIR /app
-
-# Install Agent Zero
-RUN pip install ch-agent-zero
-
-# Expose the default port
-EXPOSE 8505
-
-# Set environment variables (optional)
-ENV MCP_SERVER_HOST=0.0.0.0
-
-# Start the server
-CMD ["ch-agent-zero"]
-```
-
-Build and run:
-
-```bash
-docker build -t agent-zero .
-docker run -p 8505:8505 \
-  -e CLICKHOUSE_HOST=your-host \
-  -e CLICKHOUSE_USER=your-user \
-  -e CLICKHOUSE_PASSWORD=your-password \
-  agent-zero
+ch-agent-zero --cursor-mode agent --cursor-transport websocket
 ```
 
 ## 📂 Project Structure
