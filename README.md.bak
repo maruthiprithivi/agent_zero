@@ -330,7 +330,7 @@ If you encounter issues:
 3. Verify that the ClickHouse connection details are correct
 4. Make sure the paths in your configuration match the actual installation paths
 
-
+## 🚀 Deploying as a Standalone Server
 
 ## 🧰 Command-Line Usage
 
