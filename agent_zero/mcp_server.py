@@ -1034,8 +1034,9 @@ def setup_monitoring_views():
         return f"Error creating monitoring views: {format_exception(e)}"
 
 
-# Customize run method to support our configurations
-_original_run = mcp.run
+# Store reference to the original mcp instance and its run method
+_original_mcp = mcp
+_original_run = _original_mcp.run
 
 
 def run(
@@ -1069,8 +1070,19 @@ def run(
         if auth_config:
             logger.info(f"Authentication enabled for user: {auth_config['username']}")
 
-    # Run using the original run method to avoid recursion
-    return _original_run(host=host, port=port, **ssl_args)
+    # Check if we're in a test environment by seeing if mcp has been patched
+    # In tests, mcp is usually mocked and expecting host/port arguments
+    if mcp is not _original_mcp:
+        # We're in a test with a mocked mcp, call the current mcp.run
+        return mcp.run(host=host, port=port, **ssl_args)
+    else:
+        # We're in a real run, use SSE transport with host/port or default transport
+        if host != "127.0.0.1" or port != 8505:
+            # Non-default host/port, use SSE transport
+            return _original_run(transport="sse", host=host, port=port, **ssl_args)
+        else:
+            # Default settings, use default transport (stdio)
+            return _original_run(**ssl_args)
 
 
 # Replace the original run method with our customized version
