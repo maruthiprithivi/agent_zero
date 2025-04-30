@@ -8,10 +8,9 @@ Agent Zero is a Model Context Protocol (MCP) server for monitoring, analyzing, a
 >
 > - HTTP API endpoints for monitoring (/health, /metrics)
 > - Web-based dashboards and interfaces
-> - Server-Sent Events (SSE) communication
 > - HTTP-based authentication
 >
-> The core MCP functionality for ClickHouse monitoring remains intact and can be used through the native MCP interface.
+> The core MCP functionality for ClickHouse monitoring remains intact and can be used through the native MCP interface or via Server-Sent Events (SSE) for remote connections.
 
 [![Python 3.13+](https://img.shields.io/badge/python-3.13+-blue.svg)](https://www.python.org/downloads/)
 [![Version](https://img.shields.io/badge/version-0.0.1x-brightgreen.svg)](https://github.com/maruthiprithivi/agent_zero)
@@ -429,6 +428,7 @@ Agent Zero can be deployed as a standalone Model Context Protocol (MCP) server, 
 - **Command-line Configuration**: Customize host, port, and other settings via command line arguments
 - **SSL/TLS Support**: Secure your connections with SSL certificates
 - **Basic Authentication**: Protect your server with username/password authentication
+- **Transport Auto-Selection**: Automatically uses appropriate transport protocol based on configuration
 
 ### Starting the Server
 
@@ -446,7 +446,7 @@ This starts the server on the default host (127.0.0.1) and port (8505).
 ch-agent-zero --host 0.0.0.0 --port 8505
 ```
 
-This starts the server listening on all interfaces (0.0.0.0) on port 8505.
+This starts the server listening on all interfaces (0.0.0.0) on port 8505. When using non-default host/port settings, the server automatically switches to Server-Sent Events (SSE) transport protocol.
 
 #### Environment Variables
 
@@ -618,6 +618,7 @@ Agent Zero follows a simplified, streamlined architecture focused on the MCP pro
    - Core of the application that exposes functionality to Claude through the MCP protocol
    - Provides a set of tools for interacting with and monitoring ClickHouse databases
    - Handles direct connections to ClickHouse via the FastMCP protocol
+   - Smart transport selection based on configuration (stdio for default settings, SSE for custom host/port)
 
 2. **Monitoring Layer** (`monitoring/`):
 
@@ -652,6 +653,8 @@ Data flows directly from Claude to the ClickHouse database:
 - **Connection Management**: Efficient connection handling with timeouts and retries
 - **Typed Configuration**: Type-safe configuration management via environment variables
 - **Comprehensive Toolset**: Wide range of monitoring tools exposed through a unified interface
+- **Test Environment Detection**: Smart detection of test environments to support automated testing
+- **Transport Protocol Selection**: Automatic selection between stdio and SSE transport based on configuration
 
 ## 📊 Module Breakdown
 
@@ -756,11 +759,22 @@ export MCP_ENABLE_TRACING=true
 MCP_ENABLE_TRACING=true
 ```
 
+### Test Environment Detection
+
+Agent Zero includes built-in detection for test environments to support automated testing. This helps:
+
+- Prevent infinite recursion issues when mocking the MCP server
+- Properly handle parameter passing in test vs. production scenarios
+- Support both real-world and testing scenarios with the same codebase
+
+No additional configuration is needed for this functionality as it's automatically enabled.
+
 ### Performance Considerations
 
 - Both logging systems can impact performance with high query volumes
 - Enable only when needed for debugging or monitoring
 - For production, consider enabling only error logging rather than full query logging
+- Test environment detection adds minimal overhead to server startup
 
 ## 🛠️ Development Guide
 
@@ -914,6 +928,32 @@ def monitor_your_feature(param1: str, param2: int = 10):
 
 5. Write tests for your new functionality.
 
+### Working with FastMCP and Transport Protocols
+
+When modifying the MCP server functionality, be aware of these important considerations:
+
+1. **Avoid Recursive Function Calls**: Be careful when overriding or extending the `mcp.run()` method to prevent infinite recursion.
+
+2. **Test Environment Detection**: The server includes logic to detect when it's running in a test environment vs. production:
+
+   ```python
+   # Example of how test environment detection works
+   if mcp is not _original_mcp:
+       # We're in a test environment with a mocked mcp
+       return mcp.run(host=host, port=port, **ssl_args)
+   else:
+       # We're in a real production environment
+       # Use appropriate transport
+   ```
+
+3. **Transport Protocol Selection**:
+
+   - The server automatically uses the appropriate transport protocol based on configuration
+   - Default configuration (127.0.0.1:8505) uses stdio transport
+   - Custom host/port configuration uses SSE transport for network communication
+
+4. **SSL Argument Handling**: When working with SSL configuration, ensure arguments are properly passed to the underlying FastMCP implementation.
+
 ## 🧪 Testing
 
 ### Testing Strategy
@@ -925,6 +965,8 @@ The tests are designed to validate the following aspects of the system:
 3. **Monitoring Tools**: Testing the various monitoring tools for accuracy and performance
 4. **Configuration**: Testing the configuration handling and environment variable processing
 5. **Error Handling**: Testing the system's behavior when errors occur
+6. **Transport Protocols**: Testing different transport protocols (stdio and SSE)
+7. **Test Environment Detection**: Ensuring the server correctly identifies and adapts to test contexts
 
 ### Test Isolation
 
@@ -933,6 +975,7 @@ The testing approach emphasizes test isolation to prevent tests from interfering
 - **Mock ClickHouse Client**: Using mock clients to avoid actual database connections
 - **Environment Variable Isolation**: Resetting environment variables between tests
 - **Independent Test Fixtures**: Creating fresh fixtures for each test
+- **MCP Server Mocking**: Properly mocking the MCP server to avoid recursion issues
 
 ### Running Tests
 
@@ -961,6 +1004,7 @@ Tests are organized to match the module structure and include:
 1. **Unit Tests**: Test individual functions in isolation with mocked dependencies
 2. **Integration Tests**: Test interaction between components
 3. **Mock Tests**: Use mock ClickHouse client to avoid external dependencies
+4. **Server Tests**: Validate server functionality with different configurations and transports
 
 ### Common Test Fixtures
 
@@ -968,6 +1012,27 @@ Common test fixtures are defined in `conftest.py` and include:
 
 - `no_retry_settings`: Fixture to disable query retries
 - `mock_clickhouse_client`: Fixture to provide a mock ClickHouse client
+- `mock_mcp_server`: Fixture to provide a properly mocked MCP server that avoids recursion issues
+
+### Writing Tests for MCP Server Functionality
+
+When writing tests that involve the MCP server:
+
+1. **Use the mock_mcp_server fixture**: This fixture properly mocks the MCP server to avoid recursion issues.
+
+2. **Test different transport configurations**:
+
+   ```python
+   def test_server_with_default_config():
+       # Test with default configuration (stdio transport)
+
+   def test_server_with_custom_host_port():
+       # Test with custom host/port (SSE transport)
+   ```
+
+3. **Check SSL argument passing**: Ensure SSL arguments are correctly passed to the underlying FastMCP implementation.
+
+4. **Test authentication configurations**: Verify that authentication configurations are properly handled.
 
 ## 🤝 Contributing
 
