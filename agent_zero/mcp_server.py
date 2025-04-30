@@ -1069,8 +1069,8 @@ def run(
         if auth_config:
             logger.info(f"Authentication enabled for user: {auth_config['username']}")
 
-    # Run using FastMCP's native run method
-    return mcp.run(host=host, port=port, **ssl_args)
+    # Run using the original run method to avoid recursion
+    return _original_run(host=host, port=port, **ssl_args)
 
 
 # Replace the original run method with our customized version
