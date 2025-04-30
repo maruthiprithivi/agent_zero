@@ -16,14 +16,10 @@ from clickhouse_connect.driver.exceptions import ClickHouseError
 # Import the database logger
 from agent_zero.database_logger import log_query_execution
 
-# Import query metrics tracking
-from agent_zero.query_metrics import track_query_metrics
-
 logger = logging.getLogger("mcp-clickhouse")
 
 
 @log_query_execution
-@track_query_metrics
 def execute_query_with_retry(
     client: Client,
     query: str,

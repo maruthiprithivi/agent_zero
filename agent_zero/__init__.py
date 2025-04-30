@@ -9,7 +9,6 @@ from agent_zero.mcp_server import (
     run_select_query,
 )
 from agent_zero.server_config import ServerConfig
-from agent_zero.monitoring_endpoints import setup_monitoring_endpoints
 
 __all__ = [
     "create_clickhouse_client",
@@ -17,5 +16,4 @@ __all__ = [
     "list_tables",
     "run_select_query",
     "ServerConfig",
-    "setup_monitoring_endpoints",
 ]

@@ -86,7 +86,7 @@ class ServerConfig:
         """Get the SSL configuration dictionary.
 
         Returns:
-            dict|None: SSL configuration ready to be passed to FastAPI/Uvicorn, or None if SSL is not configured
+            dict|None: SSL configuration for MCP server, or None if SSL is not configured
         """
         if self.ssl_certfile and self.ssl_keyfile:
             return {

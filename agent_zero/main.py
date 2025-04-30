@@ -25,10 +25,6 @@ def main():
     parser.add_argument("--host", default=None, help="Host to bind to (default: 127.0.0.1)")
     parser.add_argument("--port", type=int, default=None, help="Port to bind to (default: 8505)")
 
-    # SSL configuration
-    parser.add_argument("--ssl-certfile", help="Path to SSL certificate file")
-    parser.add_argument("--ssl-keyfile", help="Path to SSL key file")
-
     # Authentication configuration
     parser.add_argument("--auth-username", help="Username for basic authentication")
     parser.add_argument(
@@ -47,10 +43,6 @@ def main():
         server_config_values["host"] = args.host
     if args.port:
         server_config_values["port"] = args.port
-    if args.ssl_certfile:
-        server_config_values["ssl_certfile"] = args.ssl_certfile
-    if args.ssl_keyfile:
-        server_config_values["ssl_keyfile"] = args.ssl_keyfile
     if args.auth_username:
         server_config_values["auth_username"] = args.auth_username
     if args.auth_password:
@@ -60,9 +52,6 @@ def main():
 
     server_config = ServerConfig(**server_config_values)
 
-    # Configure SSL
-    ssl_config = server_config.get_ssl_config()
-
     try:
         logger.debug("Starting ch-agent-zero entry point")
         logger.debug(f"Python path: {sys.path}")
@@ -70,8 +59,6 @@ def main():
 
         # Log server configuration
         logger.info(f"Starting server on {server_config.host}:{server_config.port}")
-        if ssl_config:
-            logger.info("SSL is enabled")
 
         auth_config = server_config.get_auth_config()
         if auth_config:
@@ -81,7 +68,6 @@ def main():
         run(
             host=server_config.host,
             port=server_config.port,
-            ssl_config=ssl_config,
             server_config=server_config,
         )
     except Exception as e:
