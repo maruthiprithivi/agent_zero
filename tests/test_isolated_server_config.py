@@ -1,11 +1,11 @@
-"""Isolated tests for server_config.py to avoid Prometheus registry conflicts."""
+"""Tests for server_config.py."""
 
 import os
 import tempfile
 from unittest.mock import patch
 
 
-# Import ServerConfig directly to avoid importing modules with Prometheus metrics
+# Import ServerConfig
 import sys
 
 sys.path.append("/Users/maruthi/casa/projects/agent_zero")
