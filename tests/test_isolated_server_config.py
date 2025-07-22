@@ -74,7 +74,7 @@ class TestIsolatedServerConfig:
 
     def test_get_ssl_config_complete(self):
         """Test that get_ssl_config returns a dict when SSL is fully configured."""
-        config = ServerConfig(ssl_certfile="/path/to/cert.pem", ssl_keyfile="/path/to/key.pem")
+        config = ServerConfig(ssl_certfile="/path/to/cert.pem", ssl_keyfile="/path/to/key.pem", ssl_enable=True)
         ssl_config = config.get_ssl_config()
         assert ssl_config is not None
         assert ssl_config["certfile"] == "/path/to/cert.pem"

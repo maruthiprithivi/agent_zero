@@ -157,7 +157,8 @@ class TestMain(unittest.TestCase):
         args, kwargs = self.mock_run.call_args
         server_config = kwargs["server_config"]
         self.assertEqual(server_config.cursor_mode, "agent")
-        self.assertEqual(server_config.cursor_transport, "websocket")
+        from agent_zero.server_config import TransportType
+        self.assertEqual(server_config.cursor_transport, TransportType.WEBSOCKET)
 
     def test_main_cursor_mode_invalid(self):
         """Test main with invalid Cursor IDE mode."""

@@ -68,7 +68,7 @@ from agent_zero.monitoring import (
     create_monitoring_views,
 )
 from agent_zero.utils import format_exception
-from agent_zero.server_config import ServerConfig
+from agent_zero.server_config import ServerConfig, DeploymentMode, TransportType, IDEType
 
 MCP_SERVER_NAME = "mcp-clickhouse"
 
@@ -1046,13 +1046,27 @@ def run(
     server_config: Optional[ServerConfig] = None,
 ):
     """Run the MCP server with the specified configuration.
+    
+    Supports multiple deployment modes and IDE integrations (2025 edition):
+    - Local: Traditional stdio transport for local IDEs
+    - Standalone: HTTP/WebSocket server for remote access
+    - Enterprise: Full-featured deployment with auth, metrics, etc.
 
     Args:
         host: Host to bind to
         port: Port to bind to
         ssl_config: SSL configuration dictionary
-        server_config: Server configuration instance
+        server_config: Enhanced server configuration instance
     """
+    # Use default server config if none provided
+    if server_config is None:
+        server_config = ServerConfig()
+    
+    # Check for standalone server mode
+    if server_config.deployment_mode == DeploymentMode.STANDALONE:
+        logger.info(f"Starting in standalone server mode")
+        return run_standalone_mode(server_config)
+    
     # Extract SSL arguments if provided
     ssl_args = {}
     if ssl_config:
@@ -1060,20 +1074,39 @@ def run(
             ssl_args["ssl_certfile"] = ssl_config["certfile"]
         if "keyfile" in ssl_config:
             ssl_args["ssl_keyfile"] = ssl_config["keyfile"]
+    
+    # Add SSL config from server_config
+    ssl_config_from_server = server_config.get_ssl_config()
+    if ssl_config_from_server:
+        ssl_args.update({
+            "ssl_certfile": ssl_config_from_server["certfile"],
+            "ssl_keyfile": ssl_config_from_server["keyfile"]
+        })
 
     logger.info(f"Starting MCP server on {host}:{port}")
+    logger.info(f"Deployment mode: {server_config.deployment_mode.value}")
+    
+    if server_config.ide_type:
+        logger.info(f"Optimized for IDE: {server_config.ide_type.value}")
+        optimal_transport = server_config.get_transport_for_ide()
+        logger.info(f"Using transport: {optimal_transport.value}")
 
     # Configure authentication if provided
-    auth_config = None
-    if server_config:
-        auth_config = server_config.get_auth_config()
-        if auth_config:
-            logger.info(f"Authentication enabled for user: {auth_config['username']}")
+    auth_config = server_config.get_auth_config()
+    if auth_config:
+        logger.info(f"Authentication enabled for user: {auth_config['username']}")
+    
+    oauth_config = server_config.get_oauth_config()
+    if oauth_config:
+        logger.info(f"OAuth 2.0 enabled for client: {oauth_config['client_id']}")
 
-        # Log Cursor IDE mode if configured
-        if server_config.cursor_mode:
-            logger.info(f"Configured for Cursor IDE in {server_config.cursor_mode} mode")
-            logger.info(f"Using {server_config.cursor_transport} transport for Cursor IDE")
+    # Log IDE-specific configuration
+    if server_config.cursor_mode:
+        logger.info(f"Cursor IDE mode: {server_config.cursor_mode}")
+        logger.info(f"Cursor transport: {server_config.cursor_transport.value}")
+    
+    if server_config.ide_type == IDEType.WINDSURF and server_config.windsurf_plugins_enabled:
+        logger.info("Windsurf plugin integration enabled")
 
     # Check if we're in a test environment by seeing if mcp has been patched
     # In tests, mcp is usually mocked and expecting host/port arguments
@@ -1086,26 +1119,23 @@ def run(
             # We're in a test with a mocked mcp
             logger.debug("Detected test environment")
             # For tests, directly use the mock but don't recurse into our own run function
-            if server_config and server_config.cursor_mode:
-                # In tests with Cursor mode, add the transport argument
-                transport = server_config.cursor_transport
-                return mcp.run(transport=transport, host=host, port=port, **ssl_args)
+            transport = determine_transport(server_config, host, port)
+            if transport != TransportType.STDIO:
+                return mcp.run(transport=transport.value, host=host, port=port, **ssl_args)
             else:
-                # Standard test case
                 return mcp.run(host=host, port=port, **ssl_args)
         else:
-            # We're in a real run
-            if server_config and server_config.cursor_mode:
-                # Use specified transport for Cursor IDE
-                transport = server_config.cursor_transport
-                logger.info(f"Using {transport} transport for Cursor IDE integration")
-                return _original_run(transport=transport, host=host, port=port, **ssl_args)
-            elif host != "127.0.0.1" or port != 8505:
-                # Non-default host/port, use SSE transport
-                return _original_run(transport="sse", host=host, port=port, **ssl_args)
-            else:
-                # Default settings, use default transport (stdio)
+            # We're in a real production run
+            transport = determine_transport(server_config, host, port)
+            
+            if transport == TransportType.STDIO:
+                # Default stdio transport
+                logger.info("Using stdio transport for local IDE integration")
                 return _original_run(**ssl_args)
+            else:
+                # Network-based transport (SSE, WebSocket, HTTP)
+                logger.info(f"Using {transport.value} transport for remote IDE integration")
+                return _original_run(transport=transport.value, host=host, port=port, **ssl_args)
     except RecursionError:
         # Emergency backup to prevent test failures
         logger.error("Recursion detected in run function, falling back to direct run")
@@ -1117,5 +1147,61 @@ def run(
             return {"success": True, "test": True}
 
 
-# Replace the original run method with our customized version
+def determine_transport(server_config: ServerConfig, host: str, port: int) -> TransportType:
+    """Determine the appropriate transport type based on configuration.
+    
+    Args:
+        server_config: Server configuration
+        host: Server host
+        port: Server port
+        
+    Returns:
+        The appropriate transport type
+    """
+    # If IDE type is specified, use IDE-specific transport
+    if server_config.ide_type:
+        return server_config.get_transport_for_ide()
+    
+    # If transport is explicitly set, use it
+    if server_config.transport != TransportType.STDIO:
+        return server_config.transport
+    
+    # For Cursor-specific configuration
+    if server_config.cursor_mode:
+        return server_config.cursor_transport
+    
+    # For non-default host/port, prefer SSE
+    if host != "127.0.0.1" or port != 8505:
+        return TransportType.SSE
+    
+    # Default to stdio for local development
+    return TransportType.STDIO
+
+
+def run_standalone_mode(server_config: ServerConfig):
+    """Run the server in standalone mode with HTTP/WebSocket support.
+    
+    Args:
+        server_config: Server configuration
+    """
+    try:
+        # Import asyncio and standalone server
+        import asyncio
+        from .standalone_server import run_standalone_server
+        
+        logger.info("Starting standalone MCP server with HTTP/WebSocket support")
+        
+        # Run the standalone server
+        asyncio.run(run_standalone_server(server_config))
+        
+    except ImportError as e:
+        logger.error(f"Failed to import required modules for standalone mode: {e}")
+        logger.error("Please install aiohttp and aiohttp-cors: pip install aiohttp aiohttp-cors")
+        raise
+    except Exception as e:
+        logger.error(f"Error running standalone server: {e}", exc_info=True)
+        raise
+
+
+# Replace the original run method with our enhanced version
 mcp.run = run

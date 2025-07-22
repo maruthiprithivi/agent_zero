@@ -1,0 +1,51 @@
+{
+  "deployment_mode": "standalone",
+  "server": {
+    "host": "0.0.0.0",
+    "port": 8505,
+    "transport": "sse"
+  },
+  "security": {
+    "ssl_enable": false,
+    "ssl_certfile": null,
+    "ssl_keyfile": null,
+    "auth_username": null,
+    "auth_password": null,
+    "oauth_enable": false,
+    "oauth_client_id": null,
+    "oauth_client_secret": null
+  },
+  "features": {
+    "enable_metrics": true,
+    "enable_health_check": true,
+    "rate_limit_enabled": true,
+    "rate_limit_requests": 100,
+    "enable_structured_output": true
+  },
+  "limits": {
+    "tool_limit": 100,
+    "resource_limit": 50
+  },
+  "ide_configs": {
+    "claude_code": {
+      "type": "sse",
+      "url": "http://localhost:8505/mcp/sse",
+      "headers": {}
+    },
+    "cursor": {
+      "transport": "sse",
+      "url": "http://localhost:8505/mcp/websocket"
+    },
+    "windsurf": {
+      "type": "sse",
+      "url": "http://localhost:8505/mcp/sse"
+    }
+  },
+  "endpoints": {
+    "mcp_http": "/mcp",
+    "mcp_websocket": "/mcp/websocket",
+    "mcp_sse": "/mcp/sse",
+    "health": "/health",
+    "metrics": "/metrics"
+  }
+}

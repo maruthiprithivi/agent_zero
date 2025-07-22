@@ -21,6 +21,7 @@ class TestStandaloneServer:
             port=9000,
             ssl_certfile="cert.pem",
             ssl_keyfile="key.pem",
+            ssl_enable=True,
             auth_username="admin",
             auth_password="secure_password",
         )

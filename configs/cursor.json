@@ -1,0 +1,31 @@
+{
+  "name": "agent-zero",
+  "description": "ClickHouse monitoring and analysis MCP server",
+  "command": "uv",
+  "args": [
+    "run",
+    "--with",
+    "ch-agent-zero",
+    "--python",
+    "3.13",
+    "ch-agent-zero",
+    "--ide-type",
+    "cursor",
+    "--cursor-mode",
+    "agent"
+  ],
+  "env": {
+    "CLICKHOUSE_HOST": "your-clickhouse-host",
+    "CLICKHOUSE_PORT": "8443",
+    "CLICKHOUSE_USER": "your-username",
+    "CLICKHOUSE_PASSWORD": "your-password",
+    "CLICKHOUSE_SECURE": "true",
+    "CLICKHOUSE_VERIFY": "true",
+    "CLICKHOUSE_CONNECT_TIMEOUT": "30",
+    "CLICKHOUSE_SEND_RECEIVE_TIMEOUT": "300",
+    "MCP_ENABLE_TRACING": "false",
+    "MCP_IDE_TYPE": "cursor",
+    "MCP_CURSOR_MODE": "agent",
+    "MCP_CURSOR_TRANSPORT": "sse"
+  }
+}
