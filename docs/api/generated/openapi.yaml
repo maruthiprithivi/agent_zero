@@ -1,0 +1,6 @@
+# OpenAPI Specification
+# Generated without PyYAML - install PyYAML for proper formatting
+openapi: 3.0.3
+info:
+  title: Agent Zero API
+  version: 2.1.0

@@ -16,10 +16,10 @@ on:
         default: 'full'
         type: choice
         options:
-        - full
-        - sast
-        - dependency
-        - container
+          - full
+          - sast
+          - dependency
+          - container
 
 env:
   PYTHONUNBUFFERED: 1

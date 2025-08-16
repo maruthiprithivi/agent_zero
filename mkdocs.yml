@@ -121,8 +121,8 @@ markdown_extensions:
   - pymdownx.caret
   - pymdownx.details
   - pymdownx.emoji:
-      emoji_generator: !!python/name:material.extensions.emoji.to_svg
-      emoji_index: !!python/name:material.extensions.emoji.twemoji
+      emoji_generator: materialx.emoji.to_svg
+      emoji_index: materialx.emoji.twemoji
   - pymdownx.highlight:
       anchor_linenums: true
       line_spans: __span
@@ -193,120 +193,120 @@ extra_javascript:
 # Navigation
 nav:
   - Home:
-    - index.md
-    - Overview: overview.md
-    - Features: features.md
-    - Architecture: architecture.md
-    - Changelog: changelog.md
+      - index.md
+      - Overview: overview.md
+      - Features: features.md
+      - Architecture: architecture.md
+      - Changelog: changelog.md
 
   - Getting Started:
-    - getting-started/index.md
-    - Installation: getting-started/installation.md
-    - Quick Start: getting-started/quickstart.md
-    - Configuration: getting-started/configuration.md
-    - IDE Setup: getting-started/ide-setup.md
-    - First Steps: getting-started/first-steps.md
+      - getting-started/index.md
+      - Installation: getting-started/installation.md
+      - Quick Start: getting-started/quickstart.md
+      - Configuration: getting-started/configuration.md
+      - IDE Setup: getting-started/ide-setup.md
+      - First Steps: getting-started/first-steps.md
 
   - User Guide:
-    - user-guide/index.md
-    - Database Operations: user-guide/database-operations.md
-    - Performance Analysis: user-guide/performance-analysis.md
-    - AI-Powered Diagnostics: user-guide/ai-diagnostics.md
-    - ProfileEvents Analysis: user-guide/profile-events.md
-    - Storage Analytics: user-guide/storage-analytics.md
-    - Error Analysis: user-guide/error-analysis.md
-    - Monitoring Setup: user-guide/monitoring.md
-    - Best Practices: user-guide/best-practices.md
+      - user-guide/index.md
+      - Database Operations: user-guide/database-operations.md
+      - Performance Analysis: user-guide/performance-analysis.md
+      - AI-Powered Diagnostics: user-guide/ai-diagnostics.md
+      - ProfileEvents Analysis: user-guide/profile-events.md
+      - Storage Analytics: user-guide/storage-analytics.md
+      - Error Analysis: user-guide/error-analysis.md
+      - Monitoring Setup: user-guide/monitoring.md
+      - Best Practices: user-guide/best-practices.md
 
   - Deployment:
-    - deployment/index.md
-    - Docker: deployment/docker.md
-    - Kubernetes: deployment/kubernetes.md
-    - Cloud Providers:
-      - deployment/cloud/aws.md
-      - deployment/cloud/azure.md
-      - deployment/cloud/gcp.md
-    - Production Setup: deployment/production.md
-    - Scaling: deployment/scaling.md
-    - Security: deployment/security.md
+      - deployment/index.md
+      - Docker: deployment/docker.md
+      - Kubernetes: deployment/kubernetes.md
+      - Cloud Providers:
+          - deployment/cloud/aws.md
+          - deployment/cloud/azure.md
+          - deployment/cloud/gcp.md
+      - Production Setup: deployment/production.md
+      - Scaling: deployment/scaling.md
+      - Security: deployment/security.md
 
   - API Reference:
-    - api/index.md
-    - OpenAPI Specification: api/openapi.md
-    - Authentication: api/authentication.md
-    - Rate Limiting: api/rate-limiting.md
-    - Error Handling: api/error-handling.md
-    - MCP Tools:
-      - api/mcp-tools/index.md
-      - Database Operations: api/mcp-tools/database-operations.md
-      - Performance Analysis: api/mcp-tools/performance-analysis.md
-      - AI Diagnostics: api/mcp-tools/ai-diagnostics.md
-      - ProfileEvents: api/mcp-tools/profile-events.md
-      - Storage Analytics: api/mcp-tools/storage-analytics.md
-    - SDK Reference:
-      - api/sdk/python.md
-      - api/sdk/javascript.md
-      - api/sdk/examples.md
+      - api/index.md
+      - OpenAPI Specification: api/openapi.md
+      - Authentication: api/authentication.md
+      - Rate Limiting: api/rate-limiting.md
+      - Error Handling: api/error-handling.md
+      - MCP Tools:
+          - api/mcp-tools/index.md
+          - Database Operations: api/mcp-tools/database-operations.md
+          - Performance Analysis: api/mcp-tools/performance-analysis.md
+          - AI Diagnostics: api/mcp-tools/ai-diagnostics.md
+          - ProfileEvents: api/mcp-tools/profile-events.md
+          - Storage Analytics: api/mcp-tools/storage-analytics.md
+      - SDK Reference:
+          - api/sdk/python.md
+          - api/sdk/javascript.md
+          - api/sdk/examples.md
 
   - Tutorials:
-    - tutorials/index.md
-    - Basic Setup: tutorials/basic-setup.md
-    - Performance Monitoring: tutorials/performance-monitoring.md
-    - AI Bottleneck Detection: tutorials/ai-bottleneck-detection.md
-    - Custom Analytics: tutorials/custom-analytics.md
-    - Integration Examples: tutorials/integration-examples.md
-    - Production Deployment: tutorials/production-deployment.md
-    - Troubleshooting: tutorials/troubleshooting.md
+      - tutorials/index.md
+      - Basic Setup: tutorials/basic-setup.md
+      - Performance Monitoring: tutorials/performance-monitoring.md
+      - AI Bottleneck Detection: tutorials/ai-bottleneck-detection.md
+      - Custom Analytics: tutorials/custom-analytics.md
+      - Integration Examples: tutorials/integration-examples.md
+      - Production Deployment: tutorials/production-deployment.md
+      - Troubleshooting: tutorials/troubleshooting.md
 
   - Developer Guide:
-    - development/index.md
-    - Contributing: development/contributing.md
-    - Development Setup: development/setup.md
-    - Architecture Deep Dive: development/architecture.md
-    - Code Style: development/code-style.md
-    - Testing: development/testing.md
-    - Documentation: development/documentation.md
-    - Release Process: development/release-process.md
-    - Extension Development: development/extensions.md
+      - development/index.md
+      - Contributing: development/contributing.md
+      - Development Setup: development/setup.md
+      - Architecture Deep Dive: development/architecture.md
+      - Code Style: development/code-style.md
+      - Testing: development/testing.md
+      - Documentation: development/documentation.md
+      - Release Process: development/release-process.md
+      - Extension Development: development/extensions.md
 
   - Operations:
-    - operations/index.md
-    - Production Operations: operations/production-operations.md
-    - Monitoring: operations/monitoring.md
-    - Logging: operations/logging.md
-    - Backup & Recovery: operations/backup-recovery.md
-    - Performance Tuning: operations/performance-tuning.md
-    - Troubleshooting: operations/troubleshooting.md
-    - Runbooks: operations/runbooks.md
-    - Incident Response: operations/incident-response.md
+      - operations/index.md
+      - Production Operations: operations/production-operations.md
+      - Monitoring: operations/monitoring.md
+      - Logging: operations/logging.md
+      - Backup & Recovery: operations/backup-recovery.md
+      - Performance Tuning: operations/performance-tuning.md
+      - Troubleshooting: operations/troubleshooting.md
+      - Runbooks: operations/runbooks.md
+      - Incident Response: operations/incident-response.md
 
   - Examples:
-    - examples/index.md
-    - Basic Usage: examples/basic-usage.md
-    - Advanced Scenarios: examples/advanced-scenarios.md
-    - Production Examples: examples/production-examples.md
-    - Integration Patterns: examples/integration-patterns.md
-    - Code Samples: examples/code-samples.md
+      - examples/index.md
+      - Basic Usage: examples/basic-usage.md
+      - Advanced Scenarios: examples/advanced-scenarios.md
+      - Production Examples: examples/production-examples.md
+      - Integration Patterns: examples/integration-patterns.md
+      - Code Samples: examples/code-samples.md
 
   - FAQ:
-    - faq/index.md
-    - General: faq/general.md
-    - Installation: faq/installation.md
-    - Configuration: faq/configuration.md
-    - Performance: faq/performance.md
-    - Troubleshooting: faq/troubleshooting.md
+      - faq/index.md
+      - General: faq/general.md
+      - Installation: faq/installation.md
+      - Configuration: faq/configuration.md
+      - Performance: faq/performance.md
+      - Troubleshooting: faq/troubleshooting.md
 
   - Support:
-    - support/index.md
-    - Community: support/community.md
-    - Bug Reports: support/bug-reports.md
-    - Feature Requests: support/feature-requests.md
-    - Professional Support: support/professional-support.md
+      - support/index.md
+      - Community: support/community.md
+      - Bug Reports: support/bug-reports.md
+      - Feature Requests: support/feature-requests.md
+      - Professional Support: support/professional-support.md
 
   - Legal:
-    - legal/license.md
-    - legal/privacy.md
-    - legal/terms.md
+      - legal/license.md
+      - legal/privacy.md
+      - legal/terms.md
     - legal/security.md
 
 # Validation

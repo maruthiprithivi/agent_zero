@@ -581,32 +581,32 @@ jobs:
               body: comment
             });
 
-# Summary job
-docs-ci-summary:
-  name: Documentation CI Summary
-  runs-on: ubuntu-latest
-  needs: [validate, build, test-deployment, deploy-staging, deploy-production, quality-metrics]
-  if: always()
+  # Summary job
+  docs-ci-summary:
+    name: Documentation CI Summary
+    runs-on: ubuntu-latest
+    needs: [validate, build, test-deployment, deploy-staging, deploy-production, quality-metrics]
+    if: always()
 
-  steps:
-    - name: Generate summary
-      run: |
-        echo "## 📚 Documentation CI/CD Summary" >> $GITHUB_STEP_SUMMARY
-        echo "" >> $GITHUB_STEP_SUMMARY
-        echo "| Job | Status |" >> $GITHUB_STEP_SUMMARY
-        echo "|-----|--------|" >> $GITHUB_STEP_SUMMARY
-        echo "| Validation | ${{ needs.validate.result }} |" >> $GITHUB_STEP_SUMMARY
-        echo "| Build | ${{ needs.build.result }} |" >> $GITHUB_STEP_SUMMARY
-        echo "| Test Deployment | ${{ needs.test-deployment.result }} |" >> $GITHUB_STEP_SUMMARY
-        echo "| Deploy Staging | ${{ needs.deploy-staging.result || 'skipped' }} |" >> $GITHUB_STEP_SUMMARY
-        echo "| Deploy Production | ${{ needs.deploy-production.result || 'skipped' }} |" >> $GITHUB_STEP_SUMMARY
-        echo "| Quality Metrics | ${{ needs.quality-metrics.result }} |" >> $GITHUB_STEP_SUMMARY
-        echo "" >> $GITHUB_STEP_SUMMARY
+    steps:
+      - name: Generate summary
+        run: |
+          echo "## 📚 Documentation CI/CD Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Job | Status |" >> $GITHUB_STEP_SUMMARY
+          echo "|-----|--------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Validation | ${{ needs.validate.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Build | ${{ needs.build.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Test Deployment | ${{ needs.test-deployment.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Deploy Staging | ${{ needs.deploy-staging.result || 'skipped' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Deploy Production | ${{ needs.deploy-production.result || 'skipped' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Quality Metrics | ${{ needs.quality-metrics.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
 
-        if [[ "${{ needs.deploy-production.result }}" == "success" ]]; then
-          echo "🚀 **Production deployment successful!**" >> $GITHUB_STEP_SUMMARY
-          echo "📖 Documentation available at: [${{ env.DOCS_SITE_URL }}](${{ env.DOCS_SITE_URL }})" >> $GITHUB_STEP_SUMMARY
-        elif [[ "${{ needs.deploy-staging.result }}" == "success" ]]; then
-          echo "🔧 **Staging deployment successful!**" >> $GITHUB_STEP_SUMMARY
-          echo "📖 Staging documentation available at: [${{ env.STAGING_SITE_URL }}](${{ env.STAGING_SITE_URL }})" >> $GITHUB_STEP_SUMMARY
-        fi
+          if [[ "${{ needs.deploy-production.result }}" == "success" ]]; then
+            echo "🚀 **Production deployment successful!**" >> $GITHUB_STEP_SUMMARY
+            echo "📖 Documentation available at: [${{ env.DOCS_SITE_URL }}](${{ env.DOCS_SITE_URL }})" >> $GITHUB_STEP_SUMMARY
+          elif [[ "${{ needs.deploy-staging.result }}" == "success" ]]; then
+            echo "🔧 **Staging deployment successful!**" >> $GITHUB_STEP_SUMMARY
+            echo "📖 Staging documentation available at: [${{ env.STAGING_SITE_URL }}](${{ env.STAGING_SITE_URL }})" >> $GITHUB_STEP_SUMMARY
+          fi

@@ -1,0 +1,303 @@
+[
+  {
+    "name": "standalone_server",
+    "path": "agent_zero/standalone_server.py",
+    "functions": [],
+    "classes": [],
+    "docstring": "Standalone MCP server with HTTP/WebSocket support.\n\nThis module provides a complete HTTP/WebSocket implementation of the MCP\nprotocol, supporting multiple transport methods, authentication, rate limiting,\nand comprehensive health monitoring."
+  },
+  {
+    "name": "mcp_tracer",
+    "path": "agent_zero/mcp_tracer.py",
+    "functions": [],
+    "classes": [],
+    "docstring": "MCP server tracing utilities.\n\nThis module provides functionality for tracing and logging communications in the MCP server."
+  },
+  {
+    "name": "database_logger",
+    "path": "agent_zero/database_logger.py",
+    "functions": [],
+    "classes": [],
+    "docstring": "Database query logging and monitoring utilities.\n\nThis module provides functionality for logging database queries, their execution times,\nerrors, and warnings."
+  },
+  {
+    "name": "server_config",
+    "path": "agent_zero/server_config.py",
+    "functions": [],
+    "classes": [],
+    "docstring": "DEPRECATED: Server configuration for the MCP ClickHouse server.\n\nDEPRECATED: This module is deprecated in favor of agent_zero.config.UnifiedConfig.\nIt will be removed in a future version. Please use the unified configuration system."
+  },
+  {
+    "name": "mcp",
+    "path": "agent_zero/mcp.py",
+    "functions": [],
+    "classes": [],
+    "docstring": "Module to expose the MCP app object for ASGI loading."
+  },
+  {
+    "name": "utils",
+    "path": "agent_zero/utils.py",
+    "functions": [],
+    "classes": [],
+    "docstring": "Utility functions for the ClickHouse MCP server.\n\nThis module provides common utility functions used across the MCP server components."
+  },
+  {
+    "name": "mcp_env",
+    "path": "agent_zero/mcp_env.py",
+    "functions": [],
+    "classes": [],
+    "docstring": "Environment configuration for the MCP ClickHouse server.\n\nDEPRECATED: This module is deprecated in favor of agent_zero.config.UnifiedConfig.\nIt provides backward compatibility but will be removed in a future version."
+  },
+  {
+    "name": "modern_python",
+    "path": "agent_zero/modern_python.py",
+    "functions": [],
+    "classes": [],
+    "docstring": "Modern Python 3.13+ Features Implementation.\n\nThis module showcases and implements modern Python features for Agent Zero:\n- Pattern matching with guard expressions (3.10+ enhanced in 3.14)\n- Free-threading mode support (3.13+ no-GIL)\n- JIT compiler optimizations\n- Enhanced type system with TypedDict improvements\n- Modern async/await patterns\n- Structural pattern matching for configuration"
+  },
+  {
+    "name": "main",
+    "path": "agent_zero/main.py",
+    "functions": [],
+    "classes": [],
+    "docstring": "Entry point for the ClickHouse Monitoring MCP Server.\n\nSupports multiple deployment modes and IDE integrations (2025 edition):\n- Local development and testing\n- Standalone server deployment\n- Enterprise deployment with advanced features\n- IDE integrations: Claude Desktop, Claude Code, Cursor, Windsurf, VS Code"
+  },
+  {
+    "name": "mcp_server",
+    "path": "agent_zero/mcp_server.py",
+    "functions": [],
+    "classes": [],
+    "docstring": "DEPRECATED: Legacy MCP server module for Agent Zero.\n\nDEPRECATED: This module is deprecated in favor of the modular server structure\nin agent_zero.server. It provides backward compatibility but will be removed\nin a future version.\n\nUse agent_zero.server.run instead of this module."
+  },
+  {
+    "name": "mcp_2025",
+    "path": "agent_zero/transport/mcp_2025.py",
+    "functions": [],
+    "classes": [],
+    "docstring": "MCP 2025 Specification Compliant Transport Implementation.\n\nThis module implements the MCP 2025-03-26 specification features:\n- Streamable HTTP Transport\n- OAuth 2.1 Authorization Framework\n- JSON-RPC Batching\n- Enhanced Content Types (audio support)\n- Tool Annotations\n- Progress Notifications with messages\n- Completions Capability\n- Client Capability Negotiation"
+  },
+  {
+    "name": "cloud_native",
+    "path": "agent_zero/enterprise/cloud_native.py",
+    "functions": [],
+    "classes": [],
+    "docstring": "Cloud-Native and Enterprise Features for Agent Zero.\n\nThis module implements advanced cloud-native capabilities for 2025:\n- Kubernetes operators and custom resources\n- Service mesh integration (Istio, Linkerd)\n- Advanced observability with eBPF\n- Multi-cloud deployment support\n- Serverless computing integration\n- Edge computing capabilities\n- Advanced load balancing and traffic management"
+  },
+  {
+    "name": "security_compliance",
+    "path": "agent_zero/enterprise/security_compliance.py",
+    "functions": [],
+    "classes": [],
+    "docstring": "Zero Trust Security and Compliance Framework for Agent Zero.\n\nThis module implements advanced security and compliance features for 2025:\n- Zero Trust security model implementation\n- Compliance frameworks (SOC2, GDPR, HIPAA, PCI-DSS)\n- Advanced threat detection and prevention\n- Supply chain security (SLSA, SBOM)\n- Certificate management and rotation\n- Audit logging and forensics\n- Data encryption and key management"
+  },
+  {
+    "name": "unified",
+    "path": "agent_zero/config/unified.py",
+    "functions": [],
+    "classes": [],
+    "docstring": "Unified configuration management for Agent Zero.\n\nThis module consolidates all configuration management into a single, coherent system\nfollowing the development standards defined in CLAUDE.md."
+  },
+  {
+    "name": "performance_predictor",
+    "path": "agent_zero/ai_ml/performance_predictor.py",
+    "functions": [],
+    "classes": [],
+    "docstring": "AI/ML Performance Prediction and Optimization for Agent Zero.\n\nThis module provides advanced AI/ML capabilities for predicting and optimizing\nClickHouse performance using modern machine learning techniques:\n\n- Query performance prediction\n- Resource usage forecasting\n- Anomaly detection for system metrics\n- Automated optimization recommendations\n- Vector database integration for RAG systems\n- Real-time model inference"
+  },
+  {
+    "name": "logging",
+    "path": "agent_zero/server/logging.py",
+    "functions": [],
+    "classes": [],
+    "docstring": "Production-grade structured logging for Agent Zero MCP Server.\n\nThis module implements comprehensive structured logging following 2025 best practices\nwith correlation IDs, contextual information, and proper log aggregation support."
+  },
+  {
+    "name": "metrics",
+    "path": "agent_zero/server/metrics.py",
+    "functions": [],
+    "classes": [],
+    "docstring": "Production-grade Prometheus metrics for Agent Zero MCP Server.\n\nThis module implements comprehensive application metrics following 2025 best practices\nfor observability, including custom ClickHouse metrics, request tracking, and\nperformance monitoring."
+  },
+  {
+    "name": "tracing",
+    "path": "agent_zero/server/tracing.py",
+    "functions": [],
+    "classes": [],
+    "docstring": "Production-grade OpenTelemetry distributed tracing for Agent Zero MCP Server.\n\nThis module implements comprehensive distributed tracing following 2025 best practices\nwith OpenTelemetry integration, custom instrumentation, and trace correlation."
+  },
+  {
+    "name": "backup",
+    "path": "agent_zero/server/backup.py",
+    "functions": [],
+    "classes": [],
+    "docstring": "Production-grade backup and disaster recovery for Agent Zero MCP Server.\n\nThis module implements comprehensive backup and disaster recovery capabilities\nincluding configuration backup, data export/import, failover strategies, and\nautomated recovery procedures following 2025 best practices."
+  },
+  {
+    "name": "query",
+    "path": "agent_zero/server/query.py",
+    "functions": [],
+    "classes": [],
+    "docstring": "Query execution utilities for Agent Zero MCP server.\n\nThis module handles safe query execution with proper logging and error handling.\nAdds helpers for structured results and bounded executions while preserving\nlegacy behavior by default."
+  },
+  {
+    "name": "health",
+    "path": "agent_zero/server/health.py",
+    "functions": [],
+    "classes": [],
+    "docstring": "Production-grade health check system for Agent Zero MCP Server.\n\nThis module implements comprehensive health checks following 2025 best practices\nfor production monitoring, including dependency health, readiness checks, and\ndetailed status reporting."
+  },
+  {
+    "name": "client",
+    "path": "agent_zero/server/client.py",
+    "functions": [],
+    "classes": [],
+    "docstring": "ClickHouse client management for Agent Zero MCP server.\n\nThis module handles ClickHouse client creation and connection management\nwith proper error handling and logging. It supports an optional cached\nclient to avoid connection churn under load."
+  },
+  {
+    "name": "tools",
+    "path": "agent_zero/server/tools.py",
+    "functions": [],
+    "classes": [],
+    "docstring": "MCP tool registration for Agent Zero.\n\nThis module contains all MCP tool definitions organized by category,\nfollowing the development standards defined in CLAUDE.md."
+  },
+  {
+    "name": "core",
+    "path": "agent_zero/server/core.py",
+    "functions": [],
+    "classes": [],
+    "docstring": "Core MCP server implementation for Agent Zero.\n\nThis module contains the main server logic, transport handling, and deployment\nmode management following the development standards in CLAUDE.md."
+  },
+  {
+    "name": "errors",
+    "path": "agent_zero/server/errors.py",
+    "functions": [],
+    "classes": [],
+    "docstring": "Custom error types for MCP tools.\n\nThese errors provide structured context for downstream tooling while\nremaining optional (gated by configuration to preserve legacy behavior)."
+  },
+  {
+    "name": "performance",
+    "path": "agent_zero/server/performance.py",
+    "functions": [],
+    "classes": [],
+    "docstring": "Production-grade performance monitoring and resource management for Agent Zero MCP Server.\n\nThis module implements comprehensive performance monitoring, resource management,\nconnection pooling, caching, and auto-scaling recommendations following 2025 best practices."
+  },
+  {
+    "name": "production",
+    "path": "agent_zero/server/production.py",
+    "functions": [],
+    "classes": [],
+    "docstring": "Production-grade server enhancements for Agent Zero MCP Server.\n\nThis module integrates all production operations capabilities including health checks,\nmetrics, logging, tracing, performance monitoring, and backup systems into a unified\nproduction-ready server implementation."
+  },
+  {
+    "name": "bottleneck_detector",
+    "path": "agent_zero/ai_diagnostics/bottleneck_detector.py",
+    "functions": [],
+    "classes": [],
+    "docstring": "AI-powered bottleneck detection engine for ClickHouse performance analysis.\n\nThis module provides sophisticated machine learning capabilities to automatically identify\nperformance bottlenecks, predict performance degradation, and provide intelligent\nrecommendations. It combines data from all diagnostic modules to provide holistic\nsystem health assessment and actionable insights."
+  },
+  {
+    "name": "performance_advisor",
+    "path": "agent_zero/ai_diagnostics/performance_advisor.py",
+    "functions": [],
+    "classes": [],
+    "docstring": "AI-powered performance advisor engine for ClickHouse optimization recommendations.\n\nThis module provides comprehensive machine learning-based performance optimization\nrecommendations for ClickHouse deployments. It analyzes system performance data,\nidentifies optimization opportunities, and provides actionable recommendations\nwith impact predictions and implementation complexity assessments.\n\nThe performance advisor complements the bottleneck detector by not just identifying\nproblems, but providing clear, prioritized solutions based on AI analysis of\nactual performance data."
+  },
+  {
+    "name": "pattern_analyzer",
+    "path": "agent_zero/ai_diagnostics/pattern_analyzer.py",
+    "functions": [],
+    "classes": [],
+    "docstring": "Advanced pattern analysis and anomaly detection system for ClickHouse ProfileEvents.\n\nThis module provides comprehensive statistical and machine learning capabilities for:\n- Baseline establishment from historical ProfileEvents data\n- Multi-layered anomaly detection using statistical methods\n- Long-term performance trend identification and forecasting\n- Correlation analysis between different ProfileEvents\n- Seasonal pattern recognition and change point detection\n- Pattern matching for recurring performance issues\n\nThe pattern analyzer serves as the statistical foundation for all AI-powered features,\nenabling intelligent trend analysis, anomaly detection, and pattern recognition."
+  },
+  {
+    "name": "storage_cloud_diagnostics",
+    "path": "agent_zero/monitoring/storage_cloud_diagnostics.py",
+    "functions": [],
+    "classes": [],
+    "docstring": "Storage and cloud diagnostics suite for ClickHouse.\n\nThis module provides comprehensive analysis of cloud storage operations, compression efficiency,\nand data integrity for ClickHouse deployments using S3, Azure, or other cloud storage backends.\nIt includes specialized analyzers for different aspects of storage performance and provides\nactionable optimization recommendations for cost, performance, and reliability."
+  },
+  {
+    "name": "hardware_diagnostics",
+    "path": "agent_zero/monitoring/hardware_diagnostics.py",
+    "functions": [],
+    "classes": [],
+    "docstring": "Hardware performance diagnostics suite for ClickHouse.\n\nThis module provides comprehensive analysis of hardware performance characteristics\nincluding CPU efficiency, memory management, and thread pool operations using\nClickHouse ProfileEvents. It delivers deep insights into low-level system performance,\nidentifies hardware bottlenecks, and provides optimization recommendations for\nmaximizing ClickHouse performance on modern multi-core systems."
+  },
+  {
+    "name": "resource_usage",
+    "path": "agent_zero/monitoring/resource_usage.py",
+    "functions": [],
+    "classes": [],
+    "docstring": "Resource usage monitoring tools for ClickHouse.\n\nThis module provides tools for monitoring resource usage, including memory, CPU, and server sizing."
+  },
+  {
+    "name": "performance_diagnostics",
+    "path": "agent_zero/monitoring/performance_diagnostics.py",
+    "functions": [],
+    "classes": [],
+    "docstring": "Performance diagnostics suite for ClickHouse.\n\nThis module provides comprehensive performance analysis capabilities for ClickHouse,\nbuilding on the ProfileEvents core framework to deliver deep insights into query execution,\nI/O operations, and cache performance. It includes specialized analyzers for different\naspects of performance and provides actionable optimization recommendations."
+  },
+  {
+    "name": "query_performance",
+    "path": "agent_zero/monitoring/query_performance.py",
+    "functions": [],
+    "classes": [],
+    "docstring": "Query performance monitoring tools for ClickHouse.\n\nThis module provides tools for monitoring query performance metrics in a ClickHouse cluster."
+  },
+  {
+    "name": "utility",
+    "path": "agent_zero/monitoring/utility.py",
+    "functions": [],
+    "classes": [],
+    "docstring": "Utility tools for ClickHouse database administration.\n\nThis module provides utility functions for database administration tasks."
+  },
+  {
+    "name": "error_analysis",
+    "path": "agent_zero/monitoring/error_analysis.py",
+    "functions": [],
+    "classes": [],
+    "docstring": "Error analysis tools for ClickHouse.\n\nThis module provides tools for monitoring and analyzing errors and exceptions\nin a ClickHouse database."
+  },
+  {
+    "name": "profile_events_core",
+    "path": "agent_zero/monitoring/profile_events_core.py",
+    "functions": [],
+    "classes": [],
+    "docstring": "ProfileEvents core framework for ClickHouse monitoring.\n\nThis module provides a comprehensive framework for analyzing ClickHouse ProfileEvents,\nincluding categorization, aggregation, comparison, and anomaly detection capabilities.\nIt serves as the foundation for all ProfileEvents-based analysis and troubleshooting."
+  },
+  {
+    "name": "table_statistics",
+    "path": "agent_zero/monitoring/table_statistics.py",
+    "functions": [],
+    "classes": [],
+    "docstring": "Table statistics monitoring tools for ClickHouse.\n\nThis module provides tools for monitoring table statistics in a ClickHouse cluster."
+  },
+  {
+    "name": "insert_operations",
+    "path": "agent_zero/monitoring/insert_operations.py",
+    "functions": [],
+    "classes": [],
+    "docstring": "Insert operations monitoring tools for ClickHouse.\n\nThis module provides tools for monitoring insert operations in a ClickHouse cluster."
+  },
+  {
+    "name": "system_components",
+    "path": "agent_zero/monitoring/system_components.py",
+    "functions": [],
+    "classes": [],
+    "docstring": "System components monitoring tools for ClickHouse.\n\nThis module provides tools for monitoring specific system components in a ClickHouse database,\nsuch as materialized views, blob storage, and S3 queues."
+  },
+  {
+    "name": "parts_merges",
+    "path": "agent_zero/monitoring/parts_merges.py",
+    "functions": [],
+    "classes": [],
+    "docstring": "Parts and merges monitoring tools for ClickHouse.\n\nThis module provides tools for monitoring table parts, merges, and related operations\nin a ClickHouse database."
+  },
+  {
+    "name": "scalability",
+    "path": "agent_zero/performance/scalability.py",
+    "functions": [],
+    "classes": [],
+    "docstring": "Performance and Scalability Enhancements for Agent Zero.\n\nThis module provides advanced performance and scalability features:\n- Advanced caching strategies (Redis Cluster, distributed cache)\n- Serverless and edge computing support\n- Advanced load balancing and traffic management\n- Real-time analytics and streaming capabilities\n- Connection pooling and circuit breakers\n- Auto-scaling and performance optimization"
+  }
+]
