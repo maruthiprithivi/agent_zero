@@ -309,9 +309,9 @@ class BackupManager:
 
         # Start background tasks
         if self.config.enabled:
-            asyncio.create_task(self._scheduled_backup_task())
+            self._backup_task = asyncio.create_task(self._scheduled_backup_task())
             if self.config.auto_cleanup:
-                asyncio.create_task(self._cleanup_task())
+                self._cleanup_task = asyncio.create_task(self._cleanup_task())
 
     def _load_backup_metadata(self) -> None:
         """Load existing backup metadata from disk."""
@@ -319,7 +319,7 @@ class BackupManager:
 
         if metadata_file.exists():
             try:
-                with open(metadata_file) as f:
+                with metadata_file.open() as f:
                     data = json.load(f)
 
                 for backup_data in data.get("backups", []):
@@ -358,7 +358,7 @@ class BackupManager:
                 "last_updated": datetime.now().isoformat(),
             }
 
-            with open(metadata_file, "w") as f:
+            with metadata_file.open("w") as f:
                 json.dump(data, f, indent=2)
 
         except Exception as e:
@@ -389,7 +389,11 @@ class BackupManager:
         self.active_backups[backup_id] = metadata
 
         # Start backup process
-        asyncio.create_task(self._perform_backup(metadata))
+        backup_task = asyncio.create_task(self._perform_backup(metadata))
+        # Store task reference to prevent garbage collection
+        self._active_tasks = getattr(self, '_active_tasks', set())
+        self._active_tasks.add(backup_task)
+        backup_task.add_done_callback(self._active_tasks.discard)
 
         logger.info(f"Started backup {backup_id} of type {backup_type.value}")
         return backup_id
@@ -466,7 +470,7 @@ class BackupManager:
 
             # Create metadata file
             metadata_file = config_dir / "backup_info.json"
-            with open(metadata_file, "w") as f:
+            with metadata_file.open("w") as f:
                 json.dump(
                     {
                         "backup_id": metadata.backup_id,
@@ -513,7 +517,7 @@ class BackupManager:
 
             # Export database schema
             schema_file = export_dir / "schema.sql"
-            with open(schema_file, "w") as f:
+            with schema_file.open("w") as f:
                 # Export table schemas
                 tables_result = client.query("SHOW TABLES").result_rows
                 for (table_name,) in tables_result:
@@ -534,7 +538,7 @@ class BackupManager:
                     ).result_rows
 
                     sample_file = data_dir / f"{table_name}.json"
-                    with open(sample_file, "w") as f:
+                    with sample_file.open("w") as f:
                         json.dump(
                             {
                                 "table": table_name,
@@ -603,7 +607,7 @@ class BackupManager:
 
             # Create full backup manifest
             manifest_file = backup_root / "backup_manifest.json"
-            with open(manifest_file, "w") as f:
+            with manifest_file.open("w") as f:
                 json.dump(
                     {
                         "backup_id": metadata.backup_id,
@@ -641,7 +645,7 @@ class BackupManager:
         import hashlib
 
         sha256_hash = hashlib.sha256()
-        with open(file_path, "rb") as f:
+        with file_path.open("rb") as f:
             for chunk in iter(lambda: f.read(4096), b""):
                 sha256_hash.update(chunk)
 
@@ -681,10 +685,9 @@ class BackupManager:
                 logger.info(f"Created pre-restore backup: {pre_restore_id}")
 
             # Verify backup integrity
-            if config.verify_integrity:
-                if not await self._verify_backup_integrity(backup_metadata):
-                    logger.error(f"Backup integrity verification failed for {config.backup_id}")
-                    return False
+            if config.verify_integrity and not await self._verify_backup_integrity(backup_metadata):
+                logger.error(f"Backup integrity verification failed for {config.backup_id}")
+                return False
 
             # Perform restore
             success = await self._perform_restore(backup_metadata, config)
@@ -834,7 +837,7 @@ class BackupManager:
                 logger.error("Backup manifest not found")
                 return False
 
-            with open(manifest_file) as f:
+            with manifest_file.open() as f:
                 manifest = json.load(f)
 
             # Restore components

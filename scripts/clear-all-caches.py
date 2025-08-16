@@ -7,6 +7,7 @@ or CI/CD pipeline execution. Useful for troubleshooting dependency resolution
 issues or stale cache problems.
 """
 
+import contextlib
 import shutil
 import subprocess
 import sys
@@ -64,16 +65,12 @@ def clear_python_cache():
     pyc_files = list(Path().rglob("*.pyc"))
 
     for cache_dir in pycache_dirs:
-        try:
+        with contextlib.suppress(Exception):
             shutil.rmtree(cache_dir)
-        except Exception:
-            pass
 
     for pyc_file in pyc_files:
-        try:
+        with contextlib.suppress(Exception):
             pyc_file.unlink()
-        except Exception:
-            pass
 
     total_cleared = len(pycache_dirs) + len(pyc_files)
     if total_cleared > 0:

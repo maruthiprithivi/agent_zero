@@ -7,6 +7,7 @@ they reach GitHub Actions. It tests multiple Python versions, dependencies,
 and clears caches as needed.
 """
 
+import contextlib
 import os
 import shutil
 import subprocess
@@ -50,10 +51,8 @@ def clear_caches():
     # Clear Python cache
     pycache_dirs = list(Path().rglob("__pycache__"))
     for cache_dir in pycache_dirs:
-        try:
+        with contextlib.suppress(Exception):
             shutil.rmtree(cache_dir)
-        except Exception:
-            pass
 
     if pycache_dirs:
         print(f"CLEARED: {len(pycache_dirs)} __pycache__ directories")
@@ -250,10 +249,9 @@ def main():
             continue
 
         # Test installation (optional)
-        if not skip_install:
-            if not test_installation(python_cmd):
-                all_passed = False
-                continue
+        if not skip_install and not test_installation(python_cmd):
+            all_passed = False
+            continue
 
     # Run multi-Python compatibility test
     print(f"\n{'-' * 30}")
