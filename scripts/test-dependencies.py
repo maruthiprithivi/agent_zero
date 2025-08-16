@@ -54,8 +54,11 @@ def test_dependency_resolution():
         "clickhouse-connect>=0.8.18,<1.0",
         "mcp>=1.0.0,<2.0",
         "python-dotenv>=1.0.0,<2.0",
+        "python-oauth2>=1.1.1,<2.0",
         "cryptography>=43.0.0",
+        "redis>=5.0.0",
         "kubernetes>=30.1.0",
+        "opentelemetry-api>=1.27.0,<2.0",
     ]
 
     print("\n🔍 Testing individual key dependencies...")
