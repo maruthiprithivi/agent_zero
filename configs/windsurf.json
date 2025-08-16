@@ -16,17 +16,17 @@
         "--windsurf-plugins"
       ],
       "env": {
-        "CLICKHOUSE_HOST": "your-clickhouse-host",
-        "CLICKHOUSE_PORT": "8443",
-        "CLICKHOUSE_USER": "your-username",
-        "CLICKHOUSE_PASSWORD": "your-password",
-        "CLICKHOUSE_SECURE": "true",
-        "CLICKHOUSE_VERIFY": "true",
-        "CLICKHOUSE_CONNECT_TIMEOUT": "30",
-        "CLICKHOUSE_SEND_RECEIVE_TIMEOUT": "300",
-        "MCP_ENABLE_TRACING": "false",
-        "MCP_IDE_TYPE": "windsurf",
-        "MCP_WINDSURF_PLUGINS_ENABLED": "true"
+        "AGENT_ZERO_CLICKHOUSE_HOST": "your-clickhouse-host",
+        "AGENT_ZERO_CLICKHOUSE_PORT": "8443",
+        "AGENT_ZERO_CLICKHOUSE_USER": "your-username",
+        "AGENT_ZERO_CLICKHOUSE_PASSWORD": "your-password",
+        "AGENT_ZERO_CLICKHOUSE_SECURE": "true",
+        "AGENT_ZERO_CLICKHOUSE_VERIFY": "true",
+        "AGENT_ZERO_CLICKHOUSE_CONNECT_TIMEOUT": "30",
+        "AGENT_ZERO_CLICKHOUSE_SEND_RECEIVE_TIMEOUT": "300",
+        "AGENT_ZERO_ENABLE_MCP_TRACING": "false",
+        "AGENT_ZERO_IDE_TYPE": "windsurf",
+        "AGENT_ZERO_WINDSURF_PLUGINS_ENABLED": "true"
       }
     }
   }

@@ -6,34 +6,7 @@ import pytest
 from clickhouse_connect.driver.client import Client
 from clickhouse_connect.driver.exceptions import ClickHouseError
 
-from agent_zero.mcp_server import (
-    get_cluster_sizing,
-    # Insert Operations
-    monitor_async_vs_sync_inserts,
-    # System Components
-    monitor_mv_deduplicated_blocks,
-    list_s3queue_with_names,
-    # Resource Usage
-    monitor_cpu_usage,
-    # Query Performance
-    monitor_current_processes,
-    monitor_error_stack_traces,
-    monitor_memory_usage,
-    monitor_query_duration,
-    monitor_query_patterns,
-    monitor_query_types,
-    # Error Analysis
-    monitor_recent_errors,
-    monitor_uptime,
-    view_text_log,
-    # Table Statistics
-    list_recent_table_modifications,
-    list_largest_tables,
-    # Utility Tools
-    prewarm_cache,
-    analyze_thread_distribution,
-    setup_monitoring_views,
-)
+# Import functions from the new modular server structure
 
 
 class TestMCPMonitoringTools:
@@ -45,7 +18,7 @@ class TestMCPMonitoringTools:
         self.mock_client = MagicMock(spec=Client)
 
         # Set up the client patcher
-        self.client_patcher = patch("agent_zero.mcp_server.create_clickhouse_client")
+        self.client_patcher = patch("agent_zero.server.client.create_clickhouse_client")
         self.mock_create_client = self.client_patcher.start()
         self.mock_create_client.return_value = self.mock_client
 

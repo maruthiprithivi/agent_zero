@@ -1,0 +1,507 @@
+name: Deployment Monitoring & Notifications
+
+on:
+  workflow_run:
+    workflows:
+      - "Publish Stable Release"
+      - "Publish Pre-release"
+      - "Publish Development Build"
+    types:
+      - completed
+  schedule:
+    # Daily monitoring check at 9 AM UTC
+    - cron: '0 9 * * *'
+  workflow_dispatch:
+    inputs:
+      check_type:
+        description: 'Type of monitoring check'
+        required: true
+        default: 'health'
+        type: choice
+        options:
+          - 'health'
+          - 'metrics'
+          - 'security'
+          - 'full'
+      notification_level:
+        description: 'Notification detail level'
+        required: false
+        default: 'summary'
+        type: choice
+        options:
+          - 'minimal'
+          - 'summary'
+          - 'detailed'
+
+env:
+  PYTHONUNBUFFERED: 1
+  FORCE_COLOR: 1
+
+jobs:
+  # Monitor deployment status
+  deployment-status:
+    name: Check Deployment Status
+    runs-on: ubuntu-latest
+    outputs:
+      pypi-status: ${{ steps.pypi.outputs.status }}
+      testpypi-status: ${{ steps.testpypi.outputs.status }}
+      latest-version: ${{ steps.versions.outputs.latest }}
+      pypi-version: ${{ steps.versions.outputs.pypi }}
+      testpypi-version: ${{ steps.versions.outputs.testpypi }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+          cache: 'pip'
+
+      - name: Install monitoring tools
+        run: |
+          pip install uv requests beautifulsoup4 packaging
+
+      - name: Check PyPI package status
+        id: pypi
+        run: |
+          cat > check_pypi.py << 'EOF'
+          import requests
+          import json
+          import sys
+          from packaging import version
+
+          def check_pypi_status():
+              try:
+                  # Check PyPI API
+                  response = requests.get('https://pypi.org/pypi/ch-agent-zero/json', timeout=10)
+                  if response.status_code == 200:
+                      data = response.json()
+                      latest_version = data['info']['version']
+                      upload_time = data['releases'][latest_version][0]['upload_time']
+
+                      print(f"status=healthy")
+                      print(f"version={latest_version}")
+                      print(f"upload_time={upload_time}")
+                      return True
+                  else:
+                      print(f"status=error")
+                      print(f"error=HTTP {response.status_code}")
+                      return False
+              except Exception as e:
+                  print(f"status=error")
+                  print(f"error={str(e)}")
+                  return False
+
+          if __name__ == "__main__":
+              success = check_pypi_status()
+              sys.exit(0 if success else 1)
+          EOF
+
+          python check_pypi.py >> $GITHUB_OUTPUT
+
+      - name: Check TestPyPI package status
+        id: testpypi
+        run: |
+          cat > check_testpypi.py << 'EOF'
+          import requests
+          import json
+          import sys
+
+          def check_testpypi_status():
+              try:
+                  # Check TestPyPI API
+                  response = requests.get('https://test.pypi.org/pypi/ch-agent-zero/json', timeout=10)
+                  if response.status_code == 200:
+                      data = response.json()
+                      latest_version = data['info']['version']
+
+                      print(f"status=healthy")
+                      print(f"version={latest_version}")
+                      return True
+                  else:
+                      print(f"status=error")
+                      print(f"error=HTTP {response.status_code}")
+                      return False
+              except Exception as e:
+                  print(f"status=error")
+                  print(f"error={str(e)}")
+                  return False
+
+          if __name__ == "__main__":
+              success = check_testpypi_status()
+              sys.exit(0 if success else 1)
+          EOF
+
+          python check_testpypi.py >> $GITHUB_OUTPUT
+
+      - name: Get version information
+        id: versions
+        run: |
+          # Get latest version from repository
+          LATEST_VERSION=$(python scripts/version-manager.py current)
+          echo "latest=$LATEST_VERSION" >> $GITHUB_OUTPUT
+
+          # Extract versions from previous steps
+          PYPI_VERSION=$(grep "version=" <<< "${{ steps.pypi.outputs.*}}" | cut -d'=' -f2 || echo "unknown")
+          TESTPYPI_VERSION=$(grep "version=" <<< "${{ steps.testpypi.outputs.*}}" | cut -d'=' -f2 || echo "unknown")
+
+          echo "pypi=$PYPI_VERSION" >> $GITHUB_OUTPUT
+          echo "testpypi=$TESTPYPI_VERSION" >> $GITHUB_OUTPUT
+
+  # Security monitoring
+  security-check:
+    name: Security Monitoring
+    runs-on: ubuntu-latest
+    if: github.event.inputs.check_type == 'security' || github.event.inputs.check_type == 'full' || github.event_name == 'schedule'
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+          cache: 'pip'
+
+      - name: Install security tools
+        run: |
+          pip install uv safety pip-audit
+
+      - name: Check for security vulnerabilities
+        id: security
+        run: |
+          uv venv security-env
+          uv pip install --python security-env ch-agent-zero
+
+          echo "## Security Scan Results" > security-report.md
+          echo "" >> security-report.md
+
+          # Run safety check
+          echo "### Safety Vulnerability Scan" >> security-report.md
+          if uv run --python security-env safety check --json > safety.json 2>&1; then
+            echo "✅ No known vulnerabilities found" >> security-report.md
+          else
+            echo "⚠️ Vulnerabilities detected:" >> security-report.md
+            cat safety.json >> security-report.md
+          fi
+
+          echo "" >> security-report.md
+
+          # Run pip-audit
+          echo "### Pip-audit Scan" >> security-report.md
+          if uv run --python security-env pip-audit --format=json > audit.json 2>&1; then
+            echo "✅ No audit issues found" >> security-report.md
+          else
+            echo "⚠️ Audit issues detected:" >> security-report.md
+            cat audit.json >> security-report.md
+          fi
+
+      - name: Upload security report
+        uses: actions/upload-artifact@v4
+        with:
+          name: security-report
+          path: |
+            security-report.md
+            safety.json
+            audit.json
+          retention-days: 30
+
+  # Performance and metrics monitoring
+  metrics-check:
+    name: Package Metrics Monitoring
+    runs-on: ubuntu-latest
+    if: github.event.inputs.check_type == 'metrics' || github.event.inputs.check_type == 'full' || github.event_name == 'schedule'
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+          cache: 'pip'
+
+      - name: Collect package metrics
+        id: metrics
+        run: |
+          cat > collect_metrics.py << 'EOF'
+          import requests
+          import json
+          import os
+          from datetime import datetime, timedelta
+
+          def collect_pypi_metrics():
+              try:
+                  # Get package info from PyPI
+                  response = requests.get('https://pypi.org/pypi/ch-agent-zero/json', timeout=10)
+                  if response.status_code != 200:
+                      return None
+
+                  data = response.json()
+                  info = data['info']
+
+                  metrics = {
+                      'name': info['name'],
+                      'version': info['version'],
+                      'summary': info['summary'],
+                      'author': info['author'],
+                      'license': info['license'],
+                      'requires_python': info['requires_python'],
+                      'upload_time': data['releases'][info['version']][0]['upload_time'],
+                      'file_count': len(data['releases'][info['version']]),
+                      'total_releases': len(data['releases']),
+                      'latest_files': [f['filename'] for f in data['releases'][info['version']]]
+                  }
+
+                  return metrics
+              except Exception as e:
+                  return {'error': str(e)}
+
+          def get_download_stats():
+              try:
+                  # Note: PyPI doesn't provide download stats via API anymore
+                  # This is a placeholder for future integration with pypistats
+                  return {'downloads': 'N/A - Use pypistats.org for download statistics'}
+              except Exception as e:
+                  return {'error': str(e)}
+
+          if __name__ == "__main__":
+              metrics = collect_pypi_metrics()
+              downloads = get_download_stats()
+
+              report = {
+                  'timestamp': datetime.now().isoformat(),
+                  'package_metrics': metrics,
+                  'download_stats': downloads
+              }
+
+              with open('metrics-report.json', 'w') as f:
+                  json.dump(report, f, indent=2)
+
+              print(f"Package: {metrics.get('name', 'N/A')}")
+              print(f"Version: {metrics.get('version', 'N/A')}")
+              print(f"Total Releases: {metrics.get('total_releases', 'N/A')}")
+              print(f"File Count: {metrics.get('file_count', 'N/A')}")
+          EOF
+
+          python collect_metrics.py
+
+      - name: Upload metrics report
+        uses: actions/upload-artifact@v4
+        with:
+          name: metrics-report
+          path: metrics-report.json
+          retention-days: 30
+
+  # Workflow monitoring
+  workflow-monitor:
+    name: Monitor Recent Workflows
+    runs-on: ubuntu-latest
+    permissions:
+      actions: read
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check recent workflow runs
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          cat > workflow_monitor.py << 'EOF'
+          import requests
+          import json
+          import os
+          from datetime import datetime, timedelta
+
+          def get_workflow_runs():
+              headers = {
+                  'Authorization': f'token {os.environ["GITHUB_TOKEN"]}',
+                  'Accept': 'application/vnd.github.v3+json'
+              }
+
+              # Get recent workflow runs
+              url = 'https://api.github.com/repos/maruthiprithivi/agent_zero/actions/runs'
+              params = {
+                  'per_page': 20,
+                  'status': 'completed'
+              }
+
+              response = requests.get(url, headers=headers, params=params)
+              if response.status_code != 200:
+                  return None
+
+              runs = response.json()['workflow_runs']
+
+              # Filter deployment-related workflows
+              deployment_workflows = [
+                  'Publish Stable Release',
+                  'Publish Pre-release',
+                  'Publish Development Build',
+                  'Enhanced CI Pipeline',
+                  'Build Artifacts'
+              ]
+
+              recent_runs = []
+              for run in runs:
+                  if run['name'] in deployment_workflows:
+                      recent_runs.append({
+                          'name': run['name'],
+                          'status': run['status'],
+                          'conclusion': run['conclusion'],
+                          'created_at': run['created_at'],
+                          'updated_at': run['updated_at'],
+                          'html_url': run['html_url'],
+                          'head_branch': run['head_branch']
+                      })
+
+              return recent_runs[:10]  # Last 10 deployment-related runs
+
+          if __name__ == "__main__":
+              runs = get_workflow_runs()
+              if runs:
+                  print("## Recent Deployment Workflows")
+                  print("")
+                  print("| Workflow | Status | Branch | Date |")
+                  print("|----------|--------|--------|------|")
+
+                  for run in runs:
+                      status_emoji = "✅" if run['conclusion'] == 'success' else "❌" if run['conclusion'] == 'failure' else "⏳"
+                      date = run['updated_at'][:10]
+                      print(f"| {run['name']} | {status_emoji} {run['conclusion']} | {run['head_branch']} | {date} |")
+
+                  # Save detailed report
+                  with open('workflow-report.json', 'w') as f:
+                      json.dump(runs, f, indent=2)
+              else:
+                  print("No recent workflow runs found or API error")
+          EOF
+
+          python workflow_monitor.py >> $GITHUB_STEP_SUMMARY
+
+      - name: Upload workflow report
+        uses: actions/upload-artifact@v4
+        with:
+          name: workflow-report
+          path: workflow-report.json
+          retention-days: 7
+
+  # Generate monitoring summary
+  monitoring-summary:
+    name: Generate Monitoring Summary
+    runs-on: ubuntu-latest
+    needs: [deployment-status, security-check, metrics-check, workflow-monitor]
+    if: always()
+
+    steps:
+      - name: Download all reports
+        uses: actions/download-artifact@v4
+        with:
+          path: reports/
+
+      - name: Generate comprehensive summary
+        run: |
+          echo "# 📊 Deployment Monitoring Report" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Generated:** $(date -u '+%Y-%m-%d %H:%M:%S UTC')" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          # Deployment Status
+          echo "## 🚀 Deployment Status" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Platform | Status | Latest Version |" >> $GITHUB_STEP_SUMMARY
+          echo "|----------|--------|----------------|" >> $GITHUB_STEP_SUMMARY
+
+          PYPI_STATUS="${{ needs.deployment-status.outputs.pypi-status }}"
+          TESTPYPI_STATUS="${{ needs.deployment-status.outputs.testpypi-status }}"
+          PYPI_VERSION="${{ needs.deployment-status.outputs.pypi-version }}"
+          TESTPYPI_VERSION="${{ needs.deployment-status.outputs.testpypi-version }}"
+
+          PYPI_EMOJI="✅" && [[ "$PYPI_STATUS" != "healthy" ]] && PYPI_EMOJI="❌"
+          TESTPYPI_EMOJI="✅" && [[ "$TESTPYPI_STATUS" != "healthy" ]] && TESTPYPI_EMOJI="❌"
+
+          echo "| PyPI | $PYPI_EMOJI $PYPI_STATUS | $PYPI_VERSION |" >> $GITHUB_STEP_SUMMARY
+          echo "| TestPyPI | $TESTPYPI_EMOJI $TESTPYPI_STATUS | $TESTPYPI_VERSION |" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          # Security Status
+          echo "## 🔒 Security Status" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          if [[ "${{ needs.security-check.result }}" == "success" ]]; then
+            echo "✅ Security scan completed successfully" >> $GITHUB_STEP_SUMMARY
+          elif [[ "${{ needs.security-check.result }}" == "failure" ]]; then
+            echo "⚠️ Security scan detected issues" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "⏭️ Security scan skipped" >> $GITHUB_STEP_SUMMARY
+          fi
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          # Metrics Status
+          echo "## 📈 Package Metrics" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          if [[ "${{ needs.metrics-check.result }}" == "success" ]]; then
+            echo "✅ Metrics collection completed" >> $GITHUB_STEP_SUMMARY
+          elif [[ "${{ needs.metrics-check.result }}" == "failure" ]]; then
+            echo "❌ Metrics collection failed" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "⏭️ Metrics collection skipped" >> $GITHUB_STEP_SUMMARY
+          fi
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          # Quick Links
+          echo "## 🔗 Quick Links" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "- [PyPI Package](https://pypi.org/project/ch-agent-zero/)" >> $GITHUB_STEP_SUMMARY
+          echo "- [TestPyPI Package](https://test.pypi.org/project/ch-agent-zero/)" >> $GITHUB_STEP_SUMMARY
+          echo "- [GitHub Releases](https://github.com/maruthiprithivi/agent_zero/releases)" >> $GITHUB_STEP_SUMMARY
+          echo "- [Actions](https://github.com/maruthiprithivi/agent_zero/actions)" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          # Recommendations
+          echo "## 💡 Recommendations" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          if [[ "$PYPI_STATUS" != "healthy" ]]; then
+            echo "- ⚠️ **PyPI Status Issue**: Check PyPI connectivity and package status" >> $GITHUB_STEP_SUMMARY
+          fi
+
+          if [[ "$TESTPYPI_STATUS" != "healthy" ]]; then
+            echo "- ⚠️ **TestPyPI Status Issue**: Check TestPyPI connectivity" >> $GITHUB_STEP_SUMMARY
+          fi
+
+          if [[ "${{ needs.security-check.result }}" == "failure" ]]; then
+            echo "- 🔒 **Security Alert**: Review security scan results and address vulnerabilities" >> $GITHUB_STEP_SUMMARY
+          fi
+
+          echo "- 📊 **Regular Monitoring**: This report runs daily at 9 AM UTC" >> $GITHUB_STEP_SUMMARY
+          echo "- 🔄 **Manual Trigger**: Use workflow_dispatch for on-demand monitoring" >> $GITHUB_STEP_SUMMARY
+
+  # Notification handling based on workflow_run trigger
+  notify-deployment:
+    name: Handle Deployment Notifications
+    runs-on: ubuntu-latest
+    if: github.event_name == 'workflow_run'
+
+    steps:
+      - name: Process workflow completion
+        run: |
+          WORKFLOW_NAME="${{ github.event.workflow_run.name }}"
+          WORKFLOW_STATUS="${{ github.event.workflow_run.conclusion }}"
+          WORKFLOW_URL="${{ github.event.workflow_run.html_url }}"
+          BRANCH_NAME="${{ github.event.workflow_run.head_branch }}"
+
+          echo "## 🔔 Deployment Notification" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Workflow:** $WORKFLOW_NAME" >> $GITHUB_STEP_SUMMARY
+          echo "**Status:** $WORKFLOW_STATUS" >> $GITHUB_STEP_SUMMARY
+          echo "**Branch:** $BRANCH_NAME" >> $GITHUB_STEP_SUMMARY
+          echo "**URL:** $WORKFLOW_URL" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          if [[ "$WORKFLOW_STATUS" == "success" ]]; then
+            echo "✅ Deployment completed successfully" >> $GITHUB_STEP_SUMMARY
+          elif [[ "$WORKFLOW_STATUS" == "failure" ]]; then
+            echo "❌ Deployment failed - please review logs" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "⚠️ Deployment completed with status: $WORKFLOW_STATUS" >> $GITHUB_STEP_SUMMARY
+          fi

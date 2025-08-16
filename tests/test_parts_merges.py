@@ -5,14 +5,6 @@ from unittest.mock import MagicMock, patch
 
 from clickhouse_connect.driver.client import Client
 
-from agent_zero.mcp_server import (
-    monitor_current_merges,
-    monitor_merge_stats,
-    monitor_part_log_events,
-    monitor_partition_stats,
-    monitor_parts_analysis,
-)
-
 
 class TestPartsMergesTools(unittest.TestCase):
     """Test cases for parts merges monitoring tools."""

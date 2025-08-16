@@ -42,14 +42,14 @@ install_uv() {
         echo -e "${GREEN}uv is already installed${NC}"
         return
     fi
-    
+
     echo -e "${YELLOW}Installing uv...${NC}"
     if [[ "$PLATFORM" == "windows" ]]; then
         powershell -c "irm https://astral.sh/uv/install.ps1 | iex"
     else
         curl -LsSf https://astral.sh/uv/install.sh | sh
     fi
-    
+
     # Add to PATH for current session
     if [[ "$PLATFORM" == "windows" ]]; then
         export PATH="$USERPROFILE/.cargo/bin:$PATH"
@@ -61,7 +61,7 @@ install_uv() {
 # Install Agent Zero
 install_agent_zero() {
     echo -e "${YELLOW}Installing $PACKAGE_NAME...${NC}"
-    
+
     if command_exists uv; then
         uv tool install "$PACKAGE_NAME"
     elif command_exists pip; then
@@ -70,7 +70,7 @@ install_agent_zero() {
         echo -e "${RED}Neither uv nor pip found. Please install Python first.${NC}"
         exit 1
     fi
-    
+
     echo -e "${GREEN}$PACKAGE_NAME installed successfully!${NC}"
 }
 
@@ -103,12 +103,12 @@ generate_ide_config() {
     local ide="$1"
     local deployment_mode="${2:-local}"
     local output_file="$3"
-    
+
     echo -e "${YELLOW}Generating configuration for $ide...${NC}"
-    
+
     # Create directory if it doesn't exist
     mkdir -p "$(dirname "$output_file")"
-    
+
     # Generate config using Agent Zero's built-in generator
     if command_exists ch-agent-zero; then
         ch-agent-zero generate-config --ide "$ide" --deployment-mode "$deployment_mode" --output "$output_file"
@@ -118,7 +118,7 @@ generate_ide_config() {
         echo -e "${RED}Agent Zero not found. Please install it first.${NC}"
         return 1
     fi
-    
+
     echo -e "${GREEN}Configuration saved to: $output_file${NC}"
 }
 
@@ -132,9 +132,9 @@ select_ide() {
     echo "5) VS Code"
     echo "6) All IDEs"
     echo "7) Skip IDE configuration"
-    
+
     read -p "Enter your choice (1-7): " choice
-    
+
     case $choice in
         1) configure_claude_desktop ;;
         2) configure_claude_code ;;
@@ -151,7 +151,7 @@ select_ide() {
 configure_claude_desktop() {
     echo -e "${BLUE}Configuring Claude Desktop...${NC}"
     generate_ide_config "claude-desktop" "local" "$CLAUDE_DESKTOP_CONFIG"
-    
+
     echo -e "${GREEN}Claude Desktop configured!${NC}"
     echo -e "${YELLOW}Please restart Claude Desktop to apply changes.${NC}"
 }
@@ -159,16 +159,16 @@ configure_claude_desktop() {
 # Configure Claude Code
 configure_claude_code() {
     echo -e "${BLUE}Configuring Claude Code...${NC}"
-    
+
     # Claude Code uses project-level or user-level config
     local claude_code_config=".claude.json"
     if [[ -f ".claude.json" ]]; then
         echo -e "${YELLOW}Found existing .claude.json, backing up...${NC}"
         cp ".claude.json" ".claude.json.backup"
     fi
-    
+
     generate_ide_config "claude-code" "local" "$claude_code_config"
-    
+
     echo -e "${GREEN}Claude Code configured!${NC}"
     echo -e "${YELLOW}Configuration saved to .claude.json in current directory.${NC}"
     echo -e "${YELLOW}Run 'claude mcp' to verify the configuration.${NC}"
@@ -178,7 +178,7 @@ configure_claude_code() {
 configure_cursor() {
     echo -e "${BLUE}Configuring Cursor...${NC}"
     generate_ide_config "cursor" "local" "$CURSOR_CONFIG"
-    
+
     echo -e "${GREEN}Cursor configured!${NC}"
     echo -e "${YELLOW}Please restart Cursor to apply changes.${NC}"
 }
@@ -187,7 +187,7 @@ configure_cursor() {
 configure_windsurf() {
     echo -e "${BLUE}Configuring Windsurf...${NC}"
     generate_ide_config "windsurf" "local" "$WINDSURF_CONFIG"
-    
+
     echo -e "${GREEN}Windsurf configured!${NC}"
     echo -e "${YELLOW}Please restart Windsurf to apply changes.${NC}"
 }
@@ -196,7 +196,7 @@ configure_windsurf() {
 configure_vscode() {
     echo -e "${BLUE}Configuring VS Code...${NC}"
     generate_ide_config "vscode" "local" "$VSCODE_CONFIG"
-    
+
     echo -e "${GREEN}VS Code configured!${NC}"
     echo -e "${YELLOW}Please install the MCP extension and restart VS Code.${NC}"
 }
@@ -204,20 +204,20 @@ configure_vscode() {
 # Configure all IDEs
 configure_all_ides() {
     echo -e "${BLUE}Configuring all supported IDEs...${NC}"
-    
+
     configure_claude_desktop
     configure_claude_code
     configure_cursor
     configure_windsurf
     configure_vscode
-    
+
     echo -e "${GREEN}All IDEs configured!${NC}"
 }
 
 # Setup environment variables
 setup_environment() {
     echo -e "${BLUE}Setting up environment variables...${NC}"
-    
+
     # Check if .env file exists
     if [[ ! -f ".env" ]]; then
         echo -e "${YELLOW}Creating .env file template...${NC}"
@@ -264,7 +264,7 @@ MCP_OAUTH_ENABLE=false
 MCP_OAUTH_CLIENT_ID=
 MCP_OAUTH_CLIENT_SECRET=
 EOF
-        
+
         echo -e "${GREEN}.env file created!${NC}"
         echo -e "${YELLOW}Please edit .env file with your ClickHouse connection details.${NC}"
     else
@@ -275,7 +275,7 @@ EOF
 # Verify installation
 verify_installation() {
     echo -e "${BLUE}Verifying installation...${NC}"
-    
+
     if command_exists ch-agent-zero; then
         echo -e "${GREEN}✓ Agent Zero CLI available${NC}"
         ch-agent-zero --version
@@ -286,7 +286,7 @@ verify_installation() {
         echo -e "${RED}✗ Agent Zero not found${NC}"
         return 1
     fi
-    
+
     # Test configuration generation
     echo -e "${BLUE}Testing configuration generation...${NC}"
     if ch-agent-zero generate-config --ide claude-desktop >/dev/null 2>&1; then
@@ -328,26 +328,26 @@ main() {
     echo -e "${GREEN}Agent Zero MCP Server - Universal Installer (2025 Multi-IDE Edition)${NC}"
     echo -e "${BLUE}========================================${NC}"
     echo
-    
+
     detect_platform
     get_config_paths
-    
+
     # Install dependencies
     install_uv
     install_agent_zero
-    
+
     # Setup environment
     setup_environment
-    
+
     # Configure IDEs
     select_ide
-    
+
     # Verify installation
     verify_installation
-    
+
     # Show usage examples
     show_usage_examples
-    
+
     echo
     echo -e "${GREEN}Installation completed successfully!${NC}"
     echo -e "${YELLOW}Next steps:${NC}"

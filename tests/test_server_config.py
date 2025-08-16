@@ -4,7 +4,6 @@ import os
 import tempfile
 from unittest.mock import patch
 
-
 from agent_zero.server_config import ServerConfig
 
 
@@ -70,7 +69,9 @@ class TestServerConfig:
 
     def test_get_ssl_config_complete(self):
         """Test that get_ssl_config returns a dict when SSL is fully configured."""
-        config = ServerConfig(ssl_certfile="/path/to/cert.pem", ssl_keyfile="/path/to/key.pem", ssl_enable=True)
+        config = ServerConfig(
+            ssl_certfile="/path/to/cert.pem", ssl_keyfile="/path/to/key.pem", ssl_enable=True
+        )
         ssl_config = config.get_ssl_config()
         assert ssl_config is not None
         assert ssl_config["certfile"] == "/path/to/cert.pem"
@@ -146,12 +147,14 @@ class TestServerConfig:
     def test_default_cursor_transport(self):
         """Test the default cursor transport."""
         from agent_zero.server_config import TransportType
+
         config = ServerConfig()
         assert config.cursor_transport == TransportType.SSE
 
     def test_cursor_transport_from_env(self):
         """Test getting the cursor transport from environment variables."""
         from agent_zero.server_config import TransportType
+
         os.environ["MCP_CURSOR_TRANSPORT"] = "websocket"
         config = ServerConfig()
         assert config.cursor_transport == TransportType.WEBSOCKET
@@ -159,5 +162,6 @@ class TestServerConfig:
     def test_cursor_transport_from_args(self):
         """Test getting the cursor transport from constructor arguments."""
         from agent_zero.server_config import TransportType
+
         config = ServerConfig(cursor_transport="websocket")
         assert config.cursor_transport == TransportType.WEBSOCKET

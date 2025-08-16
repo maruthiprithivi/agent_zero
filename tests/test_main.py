@@ -158,6 +158,7 @@ class TestMain(unittest.TestCase):
         server_config = kwargs["server_config"]
         self.assertEqual(server_config.cursor_mode, "agent")
         from agent_zero.server_config import TransportType
+
         self.assertEqual(server_config.cursor_transport, TransportType.WEBSOCKET)
 
     def test_main_cursor_mode_invalid(self):

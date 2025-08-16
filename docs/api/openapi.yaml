@@ -1,0 +1,1201 @@
+openapi: 3.0.3
+info:
+  title: Agent Zero ClickHouse MCP Server API
+  description: |
+    Agent Zero is a comprehensive Model Context Protocol (MCP) server for ClickHouse
+    database monitoring, analytics, and management. This API provides access to all
+    66+ specialized MCP tools for database operations, performance analysis, and
+    AI-powered diagnostics.
+
+    ## Features
+
+    - **Database Operations**: Complete database and table management
+    - **Performance Analysis**: Real-time query and system performance monitoring
+    - **AI-Powered Diagnostics**: Machine learning bottleneck detection and optimization
+    - **ProfileEvents Analysis**: Comprehensive analysis of 400+ ClickHouse ProfileEvents
+    - **Storage & Cloud Analytics**: S3, Azure, and compression optimization
+    - **Hardware Diagnostics**: CPU, memory, and thread pool analysis
+    - **Error Analysis**: Advanced error correlation and troubleshooting
+
+    ## Authentication
+
+    The API supports multiple authentication methods:
+    - API Key authentication for programmatic access
+    - Bearer token authentication for web applications
+    - Basic authentication for development environments
+
+    ## Rate Limiting
+
+    API endpoints are rate limited to ensure fair usage:
+    - Standard endpoints: 100 requests per minute
+    - Resource-intensive analytics: 10 requests per minute
+    - Health checks: 300 requests per minute
+
+    ## Error Handling
+
+    All API responses follow RFC 7807 Problem Details format for consistent
+    error reporting and troubleshooting.
+
+  version: 1.0.0
+  contact:
+    name: Agent Zero Support
+    url: https://github.com/maruthiprithivi/agent_zero
+    email: maruthiprithivi@gmail.com
+  license:
+    name: MIT
+    url: https://github.com/maruthiprithivi/agent_zero/blob/main/LICENSE
+  termsOfService: https://github.com/maruthiprithivi/agent_zero/blob/main/README.md
+
+servers:
+  - url: http://localhost:8505
+    description: Local development server
+  - url: https://api.agent-zero.example.com
+    description: Production server
+  - url: https://staging-api.agent-zero.example.com
+    description: Staging server
+
+paths:
+  # Health and Status Endpoints
+  /health:
+    get:
+      tags:
+        - Health
+      summary: Comprehensive health check
+      description: |
+        Returns comprehensive health status including system resources,
+        ClickHouse connectivity, and all service components.
+      operationId: getHealthStatus
+      responses:
+        '200':
+          description: Health status retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthResponse'
+              examples:
+                healthy:
+                  summary: All systems healthy
+                  value:
+                    status: healthy
+                    timestamp: "2025-01-15T10:30:00Z"
+                    uptime_seconds: 3600
+                    version: "1.0.0"
+                    deployment_mode: production
+                    services:
+                      - name: system
+                        status: healthy
+                        message: "System resources within normal limits"
+                        response_time_ms: 5.2
+                        details:
+                          cpu_percent: 45.2
+                          memory_percent: 68.1
+                          memory_available_mb: 2048
+                      - name: clickhouse
+                        status: healthy
+                        message: "ClickHouse connectivity verified"
+                        response_time_ms: 12.8
+                        details:
+                          server_version: "23.12.1.1"
+                          server_uptime_seconds: 86400
+                    metrics:
+                      checks_total: 3
+                      healthy_checks: 3
+                      degraded_checks: 0
+                      unhealthy_checks: 0
+                degraded:
+                  summary: System degraded performance
+                  value:
+                    status: degraded
+                    timestamp: "2025-01-15T10:30:00Z"
+                    uptime_seconds: 3600
+                    version: "1.0.0"
+                    deployment_mode: production
+                    services:
+                      - name: system
+                        status: healthy
+                        message: "System resources within normal limits"
+                        response_time_ms: 5.2
+                      - name: clickhouse
+                        status: degraded
+                        message: "High query latency detected"
+                        response_time_ms: 150.0
+                        details:
+                          avg_query_time_ms: 145.2
+                          slow_queries_count: 15
+        '503':
+          description: Service unavailable
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /health/ready:
+    get:
+      tags:
+        - Health
+      summary: Readiness probe
+      description: |
+        Lightweight readiness check for load balancers.
+        Returns 200 if service is ready to accept traffic.
+      operationId: getReadinessStatus
+      responses:
+        '200':
+          description: Service is ready
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    enum: [ready]
+                  timestamp:
+                    type: string
+                    format: date-time
+        '503':
+          description: Service not ready
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /health/live:
+    get:
+      tags:
+        - Health
+      summary: Liveness probe
+      description: |
+        Lightweight liveness check for orchestrators.
+        Returns 200 if service is alive and running.
+      operationId: getLivenessStatus
+      responses:
+        '200':
+          description: Service is alive
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    enum: [alive]
+                  timestamp:
+                    type: string
+                    format: date-time
+        '503':
+          description: Service not responding
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  # MCP Tool Endpoints
+  /mcp/tools:
+    get:
+      tags:
+        - MCP Tools
+      summary: List all available MCP tools
+      description: |
+        Returns a comprehensive list of all 66+ available MCP tools
+        organized by category with detailed metadata.
+      operationId: listMCPTools
+      parameters:
+        - name: category
+          in: query
+          description: Filter tools by category
+          required: false
+          schema:
+            type: string
+            enum:
+              - database_operations
+              - query_performance
+              - resource_usage
+              - error_analysis
+              - insert_operations
+              - parts_merges
+              - system_components
+              - table_statistics
+              - utility
+              - profile_events
+              - storage_cloud
+              - ai_diagnostics
+      responses:
+        '200':
+          description: MCP tools retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MCPToolsResponse'
+
+  /mcp/tools/{tool_name}/call:
+    post:
+      tags:
+        - MCP Tools
+      summary: Execute an MCP tool
+      description: |
+        Execute a specific MCP tool with provided arguments.
+        All tool calls are traced and logged for debugging.
+      operationId: callMCPTool
+      parameters:
+        - name: tool_name
+          in: path
+          description: Name of the MCP tool to execute
+          required: true
+          schema:
+            type: string
+            example: list_databases
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MCPToolCallRequest'
+            examples:
+              list_databases:
+                summary: List all databases
+                value:
+                  arguments: {}
+              run_query:
+                summary: Execute a SELECT query
+                value:
+                  arguments:
+                    query: "SELECT database, count() FROM system.tables GROUP BY database"
+              analyze_performance:
+                summary: Analyze query performance
+                value:
+                  arguments:
+                    start_time: "2025-01-15T00:00:00Z"
+                    end_time: "2025-01-15T23:59:59Z"
+                    limit: 50
+      responses:
+        '200':
+          description: Tool executed successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MCPToolCallResponse'
+        '400':
+          description: Invalid tool arguments
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Tool not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Tool execution failed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  # Database Operations
+  /api/v1/databases:
+    get:
+      tags:
+        - Database Operations
+      summary: List all databases
+      description: List all databases in the ClickHouse server
+      operationId: listDatabases
+      responses:
+        '200':
+          description: Databases retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  databases:
+                    type: array
+                    items:
+                      type: string
+                    example: ["default", "system", "analytics", "staging"]
+                  count:
+                    type: integer
+                    example: 4
+                  timestamp:
+                    type: string
+                    format: date-time
+
+  /api/v1/databases/{database}/tables:
+    get:
+      tags:
+        - Database Operations
+      summary: List tables in database
+      description: List all tables in a specified database with schema details
+      operationId: listTables
+      parameters:
+        - name: database
+          in: path
+          description: Database name
+          required: true
+          schema:
+            type: string
+            example: analytics
+      responses:
+        '200':
+          description: Tables retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TablesResponse'
+
+  # Query Execution
+  /api/v1/query:
+    post:
+      tags:
+        - Query Execution
+      summary: Execute SELECT query
+      description: |
+        Execute a SELECT query safely with result analysis.
+        Only SELECT queries are allowed for security.
+      operationId: executeQuery
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/QueryRequest'
+      responses:
+        '200':
+          description: Query executed successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/QueryResponse'
+        '400':
+          description: Invalid query
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  # Performance Analysis
+  /api/v1/performance/overview:
+    get:
+      tags:
+        - Performance Analysis
+      summary: Get performance overview
+      description: |
+        Get comprehensive performance overview including system metrics,
+        query performance, and resource utilization.
+      operationId: getPerformanceOverview
+      parameters:
+        - name: time_range
+          in: query
+          description: Time range for analysis
+          required: false
+          schema:
+            type: string
+            enum: ["1h", "24h", "7d", "30d"]
+            default: "1h"
+      responses:
+        '200':
+          description: Performance overview retrieved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PerformanceOverviewResponse'
+
+  /api/v1/performance/bottlenecks:
+    get:
+      tags:
+        - AI-Powered Analysis
+      summary: Detect performance bottlenecks
+      description: |
+        Use AI-powered analysis to detect current performance bottlenecks
+        with confidence scoring and optimization recommendations.
+      operationId: detectBottlenecks
+      parameters:
+        - name: confidence_threshold
+          in: query
+          description: Minimum confidence threshold for bottleneck detection
+          required: false
+          schema:
+            type: number
+            format: float
+            minimum: 0.0
+            maximum: 1.0
+            default: 0.7
+      responses:
+        '200':
+          description: Bottlenecks detected successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BottlenecksResponse'
+
+  # ProfileEvents Analysis
+  /api/v1/profile-events:
+    get:
+      tags:
+        - ProfileEvents Analysis
+      summary: Get ProfileEvents analysis
+      description: |
+        Comprehensive ProfileEvents analysis across all 400+ events
+        organized by 25+ categories.
+      operationId: getProfileEvents
+      parameters:
+        - name: category
+          in: query
+          description: Filter by ProfileEvents category
+          required: false
+          schema:
+            type: string
+            enum:
+              - query_execution
+              - memory_management
+              - disk_io
+              - network_io
+              - cache_performance
+              - compression
+              - replication
+              - s3_operations
+        - name: start_time
+          in: query
+          description: Start time for analysis (ISO 8601)
+          required: false
+          schema:
+            type: string
+            format: date-time
+        - name: end_time
+          in: query
+          description: End time for analysis (ISO 8601)
+          required: false
+          schema:
+            type: string
+            format: date-time
+        - name: limit
+          in: query
+          description: Maximum number of events to return
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 1000
+            default: 50
+      responses:
+        '200':
+          description: ProfileEvents analysis retrieved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProfileEventsResponse'
+
+  # Metrics and Monitoring
+  /metrics:
+    get:
+      tags:
+        - Monitoring
+      summary: Prometheus metrics
+      description: |
+        Prometheus-compatible metrics endpoint for monitoring
+        and alerting integration.
+      operationId: getMetrics
+      responses:
+        '200':
+          description: Metrics in Prometheus format
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: |
+                  # HELP agent_zero_http_requests_total Total HTTP requests
+                  # TYPE agent_zero_http_requests_total counter
+                  agent_zero_http_requests_total{method="GET",endpoint="/health"} 1234
+
+                  # HELP agent_zero_clickhouse_queries_total Total ClickHouse queries
+                  # TYPE agent_zero_clickhouse_queries_total counter
+                  agent_zero_clickhouse_queries_total{database="analytics"} 5678
+
+  # Backup and Recovery
+  /api/v1/backup/status:
+    get:
+      tags:
+        - Backup & Recovery
+      summary: Get backup status
+      description: Get current backup status and recent backup history
+      operationId: getBackupStatus
+      responses:
+        '200':
+          description: Backup status retrieved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BackupStatusResponse'
+
+  /api/v1/backup/create:
+    post:
+      tags:
+        - Backup & Recovery
+      summary: Create backup
+      description: Create a new backup with specified configuration
+      operationId: createBackup
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateBackupRequest'
+      responses:
+        '202':
+          description: Backup creation initiated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BackupJobResponse'
+
+components:
+  securitySchemes:
+    ApiKeyAuth:
+      type: apiKey
+      in: header
+      name: X-API-Key
+      description: API key for authentication
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: JWT Bearer token
+    BasicAuth:
+      type: http
+      scheme: basic
+      description: Basic authentication for development
+
+  schemas:
+    HealthResponse:
+      type: object
+      required:
+        - status
+        - timestamp
+        - uptime_seconds
+        - version
+        - services
+        - metrics
+      properties:
+        status:
+          type: string
+          enum: [healthy, degraded, unhealthy]
+          description: Overall health status
+        timestamp:
+          type: string
+          format: date-time
+          description: Health check timestamp
+        uptime_seconds:
+          type: integer
+          description: Service uptime in seconds
+        version:
+          type: string
+          description: Service version
+        deployment_mode:
+          type: string
+          enum: [local, standalone, enterprise]
+          description: Current deployment mode
+        services:
+          type: array
+          items:
+            $ref: '#/components/schemas/ServiceHealth'
+        metrics:
+          type: object
+          properties:
+            checks_total:
+              type: integer
+            healthy_checks:
+              type: integer
+            degraded_checks:
+              type: integer
+            unhealthy_checks:
+              type: integer
+
+    ServiceHealth:
+      type: object
+      required:
+        - name
+        - status
+        - message
+        - response_time_ms
+      properties:
+        name:
+          type: string
+          description: Service name
+        status:
+          type: string
+          enum: [healthy, degraded, unhealthy]
+          description: Service health status
+        message:
+          type: string
+          description: Health status message
+        response_time_ms:
+          type: number
+          format: float
+          description: Response time in milliseconds
+        details:
+          type: object
+          additionalProperties: true
+          description: Additional service-specific details
+
+    ErrorResponse:
+      type: object
+      required:
+        - type
+        - title
+        - status
+        - detail
+        - instance
+      properties:
+        type:
+          type: string
+          format: uri
+          description: Problem type URI (RFC 7807)
+          example: "https://api.agent-zero.example.com/problems/validation-error"
+        title:
+          type: string
+          description: Human-readable problem summary
+          example: "Validation Error"
+        status:
+          type: integer
+          description: HTTP status code
+          example: 400
+        detail:
+          type: string
+          description: Human-readable problem details
+          example: "The 'query' parameter is required for SELECT operations"
+        instance:
+          type: string
+          format: uri
+          description: Problem instance URI
+          example: "/api/v1/query"
+        correlation_id:
+          type: string
+          description: Request correlation ID for debugging
+          example: "abc-123-def-456"
+        timestamp:
+          type: string
+          format: date-time
+          description: Error timestamp
+
+    MCPToolsResponse:
+      type: object
+      required:
+        - tools
+        - categories
+        - total_count
+      properties:
+        tools:
+          type: array
+          items:
+            $ref: '#/components/schemas/MCPTool'
+        categories:
+          type: object
+          additionalProperties:
+            type: integer
+          description: Tool count by category
+        total_count:
+          type: integer
+          description: Total number of tools
+        timestamp:
+          type: string
+          format: date-time
+
+    MCPTool:
+      type: object
+      required:
+        - name
+        - category
+        - description
+        - parameters
+      properties:
+        name:
+          type: string
+          description: Tool name
+          example: "list_databases"
+        category:
+          type: string
+          description: Tool category
+          example: "database_operations"
+        description:
+          type: string
+          description: Tool description
+          example: "List all databases in the ClickHouse server"
+        parameters:
+          type: object
+          description: Tool parameter schema
+        examples:
+          type: array
+          items:
+            type: object
+          description: Usage examples
+        performance_impact:
+          type: string
+          enum: [low, medium, high]
+          description: Performance impact level
+        requires_admin:
+          type: boolean
+          description: Whether tool requires admin privileges
+
+    MCPToolCallRequest:
+      type: object
+      required:
+        - arguments
+      properties:
+        arguments:
+          type: object
+          description: Tool-specific arguments
+          additionalProperties: true
+        timeout_seconds:
+          type: integer
+          minimum: 1
+          maximum: 300
+          default: 30
+          description: Execution timeout in seconds
+        trace_enabled:
+          type: boolean
+          default: true
+          description: Enable execution tracing
+
+    MCPToolCallResponse:
+      type: object
+      required:
+        - success
+        - tool_name
+        - execution_time_ms
+        - timestamp
+      properties:
+        success:
+          type: boolean
+          description: Whether execution succeeded
+        tool_name:
+          type: string
+          description: Executed tool name
+        result:
+          type: object
+          additionalProperties: true
+          description: Tool execution result
+        execution_time_ms:
+          type: number
+          format: float
+          description: Execution time in milliseconds
+        timestamp:
+          type: string
+          format: date-time
+          description: Execution timestamp
+        trace_id:
+          type: string
+          description: Execution trace ID
+        error:
+          $ref: '#/components/schemas/ErrorResponse'
+          description: Error details if execution failed
+
+    TablesResponse:
+      type: object
+      properties:
+        tables:
+          type: array
+          items:
+            $ref: '#/components/schemas/TableInfo'
+        count:
+          type: integer
+        database:
+          type: string
+        timestamp:
+          type: string
+          format: date-time
+
+    TableInfo:
+      type: object
+      properties:
+        name:
+          type: string
+        engine:
+          type: string
+        total_rows:
+          type: integer
+        total_bytes:
+          type: integer
+        columns:
+          type: array
+          items:
+            $ref: '#/components/schemas/ColumnInfo'
+
+    ColumnInfo:
+      type: object
+      properties:
+        name:
+          type: string
+        type:
+          type: string
+        nullable:
+          type: boolean
+        default_expression:
+          type: string
+
+    QueryRequest:
+      type: object
+      required:
+        - query
+      properties:
+        query:
+          type: string
+          description: SELECT query to execute
+          example: "SELECT database, count() FROM system.tables GROUP BY database"
+        format:
+          type: string
+          enum: [JSON, TabSeparated, CSV]
+          default: JSON
+          description: Result format
+        limit:
+          type: integer
+          minimum: 1
+          maximum: 10000
+          default: 1000
+          description: Maximum rows to return
+        timeout_seconds:
+          type: integer
+          minimum: 1
+          maximum: 300
+          default: 30
+          description: Query timeout
+
+    QueryResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            type: object
+          description: Query results
+        meta:
+          type: array
+          items:
+            $ref: '#/components/schemas/ColumnInfo'
+          description: Column metadata
+        rows:
+          type: integer
+          description: Number of rows returned
+        execution_time_ms:
+          type: number
+          format: float
+        query_id:
+          type: string
+        timestamp:
+          type: string
+          format: date-time
+
+    PerformanceOverviewResponse:
+      type: object
+      properties:
+        overall_score:
+          type: number
+          format: float
+          minimum: 0
+          maximum: 100
+          description: Overall performance score
+        system_metrics:
+          $ref: '#/components/schemas/SystemMetrics'
+        query_performance:
+          $ref: '#/components/schemas/QueryPerformance'
+        resource_utilization:
+          $ref: '#/components/schemas/ResourceUtilization'
+        recommendations:
+          type: array
+          items:
+            $ref: '#/components/schemas/Recommendation'
+        timestamp:
+          type: string
+          format: date-time
+
+    SystemMetrics:
+      type: object
+      properties:
+        cpu_percent:
+          type: number
+          format: float
+        memory_percent:
+          type: number
+          format: float
+        disk_io_rate:
+          type: number
+          format: float
+        network_io_rate:
+          type: number
+          format: float
+
+    QueryPerformance:
+      type: object
+      properties:
+        average_execution_time_ms:
+          type: number
+          format: float
+        queries_per_second:
+          type: number
+          format: float
+        slow_queries_count:
+          type: integer
+        error_rate:
+          type: number
+          format: float
+
+    ResourceUtilization:
+      type: object
+      properties:
+        active_connections:
+          type: integer
+        cache_hit_ratio:
+          type: number
+          format: float
+        thread_pool_utilization:
+          type: number
+          format: float
+
+    BottlenecksResponse:
+      type: object
+      properties:
+        bottlenecks:
+          type: array
+          items:
+            $ref: '#/components/schemas/Bottleneck'
+        system_health_score:
+          type: number
+          format: float
+          minimum: 0
+          maximum: 100
+        analysis_timestamp:
+          type: string
+          format: date-time
+
+    Bottleneck:
+      type: object
+      required:
+        - bottleneck_type
+        - confidence
+        - impact
+        - description
+      properties:
+        bottleneck_type:
+          type: string
+          enum:
+            - query_performance
+            - memory_pressure
+            - disk_io
+            - network_io
+            - cache_inefficiency
+            - resource_contention
+          description: Type of bottleneck detected
+        confidence:
+          type: number
+          format: float
+          minimum: 0.0
+          maximum: 1.0
+          description: Confidence score for detection
+        impact:
+          type: number
+          format: float
+          minimum: 0.0
+          maximum: 100.0
+          description: Impact score on system performance
+        severity:
+          type: string
+          enum: [low, medium, high, critical]
+          description: Severity level
+        description:
+          type: string
+          description: Human-readable bottleneck description
+        affected_components:
+          type: array
+          items:
+            type: string
+          description: System components affected
+        recommendations:
+          type: array
+          items:
+            $ref: '#/components/schemas/Recommendation'
+        evidence:
+          type: object
+          additionalProperties: true
+          description: Supporting evidence for detection
+
+    Recommendation:
+      type: object
+      properties:
+        title:
+          type: string
+        description:
+          type: string
+        impact:
+          type: string
+          enum: [low, medium, high]
+        effort:
+          type: string
+          enum: [low, medium, high]
+        category:
+          type: string
+        implementation_steps:
+          type: array
+          items:
+            type: string
+
+    ProfileEventsResponse:
+      type: object
+      properties:
+        events:
+          type: array
+          items:
+            $ref: '#/components/schemas/ProfileEvent'
+        summary:
+          $ref: '#/components/schemas/ProfileEventsSummary'
+        time_range:
+          $ref: '#/components/schemas/TimeRange'
+        timestamp:
+          type: string
+          format: date-time
+
+    ProfileEvent:
+      type: object
+      properties:
+        name:
+          type: string
+        category:
+          type: string
+        value:
+          type: integer
+        description:
+          type: string
+        impact_level:
+          type: string
+          enum: [low, medium, high, critical]
+
+    ProfileEventsSummary:
+      type: object
+      properties:
+        total_events:
+          type: integer
+        categories_analyzed:
+          type: integer
+        anomalies_detected:
+          type: integer
+        performance_score:
+          type: number
+          format: float
+
+    TimeRange:
+      type: object
+      properties:
+        start_time:
+          type: string
+          format: date-time
+        end_time:
+          type: string
+          format: date-time
+        duration_seconds:
+          type: integer
+
+    BackupStatusResponse:
+      type: object
+      properties:
+        current_backup:
+          $ref: '#/components/schemas/BackupInfo'
+        recent_backups:
+          type: array
+          items:
+            $ref: '#/components/schemas/BackupInfo'
+        backup_configuration:
+          $ref: '#/components/schemas/BackupConfiguration'
+
+    BackupInfo:
+      type: object
+      properties:
+        backup_id:
+          type: string
+        type:
+          type: string
+          enum: [configuration, data_export, full_system]
+        status:
+          type: string
+          enum: [pending, running, completed, failed]
+        start_time:
+          type: string
+          format: date-time
+        end_time:
+          type: string
+          format: date-time
+        size_bytes:
+          type: integer
+        location:
+          type: string
+
+    BackupConfiguration:
+      type: object
+      properties:
+        enabled:
+          type: boolean
+        schedule:
+          type: string
+        retention_days:
+          type: integer
+        storage_type:
+          type: string
+          enum: [local, s3, azure]
+
+    CreateBackupRequest:
+      type: object
+      required:
+        - type
+      properties:
+        type:
+          type: string
+          enum: [configuration, data_export, full_system]
+        tags:
+          type: object
+          additionalProperties:
+            type: string
+        description:
+          type: string
+
+    BackupJobResponse:
+      type: object
+      properties:
+        job_id:
+          type: string
+        backup_id:
+          type: string
+        status:
+          type: string
+          enum: [accepted, queued, running]
+        estimated_duration_seconds:
+          type: integer
+        status_url:
+          type: string
+          format: uri
+
+security:
+  - ApiKeyAuth: []
+  - BearerAuth: []
+  - BasicAuth: []
+
+tags:
+  - name: Health
+    description: Health check and status endpoints
+  - name: MCP Tools
+    description: Model Context Protocol tool execution
+  - name: Database Operations
+    description: Database and table management operations
+  - name: Query Execution
+    description: Query execution and analysis
+  - name: Performance Analysis
+    description: Performance monitoring and analysis
+  - name: AI-Powered Analysis
+    description: Machine learning powered diagnostics
+  - name: ProfileEvents Analysis
+    description: ClickHouse ProfileEvents monitoring
+  - name: Monitoring
+    description: Metrics and observability
+  - name: Backup & Recovery
+    description: Backup and recovery operations
+
+externalDocs:
+  description: Find more info in the GitHub repository
+  url: https://github.com/maruthiprithivi/agent_zero

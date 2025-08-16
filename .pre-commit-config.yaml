@@ -1,24 +1,62 @@
+# Pre-commit hooks for Agent Zero - ClickHouse MCP Server
+# Enforces code quality and standards defined in CLAUDE.md
+
 repos:
+  # Basic file checks
   - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v4.5.0
+    rev: v4.6.0
     hooks:
       - id: trailing-whitespace
       - id: end-of-file-fixer
       - id: check-yaml
+      - id: check-json
+      - id: check-toml
+      - id: check-merge-conflict
+      - id: check-docstring-first
+      - id: debug-statements
       - id: check-added-large-files
         args: ["--maxkb=5000"]
 
+  # Python linting and formatting (using Ruff for speed)
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.3.1
+    rev: v0.6.9
     hooks:
       - id: ruff
-        args: [--fix, "--ignore", "PT001", --exit-non-zero-on-fix]
+        args: [--fix, --exit-non-zero-on-fix]
+        exclude: '^agent_zero/__init__\.py$'
+      - id: ruff-format
         exclude: '^agent_zero/__init__\.py$'
 
+  # Python code formatting (Black as backup/compatibility)
   - repo: https://github.com/psf/black
-    rev: 24.2.0
+    rev: 24.8.0
     hooks:
       - id: black
         language_version: python3
         args: [--line-length=100]
         exclude: '^agent_zero/__init__\.py$'
+
+  # Python security scanning
+  - repo: https://github.com/PyCQA/bandit
+    rev: 1.7.10
+    hooks:
+      - id: bandit
+        args: [--recursive, agent_zero/, --exclude, tests/]
+
+  # Documentation standards
+  - repo: https://github.com/pycqa/pydocstyle
+    rev: 6.3.0
+    hooks:
+      - id: pydocstyle
+        args: [--convention=google, --add-ignore=D100, D104, D105, D107, D213, D203]
+
+  # Configuration file validation
+  - repo: https://github.com/adrienverge/yamllint
+    rev: v1.35.1
+    hooks:
+      - id: yamllint
+        args: [-c, .github/.yamllint.yml]
+
+# Global configuration
+fail_fast: false
+default_stages: [pre-commit]

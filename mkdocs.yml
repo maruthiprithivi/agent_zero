@@ -1,0 +1,322 @@
+site_name: Agent Zero - ClickHouse MCP Server Documentation
+site_description: Comprehensive documentation for Agent Zero ClickHouse MCP Server - AI-powered database monitoring and analytics
+site_author: Maruthi Prithivi
+site_url: https://docs.agent-zero.example.com
+
+# Repository information
+repo_name: maruthiprithivi/agent_zero
+repo_url: https://github.com/maruthiprithivi/agent_zero
+edit_uri: edit/main/docs/
+
+# Copyright
+copyright: Copyright &copy; 2025 Maruthi Prithivi. Licensed under MIT License.
+
+# Configuration
+theme:
+  name: material
+  custom_dir: docs/overrides
+  logo: assets/images/agent-zero-logo.png
+  favicon: assets/images/favicon.ico
+
+  # Color scheme
+  palette:
+    - scheme: default
+      primary: blue
+      accent: blue
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+    - scheme: slate
+      primary: blue
+      accent: blue
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+
+  # Features
+  features:
+    - navigation.instant
+    - navigation.instant.prefetch
+    - navigation.tracking
+    - navigation.tabs
+    - navigation.tabs.sticky
+    - navigation.sections
+    - navigation.expand
+    - navigation.path
+    - navigation.prune
+    - navigation.indexes
+    - navigation.top
+    - navigation.footer
+    - search.suggest
+    - search.highlight
+    - search.share
+    - header.autohide
+    - content.action.edit
+    - content.action.view
+    - content.code.copy
+    - content.code.select
+    - content.code.annotate
+    - content.tabs.link
+    - content.tooltips
+    - toc.follow
+    - toc.integrate
+
+  # Language
+  language: en
+
+# Plugins
+plugins:
+  - search:
+      separator: '[\s\-,:!=\[\]()"`/]+|\.(?!\d)|&[lg]t;|(?!\b)(?=[A-Z][a-z])'
+  - minify:
+      minify_html: true
+  - git-revision-date-localized:
+      enable_creation_date: true
+      type: timeago
+  - git-committers:
+      repository: maruthiprithivi/agent_zero
+      branch: main
+  - git-authors
+  - macros
+  - tags:
+      tags_file: tags.md
+  - social:
+      cards_layout_options:
+        background_color: "#1976D2"
+        color: "#FFFFFF"
+  - swagger-ui-tag
+  - mermaid2:
+      arguments:
+        theme: auto
+  - table-reader
+  - mkdocstrings:
+      handlers:
+        python:
+          paths: [agent_zero]
+          options:
+            docstring_style: google
+            show_source: true
+            show_root_heading: true
+            show_category_heading: true
+            merge_init_into_class: true
+            separate_signature: true
+            show_signature_annotations: true
+
+# Extensions
+markdown_extensions:
+  - abbr
+  - admonition
+  - attr_list
+  - def_list
+  - footnotes
+  - md_in_html
+  - toc:
+      permalink: true
+      title: Page contents
+  - tables
+  - pymdownx.arithmatex:
+      generic: true
+  - pymdownx.betterem:
+      smart_enable: all
+  - pymdownx.caret
+  - pymdownx.details
+  - pymdownx.emoji:
+      emoji_generator: !!python/name:material.extensions.emoji.to_svg
+      emoji_index: !!python/name:material.extensions.emoji.twemoji
+  - pymdownx.highlight:
+      anchor_linenums: true
+      line_spans: __span
+      pygments_lang_class: true
+  - pymdownx.inlinehilite
+  - pymdownx.keys
+  - pymdownx.magiclink:
+      normalize_issue_symbols: true
+      repo_url_shorthand: true
+      user: maruthiprithivi
+      repo: agent_zero
+  - pymdownx.mark
+  - pymdownx.smartsymbols
+  - pymdownx.snippets:
+      auto_append:
+        - includes/abbreviations.md
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
+  - pymdownx.tabbed:
+      alternate_style: true
+      combine_header_slug: true
+      slugify: !!python/object/apply:pymdownx.slugs.slugify
+        kwds:
+          case: lower
+  - pymdownx.tasklist:
+      custom_checkbox: true
+  - pymdownx.tilde
+
+# Extra
+extra:
+  analytics:
+    provider: google
+    property: G-XXXXXXXXXX
+  social:
+    - icon: fontawesome/brands/github
+      link: https://github.com/maruthiprithivi/agent_zero
+      name: GitHub Repository
+    - icon: fontawesome/brands/docker
+      link: https://hub.docker.com/r/maruthiprithivi/agent-zero
+      name: Docker Hub
+    - icon: fontawesome/brands/python
+      link: https://pypi.org/project/ch-agent-zero/
+      name: PyPI Package
+  version:
+    provider: mike
+    default: latest
+  tags:
+    Performance: performance
+    API: api
+    Deployment: deployment
+    Tutorial: tutorial
+    Reference: reference
+
+# Extra CSS and JavaScript
+extra_css:
+  - assets/stylesheets/extra.css
+  - assets/stylesheets/custom.css
+
+extra_javascript:
+  - assets/javascripts/extra.js
+  - assets/javascripts/mathjax.js
+  - https://polyfill.io/v3/polyfill.min.js?features=es6
+  - https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js
+
+# Navigation
+nav:
+  - Home:
+    - index.md
+    - Overview: overview.md
+    - Features: features.md
+    - Architecture: architecture.md
+    - Changelog: changelog.md
+
+  - Getting Started:
+    - getting-started/index.md
+    - Installation: getting-started/installation.md
+    - Quick Start: getting-started/quickstart.md
+    - Configuration: getting-started/configuration.md
+    - IDE Setup: getting-started/ide-setup.md
+    - First Steps: getting-started/first-steps.md
+
+  - User Guide:
+    - user-guide/index.md
+    - Database Operations: user-guide/database-operations.md
+    - Performance Analysis: user-guide/performance-analysis.md
+    - AI-Powered Diagnostics: user-guide/ai-diagnostics.md
+    - ProfileEvents Analysis: user-guide/profile-events.md
+    - Storage Analytics: user-guide/storage-analytics.md
+    - Error Analysis: user-guide/error-analysis.md
+    - Monitoring Setup: user-guide/monitoring.md
+    - Best Practices: user-guide/best-practices.md
+
+  - Deployment:
+    - deployment/index.md
+    - Docker: deployment/docker.md
+    - Kubernetes: deployment/kubernetes.md
+    - Cloud Providers:
+      - deployment/cloud/aws.md
+      - deployment/cloud/azure.md
+      - deployment/cloud/gcp.md
+    - Production Setup: deployment/production.md
+    - Scaling: deployment/scaling.md
+    - Security: deployment/security.md
+
+  - API Reference:
+    - api/index.md
+    - OpenAPI Specification: api/openapi.md
+    - Authentication: api/authentication.md
+    - Rate Limiting: api/rate-limiting.md
+    - Error Handling: api/error-handling.md
+    - MCP Tools:
+      - api/mcp-tools/index.md
+      - Database Operations: api/mcp-tools/database-operations.md
+      - Performance Analysis: api/mcp-tools/performance-analysis.md
+      - AI Diagnostics: api/mcp-tools/ai-diagnostics.md
+      - ProfileEvents: api/mcp-tools/profile-events.md
+      - Storage Analytics: api/mcp-tools/storage-analytics.md
+    - SDK Reference:
+      - api/sdk/python.md
+      - api/sdk/javascript.md
+      - api/sdk/examples.md
+
+  - Tutorials:
+    - tutorials/index.md
+    - Basic Setup: tutorials/basic-setup.md
+    - Performance Monitoring: tutorials/performance-monitoring.md
+    - AI Bottleneck Detection: tutorials/ai-bottleneck-detection.md
+    - Custom Analytics: tutorials/custom-analytics.md
+    - Integration Examples: tutorials/integration-examples.md
+    - Production Deployment: tutorials/production-deployment.md
+    - Troubleshooting: tutorials/troubleshooting.md
+
+  - Developer Guide:
+    - development/index.md
+    - Contributing: development/contributing.md
+    - Development Setup: development/setup.md
+    - Architecture Deep Dive: development/architecture.md
+    - Code Style: development/code-style.md
+    - Testing: development/testing.md
+    - Documentation: development/documentation.md
+    - Release Process: development/release-process.md
+    - Extension Development: development/extensions.md
+
+  - Operations:
+    - operations/index.md
+    - Production Operations: operations/production-operations.md
+    - Monitoring: operations/monitoring.md
+    - Logging: operations/logging.md
+    - Backup & Recovery: operations/backup-recovery.md
+    - Performance Tuning: operations/performance-tuning.md
+    - Troubleshooting: operations/troubleshooting.md
+    - Runbooks: operations/runbooks.md
+    - Incident Response: operations/incident-response.md
+
+  - Examples:
+    - examples/index.md
+    - Basic Usage: examples/basic-usage.md
+    - Advanced Scenarios: examples/advanced-scenarios.md
+    - Production Examples: examples/production-examples.md
+    - Integration Patterns: examples/integration-patterns.md
+    - Code Samples: examples/code-samples.md
+
+  - FAQ:
+    - faq/index.md
+    - General: faq/general.md
+    - Installation: faq/installation.md
+    - Configuration: faq/configuration.md
+    - Performance: faq/performance.md
+    - Troubleshooting: faq/troubleshooting.md
+
+  - Support:
+    - support/index.md
+    - Community: support/community.md
+    - Bug Reports: support/bug-reports.md
+    - Feature Requests: support/feature-requests.md
+    - Professional Support: support/professional-support.md
+
+  - Legal:
+    - legal/license.md
+    - legal/privacy.md
+    - legal/terms.md
+    - legal/security.md
+
+# Validation
+validation:
+  omitted_files: warn
+  absolute_links: warn
+  unrecognized_links: warn
+
+# Watch additional directories
+watch:
+  - agent_zero/
+  - examples/
+  - configs/

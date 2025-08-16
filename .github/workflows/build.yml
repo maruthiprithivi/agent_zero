@@ -1,0 +1,330 @@
+name: Build Artifacts
+
+on:
+  push:
+    branches:
+      - main
+      - master
+      - develop
+      - 'release/**'
+      - 'feature/**'
+      - 'hotfix/**'
+    tags:
+      - 'v*'
+  pull_request:
+    branches:
+      - main
+      - master
+  workflow_dispatch:
+    inputs:
+      upload_artifacts:
+        description: 'Upload build artifacts'
+        required: false
+        default: 'true'
+        type: boolean
+      build_wheels:
+        description: 'Build wheel distributions'
+        required: false
+        default: 'true'
+        type: boolean
+
+env:
+  PYTHONUNBUFFERED: 1
+  FORCE_COLOR: 1
+
+jobs:
+  # Determine build configuration
+  config:
+    name: Build Configuration
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+      branch-type: ${{ steps.branch.outputs.type }}
+      should-build: ${{ steps.changes.outputs.should-build }}
+      build-type: ${{ steps.build-type.outputs.type }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+          cache: 'pip'
+
+      - name: Install version management tools
+        run: |
+          pip install uv setuptools-scm
+          python scripts/version-manager.py info
+
+      - name: Determine branch type
+        id: branch
+        run: |
+          BRANCH_NAME="${GITHUB_HEAD_REF:-${GITHUB_REF#refs/heads/}}"
+          echo "Branch: $BRANCH_NAME"
+
+          if [[ "$BRANCH_NAME" == "main" || "$BRANCH_NAME" == "master" ]]; then
+            echo "type=stable" >> $GITHUB_OUTPUT
+          elif [[ "$BRANCH_NAME" == "develop" ]]; then
+            echo "type=development" >> $GITHUB_OUTPUT
+          elif [[ "$BRANCH_NAME" =~ ^release/.* ]]; then
+            echo "type=release" >> $GITHUB_OUTPUT
+          elif [[ "$BRANCH_NAME" =~ ^feature/.* ]]; then
+            echo "type=feature" >> $GITHUB_OUTPUT
+          elif [[ "$BRANCH_NAME" =~ ^hotfix/.* ]]; then
+            echo "type=hotfix" >> $GITHUB_OUTPUT
+          else
+            echo "type=other" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Get version information
+        id: version
+        run: |
+          BRANCH_NAME="${GITHUB_HEAD_REF:-${GITHUB_REF#refs/heads/}}"
+          VERSION=$(python scripts/version-manager.py branch --base 0.2.0)
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "Determined version: $VERSION"
+
+      - name: Check for build-triggering changes
+        id: changes
+        uses: dorny/paths-filter@v2
+        with:
+          filters: |
+            should-build:
+              - 'agent_zero/**'
+              - 'pyproject.toml'
+              - 'scripts/**'
+              - 'setup.py'
+              - 'setup.cfg'
+              - 'MANIFEST.in'
+
+      - name: Determine build type
+        id: build-type
+        run: |
+          if [[ "${{ github.event_name }}" == "push" && "${{ github.ref }}" =~ refs/tags/v.* ]]; then
+            echo "type=release" >> $GITHUB_OUTPUT
+          elif [[ "${{ steps.branch.outputs.type }}" == "stable" ]]; then
+            echo "type=stable" >> $GITHUB_OUTPUT
+          elif [[ "${{ steps.branch.outputs.type }}" == "release" ]]; then
+            echo "type=prerelease" >> $GITHUB_OUTPUT
+          else
+            echo "type=development" >> $GITHUB_OUTPUT
+          fi
+
+  # Build source distribution
+  build-sdist:
+    name: Build Source Distribution
+    runs-on: ubuntu-latest
+    needs: config
+    if: needs.config.outputs.should-build == 'true'
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+          cache: 'pip'
+
+      - name: Install build tools
+        run: |
+          pip install uv build twine setuptools-scm
+
+      - name: Verify project configuration
+        run: |
+          python -c "import setuptools_scm; print(f'Version: {setuptools_scm.get_version()}')"
+
+      - name: Build source distribution
+        run: |
+          python -m build --sdist --outdir dist/
+
+      - name: Verify source distribution
+        run: |
+          twine check dist/*.tar.gz
+          ls -la dist/
+
+      - name: Test source distribution installation
+        run: |
+          # Create a temporary environment to test installation
+          uv venv test-env
+          source test-env/bin/activate
+          pip install dist/*.tar.gz
+          python -c "import agent_zero; print(f'Installed version: {agent_zero.__version__}')"
+
+      - name: Upload source distribution
+        uses: actions/upload-artifact@v4
+        with:
+          name: source-distribution
+          path: dist/*.tar.gz
+          retention-days: 90
+
+  # Build wheel distributions
+  build-wheels:
+    name: Build Wheels
+    runs-on: ${{ matrix.os }}
+    needs: config
+    if: needs.config.outputs.should-build == 'true' && github.event.inputs.build_wheels != 'false'
+
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        python-version: ["3.13"]
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: 'pip'
+
+      - name: Install build tools
+        run: |
+          pip install uv build wheel setuptools-scm
+
+      - name: Build wheel
+        run: |
+          python -m build --wheel --outdir dist/
+
+      - name: Verify wheel
+        run: |
+          python -m pip install twine
+          twine check dist/*.whl
+
+      - name: Test wheel installation
+        run: |
+          # Test installation in clean environment
+          uv venv test-wheel-env
+          uv pip install --python test-wheel-env dist/*.whl
+          uv run --python test-wheel-env python -c "import agent_zero; print(f'Wheel installed version: {agent_zero.__version__}')"
+
+      - name: Upload wheels
+        uses: actions/upload-artifact@v4
+        with:
+          name: wheel-${{ matrix.os }}-py${{ matrix.python-version }}
+          path: dist/*.whl
+          retention-days: 90
+
+  # Generate build metadata
+  build-metadata:
+    name: Generate Build Metadata
+    runs-on: ubuntu-latest
+    needs: [config, build-sdist, build-wheels]
+    if: always() && needs.config.outputs.should-build == 'true'
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts/
+
+      - name: Generate build metadata
+        run: |
+          cat > build-metadata.json << EOF
+          {
+            "version": "${{ needs.config.outputs.version }}",
+            "branch_type": "${{ needs.config.outputs.branch-type }}",
+            "build_type": "${{ needs.config.outputs.build-type }}",
+            "commit_sha": "${{ github.sha }}",
+            "ref": "${{ github.ref }}",
+            "event_name": "${{ github.event_name }}",
+            "build_timestamp": "$(date -u +%Y-%m-%dT%H:%M:%SZ)",
+            "python_version": "3.13",
+            "artifacts": []
+          }
+          EOF
+
+      - name: List all artifacts
+        run: |
+          echo "=== Build Artifacts ==="
+          find artifacts/ -type f -name "*.tar.gz" -o -name "*.whl" | sort
+
+          echo "=== Artifact Details ==="
+          find artifacts/ -type f \( -name "*.tar.gz" -o -name "*.whl" \) -exec ls -lh {} \;
+
+      - name: Create build summary
+        run: |
+          echo "## 📦 Build Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Version:** ${{ needs.config.outputs.version }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Branch Type:** ${{ needs.config.outputs.branch-type }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Build Type:** ${{ needs.config.outputs.build-type }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Commit:** ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Artifacts Generated" >> $GITHUB_STEP_SUMMARY
+          echo "| Type | Count | Status |" >> $GITHUB_STEP_SUMMARY
+          echo "|------|-------|--------|" >> $GITHUB_STEP_SUMMARY
+
+          SDIST_COUNT=$(find artifacts/ -name "*.tar.gz" | wc -l)
+          WHEEL_COUNT=$(find artifacts/ -name "*.whl" | wc -l)
+
+          echo "| Source Distribution | $SDIST_COUNT | ${{ needs.build-sdist.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Wheels | $WHEEL_COUNT | ${{ needs.build-wheels.result }} |" >> $GITHUB_STEP_SUMMARY
+
+      - name: Upload build metadata
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-metadata
+          path: build-metadata.json
+          retention-days: 30
+
+  # Build success summary
+  build-success:
+    name: Build Pipeline Success
+    runs-on: ubuntu-latest
+    needs: [config, build-sdist, build-wheels, build-metadata]
+    if: always()
+
+    steps:
+      - name: Check build status
+        run: |
+          echo "Config: ${{ needs.config.result }}"
+          echo "Source Distribution: ${{ needs.build-sdist.result }}"
+          echo "Wheels: ${{ needs.build-wheels.result }}"
+          echo "Metadata: ${{ needs.build-metadata.result }}"
+
+          if [[ "${{ needs.config.result }}" == "failure" || "${{ needs.build-sdist.result }}" == "failure" ]]; then
+            echo "❌ Build Pipeline failed"
+            exit 1
+          elif [[ "${{ needs.config.outputs.should-build }}" == "false" ]]; then
+            echo "⏭️ Build skipped - no changes detected"
+          else
+            echo "✅ Build Pipeline succeeded"
+          fi
+
+      - name: Build status summary
+        if: always()
+        run: |
+          echo "## 🔨 Build Pipeline Status" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          if [[ "${{ needs.config.outputs.should-build }}" == "false" ]]; then
+            echo "⏭️ **Build skipped** - No changes detected in source files" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "| Stage | Status |" >> $GITHUB_STEP_SUMMARY
+            echo "|-------|--------|" >> $GITHUB_STEP_SUMMARY
+            echo "| Configuration | ${{ needs.config.result }} |" >> $GITHUB_STEP_SUMMARY
+            echo "| Source Distribution | ${{ needs.build-sdist.result }} |" >> $GITHUB_STEP_SUMMARY
+            echo "| Wheels | ${{ needs.build-wheels.result }} |" >> $GITHUB_STEP_SUMMARY
+            echo "| Metadata | ${{ needs.build-metadata.result }} |" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "**Version Built:** ${{ needs.config.outputs.version }}" >> $GITHUB_STEP_SUMMARY
+            echo "**Branch Type:** ${{ needs.config.outputs.branch-type }}" >> $GITHUB_STEP_SUMMARY
+          fi

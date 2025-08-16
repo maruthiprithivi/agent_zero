@@ -1,0 +1,361 @@
+name: Publish Development Build
+
+on:
+  push:
+    branches:
+      - develop
+      - 'feature/**'
+  schedule:
+    # Weekly automatic dev builds from develop branch
+    - cron: '0 2 * * 1'  # Mondays at 2 AM UTC
+  workflow_dispatch:
+    inputs:
+      branch:
+        description: 'Branch to publish from'
+        required: false
+        type: string
+        default: 'develop'
+      force_publish:
+        description: 'Force publish even if no changes'
+        required: false
+        default: false
+        type: boolean
+      skip_tests:
+        description: 'Skip tests before publishing'
+        required: false
+        default: false
+        type: boolean
+      dry_run:
+        description: 'Perform a dry run (build but do not publish)'
+        required: false
+        default: false
+        type: boolean
+
+env:
+  PYTHONUNBUFFERED: 1
+  FORCE_COLOR: 1
+
+jobs:
+  # Development build validation
+  validate:
+    name: Development Build Validation
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+      branch-type: ${{ steps.branch.outputs.type }}
+      should-publish: ${{ steps.changes.outputs.should-publish }}
+      publish-target: ${{ steps.target.outputs.target }}
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event.inputs.branch || github.ref }}
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+          cache: 'pip'
+
+      - name: Install validation tools
+        run: |
+          pip install uv setuptools-scm
+
+      - name: Determine branch type and publish eligibility
+        id: branch
+        run: |
+          BRANCH_NAME="${GITHUB_HEAD_REF:-${GITHUB_REF#refs/heads/}}"
+          echo "Branch: $BRANCH_NAME"
+
+          if [[ "$BRANCH_NAME" == "develop" ]]; then
+            echo "type=development" >> $GITHUB_OUTPUT
+          elif [[ "$BRANCH_NAME" =~ ^feature/.* ]]; then
+            echo "type=feature" >> $GITHUB_OUTPUT
+          elif [[ "$BRANCH_NAME" =~ ^hotfix/.* ]]; then
+            echo "type=hotfix" >> $GITHUB_OUTPUT
+          else
+            echo "type=other" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Generate development version
+        id: version
+        run: |
+          BRANCH_NAME="${GITHUB_HEAD_REF:-${GITHUB_REF#refs/heads/}}"
+          DEV_VERSION=$(python scripts/version-manager.py branch --base 0.2.0)
+          echo "version=$DEV_VERSION" >> $GITHUB_OUTPUT
+          echo "Generated development version: $DEV_VERSION"
+
+      - name: Determine publish target
+        id: target
+        run: |
+          BRANCH_TYPE="${{ steps.branch.outputs.type }}"
+
+          if [[ "$BRANCH_TYPE" == "development" ]]; then
+            echo "target=testpypi" >> $GITHUB_OUTPUT
+          elif [[ "$BRANCH_TYPE" == "feature" ]]; then
+            echo "target=testpypi" >> $GITHUB_OUTPUT
+          else
+            echo "target=none" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Check for significant changes
+        id: changes
+        uses: dorny/paths-filter@v2
+        with:
+          filters: |
+            source:
+              - 'agent_zero/**'
+              - 'pyproject.toml'
+              - 'scripts/**'
+              - 'setup.py'
+              - 'setup.cfg'
+
+      - name: Determine if should publish
+        id: should-publish
+        run: |
+          if [[ "${{ github.event.inputs.force_publish }}" == "true" ]]; then
+            echo "should-publish=true" >> $GITHUB_OUTPUT
+            echo "📋 Force publish requested"
+          elif [[ "${{ steps.changes.outputs.source }}" == "true" ]]; then
+            echo "should-publish=true" >> $GITHUB_OUTPUT
+            echo "📋 Source changes detected"
+          elif [[ "${{ github.event_name }}" == "schedule" ]]; then
+            echo "should-publish=true" >> $GITHUB_OUTPUT
+            echo "📋 Scheduled build"
+          else
+            echo "should-publish=false" >> $GITHUB_OUTPUT
+            echo "⏭️ No significant changes detected, skipping publish"
+          fi
+
+  # Quick development tests
+  test:
+    name: Development Testing
+    runs-on: ubuntu-latest
+    needs: validate
+    if: needs.validate.outputs.should-publish == 'true' && github.event.inputs.skip_tests != 'true'
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event.inputs.branch || github.ref }}
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+          cache: 'pip'
+
+      - name: Install dependencies
+        run: |
+          pip install uv
+          uv venv
+          uv pip install -e .[dev]
+
+      - name: Run quick tests
+        run: |
+          # Run a subset of tests for faster feedback
+          uv run pytest -v --tb=short -x tests/ -k "not slow"
+
+      - name: Run basic linting
+        run: |
+          uv run ruff check agent_zero --output-format=github
+        continue-on-error: true
+
+  # Build development artifacts
+  build:
+    name: Build Development Artifacts
+    runs-on: ubuntu-latest
+    needs: [validate, test]
+    if: always() && needs.validate.outputs.should-publish == 'true' && (needs.test.result == 'success' || needs.test.result == 'skipped')
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event.inputs.branch || github.ref }}
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+          cache: 'pip'
+
+      - name: Install build tools
+        run: |
+          pip install uv build twine setuptools-scm
+
+      - name: Build distributions
+        run: |
+          python -m build --sdist --wheel --outdir dist/
+
+      - name: Verify distributions
+        run: |
+          twine check dist/*
+          ls -la dist/
+
+      - name: Test installation from wheel
+        run: |
+          uv venv test-install
+          uv pip install --python test-install dist/*.whl
+          uv run --python test-install python -c "import agent_zero; print(f'Development version: {agent_zero.__version__}')"
+
+      - name: Upload distributions
+        uses: actions/upload-artifact@v4
+        with:
+          name: dev-distributions
+          path: dist/
+          retention-days: 7  # Short retention for dev builds
+
+  # Publish to TestPyPI
+  publish:
+    name: Publish to TestPyPI
+    runs-on: ubuntu-latest
+    needs: [validate, test, build]
+    if: needs.validate.outputs.publish-target == 'testpypi'
+    environment:
+      name: testpypi
+      url: https://test.pypi.org/project/ch-agent-zero/
+    permissions:
+      id-token: write # Required for Trusted Publishing
+
+    steps:
+      - name: Download distributions
+        uses: actions/download-artifact@v4
+        with:
+          name: dev-distributions
+          path: dist/
+
+      - name: Verify distributions before publishing
+        run: |
+          ls -la dist/
+          echo "Development files for TestPyPI:"
+          find dist/ -name "*.whl" -o -name "*.tar.gz" | sort
+
+      - name: Dry run check
+        if: github.event.inputs.dry_run == 'true'
+        run: |
+          echo "🔍 DRY RUN MODE - Would publish these development files to TestPyPI:"
+          find dist/ -name "*.whl" -o -name "*.tar.gz" -exec ls -lh {} \;
+          echo "✅ Dry run completed successfully"
+
+      - name: Publish to TestPyPI using Trusted Publishing
+        if: github.event.inputs.dry_run != 'true'
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          repository-url: https://test.pypi.org/legacy/
+          print-hash: true
+          verbose: true
+          skip-existing: true  # Skip if version already exists
+
+  # Test installation from TestPyPI
+  test-install:
+    name: Test Installation from TestPyPI
+    runs-on: ubuntu-latest
+    needs: [validate, test, build, publish]
+    if: always() && needs.publish.result == 'success'
+
+    steps:
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Test installation from TestPyPI
+        run: |
+          # Wait a bit for TestPyPI to process the upload
+          sleep 30
+
+          pip install uv
+          uv venv test-env
+
+          # Try to install from TestPyPI with retry logic
+          for i in {1..3}; do
+            if uv pip install --python test-env \
+              --index-url https://test.pypi.org/simple/ \
+              --extra-index-url https://pypi.org/simple/ \
+              ch-agent-zero==${{ needs.validate.outputs.version }}; then
+              echo "✅ Installation successful on attempt $i"
+              break
+            else
+              echo "❌ Installation failed on attempt $i, retrying..."
+              sleep 30
+            fi
+          done
+
+          # Verify the installation
+          uv run --python test-env python -c "
+          import agent_zero
+          print(f'✅ Successfully imported agent_zero version: {agent_zero.__version__}')
+          "
+
+  # Development build summary
+  post-publish:
+    name: Development Build Summary
+    runs-on: ubuntu-latest
+    needs: [validate, test, build, publish, test-install]
+    if: always()
+
+    steps:
+      - name: Generate summary
+        run: |
+          if [[ "${{ needs.validate.outputs.should-publish }}" != "true" ]]; then
+            echo "## ⏭️ Development Build Skipped" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "No significant changes detected or build not triggered." >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "**Branch Type:** ${{ needs.validate.outputs.branch-type }}" >> $GITHUB_STEP_SUMMARY
+            echo "**Trigger:** ${{ github.event_name }}" >> $GITHUB_STEP_SUMMARY
+
+          elif [[ "${{ needs.publish.result }}" == "success" ]]; then
+            echo "## 🧪 Development Build Published to TestPyPI" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "**Version:** ${{ needs.validate.outputs.version }}" >> $GITHUB_STEP_SUMMARY
+            echo "**Branch Type:** ${{ needs.validate.outputs.branch-type }}" >> $GITHUB_STEP_SUMMARY
+            echo "**TestPyPI:** https://test.pypi.org/project/ch-agent-zero/${{ needs.validate.outputs.version }}/" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "### Installation Test" >> $GITHUB_STEP_SUMMARY
+            echo "\`\`\`bash" >> $GITHUB_STEP_SUMMARY
+            echo "pip install --index-url https://test.pypi.org/simple/ \\\\" >> $GITHUB_STEP_SUMMARY
+            echo "  --extra-index-url https://pypi.org/simple/ \\\\" >> $GITHUB_STEP_SUMMARY
+            echo "  ch-agent-zero==${{ needs.validate.outputs.version }}" >> $GITHUB_STEP_SUMMARY
+            echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+
+          else
+            echo "## ❌ Development Build Failed" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "**Attempted Version:** ${{ needs.validate.outputs.version }}" >> $GITHUB_STEP_SUMMARY
+            echo "**Branch Type:** ${{ needs.validate.outputs.branch-type }}" >> $GITHUB_STEP_SUMMARY
+          fi
+
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Pipeline Status" >> $GITHUB_STEP_SUMMARY
+          echo "| Stage | Status |" >> $GITHUB_STEP_SUMMARY
+          echo "|-------|--------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Validation | ${{ needs.validate.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Testing | ${{ needs.test.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Build | ${{ needs.build.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Publish | ${{ needs.publish.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Test Install | ${{ needs.test-install.result }} |" >> $GITHUB_STEP_SUMMARY
+
+      - name: Development build notification
+        if: needs.publish.result == 'success'
+        run: |
+          echo "🧪 Development build ${{ needs.validate.outputs.version }} published to TestPyPI"
+          echo "🔗 https://test.pypi.org/project/ch-agent-zero/${{ needs.validate.outputs.version }}/"
+          echo "📋 Install with: pip install --index-url https://test.pypi.org/simple/ --extra-index-url https://pypi.org/simple/ ch-agent-zero==${{ needs.validate.outputs.version }}"
+
+  # Clean up old TestPyPI versions (manual trigger only)
+  cleanup:
+    name: Cleanup Old Development Builds
+    runs-on: ubuntu-latest
+    if: github.event_name == 'workflow_dispatch' && github.event.inputs.branch == 'develop'
+
+    steps:
+      - name: Cleanup notice
+        run: |
+          echo "🧹 Note: TestPyPI versions should be cleaned up manually if needed"
+          echo "TestPyPI doesn't support automatic deletion via API"
+          echo "Consider removing old development versions manually from:"
+          echo "https://test.pypi.org/manage/project/ch-agent-zero/releases/"

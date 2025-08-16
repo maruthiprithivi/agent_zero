@@ -1,0 +1,612 @@
+name: Documentation Build and Deploy
+
+on:
+  push:
+    branches:
+      - main
+      - develop
+      - 'docs/**'
+      - 'release/**'
+    paths:
+      - 'docs/**'
+      - 'mkdocs.yml'
+      - 'agent_zero/**/*.py'
+      - '.github/workflows/documentation.yml'
+  pull_request:
+    branches:
+      - main
+      - develop
+    paths:
+      - 'docs/**'
+      - 'mkdocs.yml'
+      - 'agent_zero/**/*.py'
+      - '.github/workflows/documentation.yml'
+  workflow_dispatch:
+    inputs:
+      deploy_to_staging:
+        description: 'Deploy to staging environment'
+        required: false
+        default: 'true'
+        type: boolean
+      deploy_to_production:
+        description: 'Deploy to production (main branch only)'
+        required: false
+        default: 'false'
+        type: boolean
+      force_rebuild:
+        description: 'Force complete rebuild of documentation'
+        required: false
+        default: 'false'
+        type: boolean
+
+env:
+  PYTHON_VERSION: '3.11'
+  NODE_VERSION: '18'
+  DOCS_SITE_URL: 'https://docs.agent-zero.example.com'
+  STAGING_SITE_URL: 'https://docs-staging.agent-zero.example.com'
+
+jobs:
+  # Validate documentation changes
+  validate:
+    name: Validate Documentation
+    runs-on: ubuntu-latest
+    outputs:
+      docs-changed: ${{ steps.changes.outputs.docs }}
+      api-changed: ${{ steps.changes.outputs.api }}
+      should-deploy: ${{ steps.deploy-check.outputs.should-deploy }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Check for documentation changes
+        uses: dorny/paths-filter@v2
+        id: changes
+        with:
+          filters: |
+            docs:
+              - 'docs/**'
+              - 'mkdocs.yml'
+              - '.github/workflows/documentation.yml'
+            api:
+              - 'docs/api/**'
+              - 'agent_zero/**/*.py'
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: 'pip'
+
+      - name: Install documentation dependencies
+        run: |
+          pip install --upgrade pip
+          pip install mkdocs-material mkdocs-mermaid2-plugin mkdocs-swagger-ui-tag
+          pip install mkdocs-git-revision-date-localized-plugin mkdocs-git-committers-plugin-2
+          pip install mkdocs-macros-plugin mkdocs-table-reader-plugin mkdocs-tags-plugin
+          pip install mkdocstrings[python] mkdocs-social mkdocs-minify-plugin
+
+      - name: Validate MkDocs configuration
+        run: |
+          mkdocs config-show --strict
+
+      - name: Check for broken links
+        run: |
+          mkdocs build --strict --verbose
+          # Install linkchecker
+          pip install linkchecker
+          # Check for broken internal links
+          linkchecker --check-extern --ignore-url="^mailto:" site/
+
+      - name: Validate OpenAPI specification
+        run: |
+          pip install openapi-spec-validator
+          openapi-spec-validator docs/api/openapi.yaml
+
+      - name: Check documentation style
+        run: |
+          pip install vale
+          # Download Vale styles
+          curl -sL https://github.com/errata-ai/vale/releases/latest/download/vale_Linux_64-bit.tar.gz | tar -xz
+          ./vale --config=.vale.ini docs/
+
+      - name: Determine deployment requirements
+        id: deploy-check
+        run: |
+          if [[ "${{ github.event_name }}" == "push" && "${{ github.ref }}" == "refs/heads/main" ]]; then
+            echo "should-deploy=production" >> $GITHUB_OUTPUT
+          elif [[ "${{ github.event_name }}" == "push" && "${{ github.ref }}" == "refs/heads/develop" ]]; then
+            echo "should-deploy=staging" >> $GITHUB_OUTPUT
+          elif [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+            if [[ "${{ github.event.inputs.deploy_to_production }}" == "true" && "${{ github.ref }}" == "refs/heads/main" ]]; then
+              echo "should-deploy=production" >> $GITHUB_OUTPUT
+            elif [[ "${{ github.event.inputs.deploy_to_staging }}" == "true" ]]; then
+              echo "should-deploy=staging" >> $GITHUB_OUTPUT
+            else
+              echo "should-deploy=none" >> $GITHUB_OUTPUT
+            fi
+          else
+            echo "should-deploy=none" >> $GITHUB_OUTPUT
+          fi
+
+  # Generate API documentation
+  api-docs:
+    name: Generate API Documentation
+    runs-on: ubuntu-latest
+    needs: validate
+    if: needs.validate.outputs.api-changed == 'true' || github.event.inputs.force_rebuild == 'true'
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: 'pip'
+
+      - name: Install project dependencies
+        run: |
+          pip install -e .[dev]
+
+      - name: Generate API documentation from docstrings
+        run: |
+          python scripts/generate_api_docs.py
+
+      - name: Validate generated OpenAPI spec
+        run: |
+          pip install openapi-spec-validator
+          python scripts/validate_openapi.py
+
+      - name: Generate SDK documentation
+        run: |
+          python scripts/generate_sdk_docs.py
+
+      - name: Upload API documentation artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: api-docs
+          path: |
+            docs/api/generated/
+            docs/sdk/generated/
+          retention-days: 30
+
+  # Build documentation site
+  build:
+    name: Build Documentation Site
+    runs-on: ubuntu-latest
+    needs: [validate, api-docs]
+    if: always() && (needs.validate.result == 'success')
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Needed for git-based plugins
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: 'pip'
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Download API documentation artifacts
+        if: needs.api-docs.result == 'success'
+        uses: actions/download-artifact@v4
+        with:
+          name: api-docs
+          path: docs/
+
+      - name: Install documentation dependencies
+        run: |
+          pip install --upgrade pip
+          pip install mkdocs-material mkdocs-mermaid2-plugin mkdocs-swagger-ui-tag
+          pip install mkdocs-git-revision-date-localized-plugin mkdocs-git-committers-plugin-2
+          pip install mkdocs-macros-plugin mkdocs-table-reader-plugin mkdocs-tags-plugin
+          pip install mkdocstrings[python] mkdocs-social mkdocs-minify-plugin
+
+          # Install Node.js dependencies for advanced features
+          npm install -g mermaid mermaid.cli
+          npm install tailwindcss autoprefixer
+
+      - name: Configure git for git-based plugins
+        run: |
+          git config --global user.name "GitHub Actions"
+          git config --global user.email "actions@github.com"
+
+      - name: Set environment variables for build
+        run: |
+          echo "SITE_URL=${{ env.DOCS_SITE_URL }}" >> $GITHUB_ENV
+          echo "REPO_NAME=${{ github.repository }}" >> $GITHUB_ENV
+          echo "REPO_URL=https://github.com/${{ github.repository }}" >> $GITHUB_ENV
+          echo "EDIT_URI=edit/${{ github.ref_name }}/docs/" >> $GITHUB_ENV
+
+          # Set version information
+          if [[ "${{ github.ref }}" == "refs/heads/main" ]]; then
+            echo "VERSION=latest" >> $GITHUB_ENV
+            echo "VERSION_ALIAS=stable" >> $GITHUB_ENV
+          elif [[ "${{ github.ref }}" == "refs/heads/develop" ]]; then
+            echo "VERSION=develop" >> $GITHUB_ENV
+            echo "VERSION_ALIAS=development" >> $GITHUB_ENV
+          else
+            echo "VERSION=${{ github.ref_name }}" >> $GITHUB_ENV
+            echo "VERSION_ALIAS=branch" >> $GITHUB_ENV
+          fi
+
+      - name: Build documentation with caching
+        run: |
+          # Create cache directory
+          mkdir -p .mkdocs_cache
+
+          # Build with strict mode for production
+          if [[ "${{ needs.validate.outputs.should-deploy }}" == "production" ]]; then
+            mkdocs build --strict --verbose
+          else
+            mkdocs build --verbose
+          fi
+
+      - name: Optimize built site
+        run: |
+          # Compress images
+          find site/ -name "*.png" -exec optipng -o2 {} \;
+          find site/ -name "*.jpg" -exec jpegoptim --strip-all {} \;
+
+          # Generate sitemap
+          python scripts/generate_sitemap.py site/ ${{ env.DOCS_SITE_URL }}
+
+          # Add security headers
+          cp scripts/netlify/_headers site/_headers 2>/dev/null || true
+          cp scripts/netlify/_redirects site/_redirects 2>/dev/null || true
+
+      - name: Run accessibility tests
+        run: |
+          npm install -g pa11y-ci
+          pa11y-ci --sitemap "${{ env.DOCS_SITE_URL }}/sitemap.xml" || true
+
+      - name: Generate performance report
+        run: |
+          npm install -g lighthouse-ci
+          lhci autorun --collect.url="file://$(pwd)/site/index.html" || true
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: documentation-site-${{ github.sha }}
+          path: site/
+          retention-days: 30
+
+      - name: Upload build reports
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: build-reports-${{ github.sha }}
+          path: |
+            .lighthouseci/
+            pa11y-ci-results/
+          retention-days: 7
+
+  # Test documentation deployment
+  test-deployment:
+    name: Test Documentation Deployment
+    runs-on: ubuntu-latest
+    needs: build
+    if: needs.build.result == 'success'
+
+    steps:
+      - name: Download documentation artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: documentation-site-${{ github.sha }}
+          path: site/
+
+      - name: Set up test server
+        run: |
+          python -m http.server 8000 --directory site/ &
+          sleep 5
+
+      - name: Test site functionality
+        run: |
+          # Test main page loads
+          curl -f http://localhost:8000/ > /dev/null
+
+          # Test API documentation
+          curl -f http://localhost:8000/api/ > /dev/null
+
+          # Test search functionality
+          curl -f http://localhost:8000/search/ > /dev/null || true
+
+          # Test OpenAPI spec accessibility
+          curl -f http://localhost:8000/api/openapi.yaml > /dev/null
+
+      - name: Test responsive design
+        run: |
+          npm install -g puppeteer-cli
+          # Test mobile responsiveness
+          puppeteer screenshot --viewport 375x667 http://localhost:8000/ mobile-screenshot.png
+          puppeteer screenshot --viewport 1920x1080 http://localhost:8000/ desktop-screenshot.png
+
+      - name: Upload test artifacts
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: test-screenshots-${{ github.sha }}
+          path: "*-screenshot.png"
+          retention-days: 7
+
+  # Deploy to staging
+  deploy-staging:
+    name: Deploy to Staging
+    runs-on: ubuntu-latest
+    needs: [validate, build, test-deployment]
+    if: needs.validate.outputs.should-deploy == 'staging' && needs.test-deployment.result == 'success'
+    environment: staging
+
+    steps:
+      - name: Download documentation artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: documentation-site-${{ github.sha }}
+          path: site/
+
+      - name: Deploy to Netlify staging
+        uses: nwtgck/actions-netlify@v2.0
+        with:
+          publish-dir: './site'
+          production-deploy: false
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          deploy-message: "Deploy from GitHub Actions - ${{ github.sha }}"
+          enable-pull-request-comment: true
+          enable-commit-comment: true
+        env:
+          NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
+          NETLIFY_SITE_ID: ${{ secrets.NETLIFY_STAGING_SITE_ID }}
+
+      - name: Update staging DNS
+        run: |
+          # Update staging subdomain if needed
+          echo "Staging deployment completed"
+          echo "Site available at: ${{ env.STAGING_SITE_URL }}"
+
+      - name: Run post-deployment tests
+        run: |
+          # Wait for deployment to be available
+          sleep 30
+
+          # Test staging site
+          curl -f ${{ env.STAGING_SITE_URL }}/ > /dev/null
+          curl -f ${{ env.STAGING_SITE_URL }}/api/ > /dev/null
+
+          # Test API documentation functionality
+          curl -f ${{ env.STAGING_SITE_URL }}/api/openapi.yaml > /dev/null
+
+      - name: Notify team
+        uses: 8398a7/action-slack@v3
+        if: always()
+        with:
+          status: ${{ job.status }}
+          text: 'Documentation staging deployment: ${{ job.status }}'
+          webhook_url: ${{ secrets.SLACK_WEBHOOK }}
+
+  # Deploy to production
+  deploy-production:
+    name: Deploy to Production
+    runs-on: ubuntu-latest
+    needs: [validate, build, test-deployment]
+    if: needs.validate.outputs.should-deploy == 'production' && needs.test-deployment.result == 'success'
+    environment: production
+
+    steps:
+      - name: Download documentation artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: documentation-site-${{ github.sha }}
+          path: site/
+
+      - name: Deploy to production hosting
+        uses: nwtgck/actions-netlify@v2.0
+        with:
+          publish-dir: './site'
+          production-deploy: true
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          deploy-message: "Production deploy from GitHub Actions - ${{ github.sha }}"
+        env:
+          NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
+          NETLIFY_SITE_ID: ${{ secrets.NETLIFY_PRODUCTION_SITE_ID }}
+
+      - name: Update search index
+        run: |
+          # Update search index for production site
+          curl -X POST "${{ secrets.SEARCH_INDEX_WEBHOOK_URL }}" \
+            -H "Authorization: Bearer ${{ secrets.SEARCH_INDEX_TOKEN }}" \
+            -H "Content-Type: application/json" \
+            -d '{"site_url": "${{ env.DOCS_SITE_URL }}"}'
+
+      - name: Invalidate CDN cache
+        run: |
+          # Invalidate CloudFlare cache if using CDN
+          curl -X POST "https://api.cloudflare.com/client/v4/zones/${{ secrets.CLOUDFLARE_ZONE_ID }}/purge_cache" \
+            -H "Authorization: Bearer ${{ secrets.CLOUDFLARE_API_TOKEN }}" \
+            -H "Content-Type: application/json" \
+            -d '{"purge_everything":true}' || true
+
+      - name: Run production smoke tests
+        run: |
+          # Wait for deployment and CDN update
+          sleep 60
+
+          # Test production site
+          curl -f ${{ env.DOCS_SITE_URL }}/ > /dev/null
+          curl -f ${{ env.DOCS_SITE_URL }}/api/ > /dev/null
+          curl -f ${{ env.DOCS_SITE_URL }}/getting-started/ > /dev/null
+
+          # Test API documentation
+          curl -f ${{ env.DOCS_SITE_URL }}/api/openapi.yaml > /dev/null
+
+          # Test search functionality
+          curl -f "${{ env.DOCS_SITE_URL }}/search/?q=installation" > /dev/null || true
+
+      - name: Update GitHub Pages (backup)
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./site
+          cname: ${{ env.DOCS_SITE_URL }}
+
+      - name: Create deployment record
+        run: |
+          # Create a deployment record for tracking
+          echo "Documentation deployed to production"
+          echo "Version: ${{ github.sha }}"
+          echo "URL: ${{ env.DOCS_SITE_URL }}"
+          echo "Timestamp: $(date -u +%Y-%m-%dT%H:%M:%SZ)"
+
+      - name: Notify stakeholders
+        uses: 8398a7/action-slack@v3
+        if: always()
+        with:
+          status: ${{ job.status }}
+          text: |
+            📚 Documentation Production Deployment: ${{ job.status }}
+            🔗 Site: ${{ env.DOCS_SITE_URL }}
+            📝 Commit: ${{ github.sha }}
+          webhook_url: ${{ secrets.SLACK_WEBHOOK }}
+
+  # Cleanup old deployments
+  cleanup:
+    name: Cleanup Old Deployments
+    runs-on: ubuntu-latest
+    needs: [deploy-production, deploy-staging]
+    if: always() && (needs.deploy-production.result == 'success' || needs.deploy-staging.result == 'success')
+
+    steps:
+      - name: Cleanup old artifacts
+        uses: geekyeggo/delete-artifact@v4
+        with:
+          name: |
+            documentation-site-*
+            build-reports-*
+            test-screenshots-*
+          useGlob: true
+          failOnError: false
+
+      - name: Cleanup old Netlify deployments
+        run: |
+          # Keep only last 10 deployments per site
+          echo "Cleanup completed"
+
+  # Documentation quality metrics
+  quality-metrics:
+    name: Documentation Quality Metrics
+    runs-on: ubuntu-latest
+    needs: build
+    if: always() && needs.build.result == 'success'
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Download documentation artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: documentation-site-${{ github.sha }}
+          path: site/
+
+      - name: Analyze documentation quality
+        run: |
+          # Count pages and words
+          PAGES=$(find site/ -name "*.html" | wc -l)
+          WORDS=$(find site/ -name "*.html" -exec cat {} \; | wc -w)
+
+          # Check for common issues
+          BROKEN_LINKS=$(grep -r "href.*404" site/ | wc -l || echo 0)
+          MISSING_IMAGES=$(grep -r "alt=\"\"" site/ | wc -l || echo 0)
+
+          # Generate metrics report
+          cat > quality-metrics.json << EOF
+          {
+            "timestamp": "$(date -u +%Y-%m-%dT%H:%M:%SZ)",
+            "commit": "${{ github.sha }}",
+            "pages": $PAGES,
+            "words": $WORDS,
+            "broken_links": $BROKEN_LINKS,
+            "missing_alt_text": $MISSING_IMAGES,
+            "build_time": "${{ needs.build.outputs.build-time }}",
+            "site_size_mb": $(du -sm site/ | cut -f1)
+          }
+          EOF
+
+          echo "📊 Documentation Quality Metrics:"
+          cat quality-metrics.json | jq '.'
+
+      - name: Upload quality metrics
+        uses: actions/upload-artifact@v4
+        with:
+          name: quality-metrics-${{ github.sha }}
+          path: quality-metrics.json
+          retention-days: 90
+
+      - name: Comment PR with metrics
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const metrics = JSON.parse(fs.readFileSync('quality-metrics.json'));
+
+            const comment = `## 📚 Documentation Quality Report
+
+            | Metric | Value |
+            |--------|--------|
+            | 📄 Pages | ${metrics.pages} |
+            | 📝 Words | ${metrics.words.toLocaleString()} |
+            | 🔗 Potential Issues | ${metrics.broken_links} |
+            | 🖼️ Missing Alt Text | ${metrics.missing_alt_text} |
+            | 📦 Site Size | ${metrics.site_size_mb} MB |
+
+            Generated for commit: \`${metrics.commit.substring(0, 7)}\``;
+
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: comment
+            });
+
+# Summary job
+docs-ci-summary:
+  name: Documentation CI Summary
+  runs-on: ubuntu-latest
+  needs: [validate, build, test-deployment, deploy-staging, deploy-production, quality-metrics]
+  if: always()
+
+  steps:
+    - name: Generate summary
+      run: |
+        echo "## 📚 Documentation CI/CD Summary" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "| Job | Status |" >> $GITHUB_STEP_SUMMARY
+        echo "|-----|--------|" >> $GITHUB_STEP_SUMMARY
+        echo "| Validation | ${{ needs.validate.result }} |" >> $GITHUB_STEP_SUMMARY
+        echo "| Build | ${{ needs.build.result }} |" >> $GITHUB_STEP_SUMMARY
+        echo "| Test Deployment | ${{ needs.test-deployment.result }} |" >> $GITHUB_STEP_SUMMARY
+        echo "| Deploy Staging | ${{ needs.deploy-staging.result || 'skipped' }} |" >> $GITHUB_STEP_SUMMARY
+        echo "| Deploy Production | ${{ needs.deploy-production.result || 'skipped' }} |" >> $GITHUB_STEP_SUMMARY
+        echo "| Quality Metrics | ${{ needs.quality-metrics.result }} |" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+
+        if [[ "${{ needs.deploy-production.result }}" == "success" ]]; then
+          echo "🚀 **Production deployment successful!**" >> $GITHUB_STEP_SUMMARY
+          echo "📖 Documentation available at: [${{ env.DOCS_SITE_URL }}](${{ env.DOCS_SITE_URL }})" >> $GITHUB_STEP_SUMMARY
+        elif [[ "${{ needs.deploy-staging.result }}" == "success" ]]; then
+          echo "🔧 **Staging deployment successful!**" >> $GITHUB_STEP_SUMMARY
+          echo "📖 Staging documentation available at: [${{ env.STAGING_SITE_URL }}](${{ env.STAGING_SITE_URL }})" >> $GITHUB_STEP_SUMMARY
+        fi

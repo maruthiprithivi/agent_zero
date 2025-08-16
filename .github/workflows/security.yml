@@ -1,0 +1,405 @@
+name: 🔒 Security Scanning
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+  schedule:
+    # Run security scans daily at 2 AM UTC
+    - cron: '0 2 * * *'
+  workflow_dispatch:
+    inputs:
+      scan_type:
+        description: 'Type of security scan'
+        required: true
+        default: 'full'
+        type: choice
+        options:
+        - full
+        - sast
+        - dependency
+        - container
+
+env:
+  PYTHONUNBUFFERED: 1
+  FORCE_COLOR: 1
+
+jobs:
+  security-preflight:
+    name: Security Pre-flight
+    runs-on: ubuntu-latest
+    outputs:
+      should-scan: ${{ steps.changes.outputs.should-scan }}
+      scan-type: ${{ steps.scan-type.outputs.type }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Determine scan type
+        id: scan-type
+        run: |
+          if [[ "${{ github.event_name }}" == "schedule" ]]; then
+            echo "type=full" >> $GITHUB_OUTPUT
+          elif [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+            echo "type=${{ github.event.inputs.scan_type }}" >> $GITHUB_OUTPUT
+          else
+            echo "type=incremental" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Check for changes requiring security scan
+        id: changes
+        uses: dorny/paths-filter@v3
+        with:
+          filters: |
+            should-scan:
+              - 'agent_zero/**'
+              - 'requirements.txt'
+              - 'pyproject.toml'
+              - 'Dockerfile*'
+              - 'docker-compose*.yml'
+              - '.github/workflows/**'
+
+  sast-scan:
+    name: Static Application Security Testing (SAST)
+    runs-on: ubuntu-latest
+    needs: security-preflight
+    if: needs.security-preflight.outputs.should-scan == 'true' || github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+
+    permissions:
+      security-events: write
+      actions: read
+      contents: read
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+          cache: 'pip'
+
+      - name: Install dependencies
+        run: |
+          pip install uv
+          uv venv
+          uv pip install -e .[dev,security]
+
+      - name: Run Bandit SAST scan
+        run: |
+          uv run bandit -r agent_zero/ -f json -o bandit-report.json -ll
+          uv run bandit -r agent_zero/ -f sarif -o bandit-results.sarif -ll
+        continue-on-error: true
+
+      - name: Run Semgrep SAST scan
+        uses: semgrep/semgrep-action@v1
+        with:
+          config: >-
+            p/security-audit
+            p/secrets
+            p/python
+            p/django
+            p/flask
+            p/expressjs
+        env:
+          SEMGREP_APP_TOKEN: ${{ secrets.SEMGREP_APP_TOKEN }}
+        continue-on-error: true
+
+      - name: Upload Bandit results to GitHub Security
+        if: always()
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: bandit-results.sarif
+          category: bandit
+
+      - name: Upload security scan artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: sast-results
+          path: |
+            bandit-report.json
+            bandit-results.sarif
+          retention-days: 30
+
+  dependency-scan:
+    name: Dependency Vulnerability Scanning
+    runs-on: ubuntu-latest
+    needs: security-preflight
+    if: needs.security-preflight.outputs.should-scan == 'true' || github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+
+    permissions:
+      security-events: write
+      actions: read
+      contents: read
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Install scanning tools
+        run: |
+          pip install uv safety pip-audit
+
+      - name: Install project dependencies
+        run: |
+          uv venv
+          uv pip install -e .
+
+      - name: Run Safety dependency scan
+        run: |
+          uv run safety check --json --output safety-report.json --continue-on-error
+          uv run safety check --output safety-report.txt --continue-on-error
+        continue-on-error: true
+
+      - name: Run pip-audit dependency scan
+        run: |
+          uv run pip-audit --format=json --output=pip-audit-report.json
+          uv run pip-audit --format=sarif --output=pip-audit-results.sarif
+        continue-on-error: true
+
+      - name: Upload pip-audit results to GitHub Security
+        if: always()
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: pip-audit-results.sarif
+          category: pip-audit
+
+      - name: Run Snyk dependency scan
+        uses: snyk/actions/python@master
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+        with:
+          args: --severity-threshold=medium --json-file-output=snyk-report.json
+        continue-on-error: true
+
+      - name: Upload dependency scan artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: dependency-scan-results
+          path: |
+            safety-report.json
+            safety-report.txt
+            pip-audit-report.json
+            pip-audit-results.sarif
+            snyk-report.json
+          retention-days: 30
+
+  container-scan:
+    name: Container Security Scanning
+    runs-on: ubuntu-latest
+    needs: security-preflight
+    if: needs.security-preflight.outputs.should-scan == 'true' || github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+
+    permissions:
+      security-events: write
+      actions: read
+      contents: read
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build Docker image
+        run: |
+          docker build -f docker/Dockerfile -t agent-zero:security-scan .
+
+      - name: Run Trivy vulnerability scanner
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: 'agent-zero:security-scan'
+          format: 'sarif'
+          output: 'trivy-results.sarif'
+
+      - name: Run Trivy filesystem scan
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: 'fs'
+          scan-ref: '.'
+          format: 'sarif'
+          output: 'trivy-fs-results.sarif'
+
+      - name: Upload Trivy results to GitHub Security
+        if: always()
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: trivy-results.sarif
+          category: trivy-container
+
+      - name: Upload Trivy filesystem results
+        if: always()
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: trivy-fs-results.sarif
+          category: trivy-filesystem
+
+      - name: Run Docker Scout scan
+        uses: docker/scout-action@v1
+        if: ${{ github.event_name != 'pull_request_target' }}
+        with:
+          command: cves
+          image: agent-zero:security-scan
+          format: sarif
+          output: scout-results.sarif
+        continue-on-error: true
+
+      - name: Upload container scan artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: container-scan-results
+          path: |
+            trivy-results.sarif
+            trivy-fs-results.sarif
+            scout-results.sarif
+          retention-days: 30
+
+  secrets-scan:
+    name: Secrets Detection
+    runs-on: ubuntu-latest
+    needs: security-preflight
+    if: needs.security-preflight.outputs.should-scan == 'true' || github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+
+    permissions:
+      security-events: write
+      actions: read
+      contents: read
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Run TruffleHog secrets scan
+        uses: trufflesecurity/trufflehog@main
+        with:
+          path: ./
+          base: main
+          head: HEAD
+          extra_args: --debug --only-verified
+
+      - name: Run GitLeaks secrets scan
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITLEAKS_LICENSE: ${{ secrets.GITLEAKS_LICENSE }}
+
+  security-summary:
+    name: Security Scan Summary
+    runs-on: ubuntu-latest
+    needs: [security-preflight, sast-scan, dependency-scan, container-scan, secrets-scan]
+    if: always()
+
+    permissions:
+      security-events: write
+      actions: read
+      contents: read
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download all scan results
+        uses: actions/download-artifact@v4
+        with:
+          path: security-results/
+
+      - name: Generate security summary
+        run: |
+          python scripts/generate-security-summary.py security-results/
+        continue-on-error: true
+
+      - name: Create security summary comment
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+
+            try {
+              const summary = fs.readFileSync('security-summary.md', 'utf8');
+
+              await github.rest.issues.createComment({
+                issue_number: context.issue.number,
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                body: summary
+              });
+            } catch (error) {
+              console.log('No security summary found or error creating comment:', error);
+            }
+
+      - name: Upload security summary
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: security-summary
+          path: |
+            security-summary.md
+            security-results/
+          retention-days: 90
+
+      - name: Check security scan results
+        run: |
+          echo "Security scan completed. Check artifacts for detailed results."
+
+          # Exit with error if critical vulnerabilities found
+          if grep -q "CRITICAL" security-results/**/*.json 2>/dev/null; then
+            echo "❌ Critical security vulnerabilities detected!"
+            exit 1
+          fi
+
+          if grep -q "HIGH" security-results/**/*.json 2>/dev/null; then
+            echo "⚠️ High severity vulnerabilities detected!"
+            # Don't fail for high severity in non-production branches
+            if [[ "${{ github.ref }}" == "refs/heads/main" ]]; then
+              exit 1
+            fi
+          fi
+
+          echo "✅ No critical security issues detected."
+
+  security-notification:
+    name: Security Notification
+    runs-on: ubuntu-latest
+    needs: [security-summary]
+    if: failure() && (github.event_name == 'schedule' || github.ref == 'refs/heads/main')
+
+    steps:
+      - name: Notify security team
+        uses: actions/github-script@v7
+        with:
+          script: |
+            await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: '🚨 Security Scan Alert - Critical Vulnerabilities Detected',
+              body: `
+              ## Security Alert
+
+              Critical security vulnerabilities have been detected in the latest security scan.
+
+              **Details:**
+              - Branch: ${context.ref}
+              - Commit: ${context.sha}
+              - Workflow: ${context.workflow}
+              - Run: ${context.runNumber}
+
+              **Action Required:**
+              1. Review the security scan results in the workflow artifacts
+              2. Address critical and high severity vulnerabilities immediately
+              3. Update dependencies and fix code issues
+              4. Re-run security scans to verify fixes
+
+              **Artifacts:**
+              Check the workflow run for detailed security scan results.
+              `,
+              labels: ['security', 'critical', 'triage']
+            });

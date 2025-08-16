@@ -1,0 +1,116 @@
+{
+  "environment": "development",
+  "description": "Development environment configuration for Agent Zero",
+  "deployment_mode": "local",
+  "debug": true,
+  "server": {
+    "host": "127.0.0.1",
+    "port": 8505,
+    "transport": "stdio",
+    "reload": true,
+    "log_level": "DEBUG"
+  },
+  "clickhouse": {
+    "host": "${AGENT_ZERO_CLICKHOUSE_HOST:-localhost}",
+    "port": "${AGENT_ZERO_CLICKHOUSE_PORT:-8123}",
+    "user": "${AGENT_ZERO_CLICKHOUSE_USER:-default}",
+    "password": "${AGENT_ZERO_CLICKHOUSE_PASSWORD:-}",
+    "database": "${AGENT_ZERO_CLICKHOUSE_DATABASE:-default}",
+    "secure": false,
+    "verify": false,
+    "connect_timeout": 10,
+    "send_receive_timeout": 60,
+    "pool_size": 5,
+    "max_overflow": 10,
+    "enable_client_cache": true,
+    "cache_ttl": 300
+  },
+  "security": {
+    "ssl_enable": false,
+    "ssl_certfile": null,
+    "ssl_keyfile": null,
+    "auth_required": false,
+    "auth_username": null,
+    "auth_password": null,
+    "oauth_enable": false,
+    "rate_limit_enabled": false,
+    "cors_enabled": true,
+    "cors_origins": ["*"],
+    "security_headers": false
+  },
+  "features": {
+    "enable_metrics": true,
+    "enable_health_check": true,
+    "enable_profiling": true,
+    "enable_debug_endpoints": true,
+    "enable_mock_data": true,
+    "enable_hot_reload": true,
+    "real_time_analytics": false,
+    "enable_structured_output": true,
+    "enable_query_caching": true
+  },
+  "limits": {
+    "tool_limit": 50,
+    "resource_limit": 25,
+    "max_query_rows": 1000,
+    "max_execution_seconds": 30,
+    "max_file_size_mb": 10,
+    "max_concurrent_requests": 10,
+    "rate_limit_requests": 1000,
+    "rate_limit_window": 3600
+  },
+  "logging": {
+    "level": "DEBUG",
+    "format": "detailed",
+    "enable_file_logging": true,
+    "log_file": "logs/agent-zero-dev.log",
+    "max_file_size_mb": 100,
+    "backup_count": 5,
+    "enable_performance_logging": true,
+    "enable_request_logging": true,
+    "enable_sql_logging": true
+  },
+  "monitoring": {
+    "enable_opentelemetry": false,
+    "enable_prometheus": true,
+    "prometheus_port": 9090,
+    "jaeger_endpoint": null,
+    "enable_health_checks": true,
+    "health_check_interval": 30,
+    "enable_alerts": false
+  },
+  "testing": {
+    "enable_test_mode": true,
+    "mock_clickhouse": false,
+    "test_database": "test_agent_zero",
+    "cleanup_on_exit": true,
+    "enable_coverage": true
+  },
+  "ide_integrations": {
+    "claude_code": {
+      "transport": "stdio",
+      "enable_progress_notifications": true,
+      "enable_tool_annotations": true
+    },
+    "cursor": {
+      "transport": "sse",
+      "agent_mode": true,
+      "websocket_fallback": true
+    },
+    "windsurf": {
+      "plugins_enabled": true,
+      "multi_panel_support": true
+    }
+  },
+  "validation": {
+    "required_env_vars": [
+      "AGENT_ZERO_CLICKHOUSE_HOST"
+    ],
+    "optional_env_vars": [
+      "AGENT_ZERO_CLICKHOUSE_USER",
+      "AGENT_ZERO_CLICKHOUSE_PASSWORD",
+      "AGENT_ZERO_CLICKHOUSE_DATABASE"
+    ],
+    "config_schema_version": "2.1.0"
+  }
+}

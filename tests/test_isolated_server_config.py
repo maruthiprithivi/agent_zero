@@ -1,12 +1,11 @@
 """Tests for server_config.py."""
 
 import os
-import tempfile
-from unittest.mock import patch
-
 
 # Import ServerConfig
 import sys
+import tempfile
+from unittest.mock import patch
 
 sys.path.append("/Users/maruthi/casa/projects/agent_zero")
 from agent_zero.server_config import ServerConfig
@@ -74,7 +73,9 @@ class TestIsolatedServerConfig:
 
     def test_get_ssl_config_complete(self):
         """Test that get_ssl_config returns a dict when SSL is fully configured."""
-        config = ServerConfig(ssl_certfile="/path/to/cert.pem", ssl_keyfile="/path/to/key.pem", ssl_enable=True)
+        config = ServerConfig(
+            ssl_certfile="/path/to/cert.pem", ssl_keyfile="/path/to/key.pem", ssl_enable=True
+        )
         ssl_config = config.get_ssl_config()
         assert ssl_config is not None
         assert ssl_config["certfile"] == "/path/to/cert.pem"

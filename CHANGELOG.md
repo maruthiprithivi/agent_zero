@@ -8,37 +8,37 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
-- 🚀 **Multi-IDE Support (2025 Edition)**: Complete integration support for Claude Desktop, Claude Code, Cursor, Windsurf, and VS Code
-- 🏗️ **Multiple Deployment Modes**: Local, Standalone, and Enterprise deployment options
-- 🌐 **Standalone Server Mode**: Full HTTP/WebSocket server with async support using aiohttp
-- 🔒 **Enhanced Security**: SSL/TLS support, Basic Authentication, OAuth 2.0 integration
-- 📊 **Advanced Monitoring**: Health checks, Prometheus metrics, OpenTelemetry tracing
-- ⚡ **Smart Transport Selection**: Automatic transport optimization based on IDE and deployment mode
-- 🎛️ **Enhanced Configuration System**: Type-safe configuration with enums and comprehensive environment variable support
-- 🛠️ **Configuration Generation**: Built-in command to generate IDE-specific configurations
-- 📦 **Universal Installer**: Cross-platform installation script with IDE auto-configuration
-- 🐳 **Docker Support**: Complete containerization with docker-compose for enterprise deployments
-- ☸️ **Kubernetes Ready**: K8s deployment examples and configurations
-- 📝 **Configuration Templates**: Pre-built configurations for all supported IDEs
-- 🔄 **Rate Limiting**: Configurable rate limiting for enterprise deployments
-- 🎯 **IDE-Specific Optimizations**: Tailored features and transport selection per IDE
-- 📋 **Structured Output**: 2025-06-18 MCP specification compliance
-- 🔧 **Environment Variable Expansion**: Support for dynamic configuration in IDE configs
+- **Multi-IDE Support (2025 Edition)**: Complete integration support for Claude Desktop, Claude Code, Cursor, Windsurf, and VS Code
+- **Multiple Deployment Modes**: Local, Standalone, and Enterprise deployment options
+- **Standalone Server Mode**: Full HTTP/WebSocket server with async support using aiohttp
+- **Enhanced Security**: SSL/TLS support, Basic Authentication, OAuth 2.0 integration
+- **Advanced Monitoring**: Health checks, Prometheus metrics, OpenTelemetry tracing
+- **Smart Transport Selection**: Automatic transport optimization based on IDE and deployment mode
+- **Enhanced Configuration System**: Type-safe configuration with enums and comprehensive environment variable support
+- **Configuration Generation**: Built-in command to generate IDE-specific configurations
+- **Universal Installer**: Cross-platform installation script with IDE auto-configuration
+- **Docker Support**: Complete containerization with docker-compose for enterprise deployments
+- **Kubernetes Ready**: K8s deployment examples and configurations
+- **Configuration Templates**: Pre-built configurations for all supported IDEs
+- **Rate Limiting**: Configurable rate limiting for enterprise deployments
+- **IDE-Specific Optimizations**: Tailored features and transport selection per IDE
+- **Structured Output**: 2025-06-18 MCP specification compliance
+- **Environment Variable Expansion**: Support for dynamic configuration in IDE configs
 
 ### Enhanced
-- 🏛️ **Server Architecture**: Redesigned with support for multiple deployment modes and transports
-- 🔧 **Configuration Management**: Complete overhaul with type-safe configuration classes
-- 📡 **Transport Layer**: Enhanced with SSE, WebSocket, and HTTP transport support
-- 🎯 **CLI Interface**: Expanded with comprehensive options for all deployment modes
-- 🧪 **Testing Framework**: Enhanced test isolation and mock server support
-- 📚 **Documentation**: Complete rewrite with deployment guides and IDE-specific instructions
+- **Server Architecture**: Redesigned with support for multiple deployment modes and transports
+- **Configuration Management**: Complete overhaul with type-safe configuration classes
+- **Transport Layer**: Enhanced with SSE, WebSocket, and HTTP transport support
+- **CLI Interface**: Expanded with comprehensive options for all deployment modes
+- **Testing Framework**: Enhanced test isolation and mock server support
+- **Documentation**: Complete rewrite with deployment guides and IDE-specific instructions
 
 ### Changed
-- ⚙️ **Server Configuration**: Migrated from simple config to comprehensive ServerConfig class with enums
-- 🚀 **Entry Point**: Enhanced main.py with multi-mode support and configuration generation
-- 🔌 **MCP Server**: Updated with intelligent transport selection and deployment mode detection
-- 📦 **Dependencies**: Added aiohttp, aiohttp-cors for standalone server support
-- 🏗️ **Project Structure**: Added configs/, scripts/, and deployment files
+- **Server Configuration**: Migrated from simple config to comprehensive ServerConfig class with enums
+- **Entry Point**: Enhanced main.py with multi-mode support and configuration generation
+- **MCP Server**: Updated with intelligent transport selection and deployment mode detection
+- **Dependencies**: Added aiohttp, aiohttp-cors for standalone server support
+- **Project Structure**: Added configs/, scripts/, and deployment files
 
 ### Technical Details
 
@@ -174,7 +174,7 @@ For users upgrading from previous versions:
    ```bash
    # Old way
    ch-agent-zero --cursor-mode agent
-   
+
    # New way (recommended)
    ch-agent-zero --ide-type cursor --cursor-mode agent
    ```
@@ -183,7 +183,7 @@ For users upgrading from previous versions:
    ```bash
    # Old variables still supported
    CLICKHOUSE_HOST=localhost
-   
+
    # New MCP-specific variables
    MCP_IDE_TYPE=cursor
    MCP_DEPLOYMENT_MODE=local

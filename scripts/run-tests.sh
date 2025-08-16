@@ -29,12 +29,12 @@ echo
 # Function to cleanup containers
 cleanup() {
     echo -e "${YELLOW}Cleaning up...${NC}"
-    
+
     # Stop and remove container if it exists
     if docker ps -a | grep -q "$TEST_CONTAINER_NAME"; then
         docker rm -f "$TEST_CONTAINER_NAME" >/dev/null 2>&1 || true
     fi
-    
+
     # Remove test image if requested
     if [[ "$1" == "--clean-image" ]]; then
         echo -e "${YELLOW}Removing test image...${NC}"
@@ -119,7 +119,7 @@ cleanup
 
 # Build the test Docker image
 echo -e "${BLUE}Building test Docker image...${NC}"
-docker build $NO_CACHE -f Dockerfile.test -t "$TEST_IMAGE_NAME" .
+docker build $NO_CACHE -f docker/Dockerfile.test -t "$TEST_IMAGE_NAME" .
 
 # Prepare test command
 TEST_CMD="python -m pytest -v --tb=short"
