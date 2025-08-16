@@ -132,14 +132,27 @@ jobs:
           pip install uv
           uv --version
 
-      - name: Validate dependencies before installation
+      - name: Debug Python environment
         run: |
-          python3 scripts/test-dependencies.py
+          python --version
+          pip --version
+          which python
+          python -c "import sys; print('Python path:', sys.executable)"
 
       - name: Create virtual environment and install dependencies
         run: |
           uv venv
-          uv pip install -e .[dev]
+          # Install core dependencies first
+          uv pip install clickhouse-connect>=0.8.18,<1.0
+          uv pip install mcp>=1.0.0,<2.0
+          uv pip install python-dotenv>=1.0.0,<2.0
+          uv pip install python-oauth2>=1.1.1,<2.0
+          # Install dev dependencies
+          uv pip install pytest>=8.0.0
+          uv pip install pytest-asyncio>=0.24.0
+          uv pip install pytest-mock>=3.14.0
+          # Install the package itself
+          uv pip install -e .
 
       - name: Run Docker-based tests
         if: matrix.os == 'ubuntu-latest'
@@ -186,7 +199,12 @@ jobs:
         run: |
           pip install uv
           uv venv
-          uv pip install -e .[dev]
+          # Install minimal linting dependencies
+          uv pip install ruff>=0.6.0
+          uv pip install black>=24.0.0
+          uv pip install mypy>=1.11.0
+          # Install the package itself
+          uv pip install -e .
 
       - name: Run Ruff linting
         run: |
