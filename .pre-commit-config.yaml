@@ -41,7 +41,7 @@ repos:
     rev: 1.7.10
     hooks:
       - id: bandit
-        args: [--recursive, agent_zero/, --exclude, tests/]
+        args: [--recursive, --exclude, tests/, .]
 
   # Documentation standards
   - repo: https://github.com/pycqa/pydocstyle
