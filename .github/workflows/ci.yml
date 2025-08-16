@@ -121,7 +121,8 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ~/.cache/uv
-          key: uv-v2-${{ matrix.os }}-${{ matrix.python-version }}-${{ hashFiles('pyproject.toml') }}
+          key: >-
+            uv-v2-${{ matrix.os }}-${{ matrix.python-version }}-${{ hashFiles('pyproject.toml') }}
           restore-keys: |
             uv-v2-${{ matrix.os }}-${{ matrix.python-version }}-
             uv-v2-${{ matrix.os }}-
@@ -334,7 +335,10 @@ jobs:
           echo "Docker: ${{ needs.docker.result }}"
           echo "Build: ${{ needs.build.result }}"
 
-          if [[ "${{ needs.pre-flight.result }}" == "failure" || "${{ needs.test.result }}" == "failure" || "${{ needs.lint.result }}" == "failure" || "${{ needs.build.result }}" == "failure" ]]; then
+          if [[ "${{ needs.pre-flight.result }}" == "failure" || \
+                "${{ needs.test.result }}" == "failure" || \
+                "${{ needs.lint.result }}" == "failure" || \
+                "${{ needs.build.result }}" == "failure" ]]; then
             echo "❌ CI Pipeline failed"
             exit 1
           else

@@ -336,8 +336,10 @@ jobs:
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "**Version:** ${{ needs.validate.outputs.version }}" >> $GITHUB_STEP_SUMMARY
           echo "**Tag:** ${{ needs.validate.outputs.tag }}" >> $GITHUB_STEP_SUMMARY
-          echo "**PyPI:** https://pypi.org/project/ch-agent-zero/${{ needs.validate.outputs.version }}/" >> $GITHUB_STEP_SUMMARY
-          echo "**GitHub Release:** https://github.com/maruthiprithivi/agent_zero/releases/tag/${{ needs.validate.outputs.tag }}" >> $GITHUB_STEP_SUMMARY
+          echo "**PyPI:** https://pypi.org/project/ch-agent-zero/${{ needs.validate.outputs.version }}/" \
+            >> $GITHUB_STEP_SUMMARY
+          echo "**GitHub Release:** https://github.com/maruthiprithivi/agent_zero/releases/tag/${{ needs.validate.outputs.tag }}" \
+            >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "### Pipeline Status" >> $GITHUB_STEP_SUMMARY
           echo "| Stage | Status |" >> $GITHUB_STEP_SUMMARY
@@ -351,8 +353,10 @@ jobs:
       - name: Notify completion
         run: |
           echo "✅ Stable release ${{ needs.validate.outputs.version }} published successfully!"
-          echo "📦 PyPI: https://pypi.org/project/ch-agent-zero/${{ needs.validate.outputs.version }}/"
-          echo "🏷️ GitHub: https://github.com/maruthiprithivi/agent_zero/releases/tag/${{ needs.validate.outputs.tag }}"
+          echo "📦 PyPI: https://pypi.org/project/ch-agent-zero/" \
+            "${{ needs.validate.outputs.version }}/"
+          echo "🏷️ GitHub: https://github.com/maruthiprithivi/agent_zero/releases/tag/" \
+            "${{ needs.validate.outputs.tag }}"
 
   # Handle failures
   on-failure:
@@ -366,7 +370,8 @@ jobs:
         run: |
           echo "## ❌ Stable Release Publication Failed" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "**Attempted Version:** ${{ needs.validate.outputs.version || 'unknown' }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Attempted Version:** ${{ needs.validate.outputs.version || 'unknown' }}" \
+            >> $GITHUB_STEP_SUMMARY
           echo "**Tag:** ${{ needs.validate.outputs.tag || 'unknown' }}" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "### Failed Stages" >> $GITHUB_STEP_SUMMARY
