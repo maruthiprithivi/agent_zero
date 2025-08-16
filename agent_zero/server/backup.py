@@ -31,11 +31,10 @@ logger = logging.getLogger(__name__)
 # Optional imports for cloud storage
 try:
     import boto3
-    from botocore.exceptions import ClientError
 
     boto3_available = True
 except ImportError:
-    logger.warning("boto3 not available. Cloud backup features will be disabled.")
+    logger.debug("boto3 not available. Cloud backup features will be disabled.")
     boto3_available = False
     boto3 = None
 
@@ -917,8 +916,9 @@ class BackupManager:
 
             # Remove from cloud storage if configured
             if self.cloud_storage:
-                cloud_path = f"backups/{metadata.backup_id}/{Path(metadata.file_path).name}"
                 # Note: Cloud deletion would need to be implemented per storage type
+                # cloud_path = f"backups/{metadata.backup_id}/{Path(metadata.file_path).name}"
+                pass
 
             # Remove from tracking
             if metadata in self.completed_backups:

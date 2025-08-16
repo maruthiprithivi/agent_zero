@@ -94,7 +94,7 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest]
-        python-version: ["3.13"]
+        python-version: ["3.11", "3.12", "3.13"]
         include:
           # Add additional combinations for stable branches
           - os: macos-latest
@@ -121,15 +121,19 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ~/.cache/uv
-          key: uv-${{ matrix.os }}-${{ matrix.python-version }}-${{ hashFiles('pyproject.toml') }}
+          key: uv-v2-${{ matrix.os }}-${{ matrix.python-version }}-${{ hashFiles('pyproject.toml') }}
           restore-keys: |
-            uv-${{ matrix.os }}-${{ matrix.python-version }}-
-            uv-${{ matrix.os }}-
+            uv-v2-${{ matrix.os }}-${{ matrix.python-version }}-
+            uv-v2-${{ matrix.os }}-
 
       - name: Install UV
         run: |
           pip install uv
           uv --version
+
+      - name: Validate dependencies before installation
+        run: |
+          python3 scripts/test-dependencies.py
 
       - name: Create virtual environment and install dependencies
         run: |
@@ -174,8 +178,8 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ~/.cache/uv
-          key: uv-lint-${{ hashFiles('pyproject.toml') }}
-          restore-keys: uv-lint-
+          key: uv-v2-lint-${{ hashFiles('pyproject.toml') }}
+          restore-keys: uv-v2-lint-
 
       - name: Install UV and dependencies
         run: |

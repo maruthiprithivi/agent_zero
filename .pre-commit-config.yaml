@@ -57,6 +57,16 @@ repos:
       - id: yamllint
         args: [-c, .github/.yamllint.yml]
 
+  # Multi-Python version compatibility testing
+  - repo: local
+    hooks:
+      - id: multi-python-test
+        name: Multi-Python Version Compatibility Test
+        entry: python3 scripts/test-multi-python.py
+        language: system
+        pass_filenames: false
+        types: [python]
+
 # Global configuration
 fail_fast: false
 default_stages: [pre-commit]
