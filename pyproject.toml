@@ -26,8 +26,8 @@ classifiers = [
     "Topic :: System :: Monitoring",
 ]
 dependencies = [
-    "clickhouse-connect>=0.8.20,<1.0",
-    "mcp[cli]>=2.0.0,<3.0",
+    "clickhouse-connect>=0.8.18,<1.0",
+    "mcp>=1.0.0,<2.0",
     "python-dotenv>=1.0.0,<2.0",
     "pip-system-certs>=4.0",
     # 2025 Standards - Modern Python Features
