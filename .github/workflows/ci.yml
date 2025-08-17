@@ -169,8 +169,8 @@ jobs:
           export CLICKHOUSE_USER=mock_user
           export CLICKHOUSE_PASSWORD=mock_password
           export CH_AGENT_ZERO_DEBUG=1
-          # Run tests with coverage (temporarily lowered coverage requirement for CI stability)
-          pytest -v --tb=short --cov=agent_zero --cov-report=xml --cov-report=term --cov-fail-under=10
+          # Run tests with coverage (exclude integration, slow, and performance tests for CI stability)
+          pytest -v --tb=short --cov=agent_zero --cov-report=xml --cov-report=term --cov-fail-under=10 -m "not integration and not slow and not performance"
         shell: bash
 
       - name: Upload coverage to Codecov

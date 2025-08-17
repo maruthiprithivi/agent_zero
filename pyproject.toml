@@ -123,7 +123,8 @@ zero_trust = [
     "ch-agent-zero[enterprise]",
     # Zero Trust Security
     "hvac>=2.0.0,<3.0",
-    "cert-manager>=1.15.0,<2.0",
+    # Note: cert-manager is a Kubernetes operator, not a Python package
+    # It should be installed via kubectl/helm, not pip
 ]
 kubernetes = [
     "ch-agent-zero[enterprise]",
