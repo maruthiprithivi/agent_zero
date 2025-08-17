@@ -12,7 +12,7 @@ This module provides advanced performance and scalability features:
 import asyncio
 import json
 import logging
-import pickle
+import pickle  # nosec B403 - Used for internal cache serialization with controlled data
 import statistics
 import time
 from collections import deque

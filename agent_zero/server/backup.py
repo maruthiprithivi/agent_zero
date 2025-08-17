@@ -391,7 +391,7 @@ class BackupManager:
         # Start backup process
         backup_task = asyncio.create_task(self._perform_backup(metadata))
         # Store task reference to prevent garbage collection
-        self._active_tasks = getattr(self, '_active_tasks', set())
+        self._active_tasks = getattr(self, "_active_tasks", set())
         self._active_tasks.add(backup_task)
         backup_task.add_done_callback(self._active_tasks.discard)
 
@@ -749,7 +749,7 @@ class BackupManager:
                     safe_members = []
                     for member in tar.getmembers():
                         # Check for path traversal attacks
-                        if member.name.startswith('/') or '..' in member.name:
+                        if member.name.startswith("/") or ".." in member.name:
                             logger.warning(f"Skipping unsafe tar member: {member.name}")
                             continue
                         # Check for suspicious file types
@@ -758,8 +758,8 @@ class BackupManager:
                             continue
                         safe_members.append(member)
 
-                    # Extract only safe members
-                    tar.extractall(temp_dir, members=safe_members)
+                    # Extract only safe members (validated above for security)
+                    tar.extractall(temp_dir, members=safe_members)  # nosec B202
 
                 if metadata.backup_type == BackupType.CONFIGURATION:
                     return await self._restore_configuration(temp_dir, config)
@@ -866,7 +866,7 @@ class BackupManager:
                             safe_members = []
                             for member in tar.getmembers():
                                 # Check for path traversal attacks
-                                if member.name.startswith('/') or '..' in member.name:
+                                if member.name.startswith("/") or ".." in member.name:
                                     logger.warning(f"Skipping unsafe tar member: {member.name}")
                                     continue
                                 # Check for suspicious file types
@@ -875,8 +875,8 @@ class BackupManager:
                                     continue
                                 safe_members.append(member)
 
-                            # Extract only safe members
-                            tar.extractall(comp_temp_dir, members=safe_members)
+                            # Extract only safe members (validated above for security)
+                            tar.extractall(comp_temp_dir, members=safe_members)  # nosec B202
 
                         if component["type"] == "configuration":
                             comp_success = await self._restore_configuration(comp_temp_dir, config)
