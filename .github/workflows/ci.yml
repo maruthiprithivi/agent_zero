@@ -9,12 +9,14 @@ on:
       - 'release/**'
       - 'feature/**'
       - 'hotfix/**'
+      - 'mp/**'
   pull_request:
     branches:
       - main
       - master
       - develop
       - 'release/**'
+      - 'mp/**'
   workflow_dispatch:
     inputs:
       run_security_scan:
