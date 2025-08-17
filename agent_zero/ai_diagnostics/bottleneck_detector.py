@@ -1012,13 +1012,13 @@ class IntelligentBottleneckDetector:
         self.performance_engine = PerformanceDiagnosticEngine(client)
         try:
             self.storage_engine = StorageOptimizationEngine(self.profile_analyzer)
-        except:
+        except Exception:
             self.storage_engine = None
             logger.warning("StorageOptimizationEngine not available")
 
         try:
             self.hardware_engine = HardwareHealthEngine(client)
-        except:
+        except Exception:
             self.hardware_engine = None
             logger.warning("HardwareHealthEngine not available")
 

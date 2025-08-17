@@ -6,6 +6,8 @@ production-ready server implementation.
 """
 
 import asyncio
+import json
+import ssl
 import time
 from typing import Any
 
@@ -20,7 +22,7 @@ except ImportError:
 
 from .backup import BackupConfig, get_backup_manager
 from .health import get_health_manager
-from .logging import LogContext, get_logger, set_correlation_id
+from .logging import LogContext, correlation_id, get_logger, set_correlation_id
 from .metrics import MetricsConfig, get_metrics_manager
 from .performance import get_performance_monitor
 from .tracing import TracingConfig, get_tracing_manager
