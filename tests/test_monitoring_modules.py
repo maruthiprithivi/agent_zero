@@ -162,7 +162,7 @@ class TestQueryPerformanceMonitoring:
         """Test error handling in get_current_processes."""
         self.mock_client.query.side_effect = Exception("Connection failed")
 
-        with pytest.raises(Exception):
+        with pytest.raises((RuntimeError, ValueError, Exception)):
             get_current_processes(self.mock_client)
 
     def test_get_query_duration_stats_with_filter(self):

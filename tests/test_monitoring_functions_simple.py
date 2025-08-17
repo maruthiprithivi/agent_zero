@@ -17,20 +17,20 @@ test_env = {
 }
 
 # Import monitoring functions
-from agent_zero.monitoring.parts_merges import (
+from agent_zero.monitoring.parts_merges import (  # noqa: E402
     get_current_merges,
     get_merge_stats,
     get_part_log_events,
     get_partition_stats,
     get_parts_analysis,
 )
-from agent_zero.monitoring.query_performance import (
+from agent_zero.monitoring.query_performance import (  # noqa: E402
     get_current_processes,
     get_normalized_query_stats,
     get_query_duration_stats,
     get_query_kind_breakdown,
 )
-from agent_zero.monitoring.resource_usage import (
+from agent_zero.monitoring.resource_usage import (  # noqa: E402
     get_cpu_usage,
     get_memory_usage,
     get_server_sizing,

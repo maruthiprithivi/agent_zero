@@ -19,7 +19,7 @@ test_env = {
 }
 
 # Mock the problematic imports in standalone_server.py
-import sys
+import sys  # noqa: E402
 
 mock_logger = Mock()
 mock_logger.name = "mcp-server"
@@ -94,7 +94,7 @@ class TestRateLimiter:
         client_id = "test_client"
 
         # Should allow first few requests
-        for i in range(5):
+        for _i in range(5):
             assert limiter.is_allowed(client_id) is True
 
     @patch.dict("os.environ", test_env)
@@ -106,7 +106,7 @@ class TestRateLimiter:
         client_id = "test_client"
 
         # Fill up the rate limit
-        for i in range(3):
+        for _i in range(3):
             assert limiter.is_allowed(client_id) is True
 
         # Next request should be blocked
@@ -367,7 +367,7 @@ class TestStandaloneServerIntegration:
         assert api_limiter.is_allowed(client_id) is True
 
         # Fill auth limiter
-        for i in range(4):
+        for _i in range(4):
             auth_limiter.is_allowed(client_id)
 
         # Auth limiter should be at limit
@@ -473,7 +473,7 @@ class TestStandaloneServerUtilities:
         for i in range(50):
             client_id = f"client_{i}"
             # Each client makes several requests
-            for j in range(10):
+            for _j in range(10):
                 result = limiter.is_allowed(client_id)
                 assert isinstance(result, bool)
 

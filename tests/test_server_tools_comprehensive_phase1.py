@@ -390,7 +390,7 @@ class TestMCPToolParameters:
 
         # Test tools with different parameter scenarios
         if registered_tools:
-            for tool_name, tool_func in registered_tools.items():
+            for _tool_name, tool_func in registered_tools.items():
                 try:
                     # Try with no parameters
                     result = tool_func()

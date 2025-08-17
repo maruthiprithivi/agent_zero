@@ -70,7 +70,7 @@ class DocumentationValidator:
 
         self.file_references[str(file_path)] = set()
 
-        for text, url in links:
+        for _text, url in links:
             if self.is_external_link(url):
                 self.external_links.add(url)
             else:

@@ -13,13 +13,14 @@ from pathlib import Path
 project_root = Path(__file__).parent.parent
 sys.path.insert(0, str(project_root))
 
-from agent_zero.monitoring.performance_diagnostics import (
+# Import after path modification
+from agent_zero.monitoring.performance_diagnostics import (  # noqa: E402
     CacheAnalyzer,
     IOPerformanceAnalyzer,
     PerformanceDiagnosticEngine,
     QueryExecutionAnalyzer,
 )
-from agent_zero.server.client import create_clickhouse_client
+from agent_zero.server.client import create_clickhouse_client  # noqa: E402
 
 
 def main():

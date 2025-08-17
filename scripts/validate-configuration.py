@@ -366,7 +366,7 @@ class ConfigurationValidator:
 
         # Check that all environments have the same schema version
         schema_versions = set()
-        for env_name, config in self.environments.items():
+        for _env_name, config in self.environments.items():
             version = config.get("validation", {}).get("config_schema_version")
             if version:
                 schema_versions.add(version)
@@ -418,7 +418,7 @@ class ConfigurationValidator:
                 prometheus_ports[env_name] = prometheus_port
 
         # Check for port conflicts within environment
-        for env_name, config in self.environments.items():
+        for env_name, _config in self.environments.items():
             server_port = server_ports.get(env_name)
             prometheus_port = prometheus_ports.get(env_name)
 

@@ -607,7 +607,7 @@ class TestChaosEngineering:
         # Phase 1: Normal operation
         metrics.start_timer()
 
-        for i in range(20):
+        for _i in range(20):
             try:
                 start_time = time.time()
                 result = chaos_client.command("SELECT 1")
@@ -622,7 +622,7 @@ class TestChaosEngineering:
         # Phase 2: Simulate disruption (connection issues)
         disruption_start = time.time()
 
-        for i in range(10):
+        for _i in range(10):
             try:
                 # Simulate network timeout by using very short timeout
                 start_time = time.time()
@@ -639,7 +639,7 @@ class TestChaosEngineering:
         # Phase 3: Recovery period
         recovery_start = time.time()
 
-        for i in range(20):
+        for _i in range(20):
             try:
                 start_time = time.time()
                 result = chaos_client.command("SELECT 1")

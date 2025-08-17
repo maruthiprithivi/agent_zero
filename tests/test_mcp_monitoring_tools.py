@@ -6,7 +6,28 @@ import pytest
 from clickhouse_connect.driver.client import Client
 from clickhouse_connect.driver.exceptions import ClickHouseError
 
-# Import functions from the new modular server structure
+# Import monitoring functions from the server tools module
+from agent_zero.server.tools import (
+    analyze_thread_distribution,
+    get_cluster_sizing,
+    list_largest_tables,
+    list_recent_table_modifications,
+    list_s3queue_with_names,
+    monitor_async_vs_sync_inserts,
+    monitor_cpu_usage,
+    monitor_current_processes,
+    monitor_error_stack_traces,
+    monitor_memory_usage,
+    monitor_mv_deduplicated_blocks,
+    monitor_query_duration,
+    monitor_query_patterns,
+    monitor_query_types,
+    monitor_recent_errors,
+    monitor_uptime,
+    prewarm_cache,
+    setup_monitoring_views,
+    view_text_log,
+)
 
 
 class TestMCPMonitoringTools:

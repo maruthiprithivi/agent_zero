@@ -193,7 +193,7 @@ class TestComprehensiveMCPTools:
                 elif isinstance(result, dict):
                     assert "error" in result
                 else:
-                    assert False, f"Unexpected result type: {type(result)}"
+                    raise AssertionError(f"Unexpected result type: {type(result)}")
 
     def test_tool_parameter_validation(self, mock_client, mock_profile_analyzer):
         """Test tool parameter validation."""

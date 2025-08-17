@@ -221,7 +221,9 @@ class TestComprehensiveIntegration:
                             pass
                 except Exception as e:
                     # Tool should not raise unhandled exceptions
-                    assert False, f"Tool {tool_func.__name__} raised unhandled exception: {e}"
+                    raise AssertionError(
+                        f"Tool {tool_func.__name__} raised unhandled exception: {e}"
+                    )
 
             # Verify error handling
             total_tested = len(error_responses) + successful_calls
@@ -341,7 +343,7 @@ class TestComprehensiveIntegration:
 
             # Create multiple analyzer instances
             analyzers = []
-            for i in range(10):
+            for _i in range(10):
                 analyzer = ProfileEventsAnalyzer(mock_client)
                 analyzers.append(analyzer)
 
@@ -383,7 +385,7 @@ class TestComprehensiveIntegration:
 
                 # Simulate concurrent calls
                 results = []
-                for i in range(5):  # Simulate 5 concurrent requests
+                for _i in range(5):  # Simulate 5 concurrent requests
                     for tool in tools[:3]:  # Test first 3 tools
                         try:
                             result = tool(24)  # Call with hours parameter

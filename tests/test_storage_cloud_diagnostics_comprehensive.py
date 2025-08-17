@@ -9,6 +9,13 @@ from unittest.mock import Mock, patch
 
 import pytest
 
+# Import storage diagnostics classes
+from agent_zero.monitoring.storage_cloud_diagnostics import (
+    StorageIssue,
+    StoragePerformanceIssue,
+    StorageSeverity,
+)
+
 # Test environment configuration
 test_env = {
     "CLICKHOUSE_HOST": "test_host",

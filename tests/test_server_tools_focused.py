@@ -303,7 +303,7 @@ class TestToolDecorators:
         assert len(tool_calls) > 0, "No MCP tool decorators were called"
 
         # Each tool call should have name and description
-        for args, kwargs in tool_calls:
+        for _args, kwargs in tool_calls:
             if "name" in kwargs:
                 assert isinstance(kwargs["name"], str), "Tool name should be string"
                 assert len(kwargs["name"]) > 0, "Tool name should not be empty"
