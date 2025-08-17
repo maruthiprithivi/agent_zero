@@ -30,6 +30,9 @@ dependencies = [
     "mcp>=1.0.0,<2.0",
     "python-dotenv>=1.0.0,<2.0",
     "pip-system-certs>=4.0",
+    # Core HTTP functionality for MCP server
+    "aiohttp>=3.10.0,<4.0",
+    "aiohttp-cors>=0.7.0,<1.0",
     # 2025 Standards - Modern Python Features
     "typing-extensions>=4.12.0",
     "pydantic>=2.9.0,<3.0",
@@ -77,8 +80,6 @@ test = [
     "freezegun>=1.5.0",
 ]
 remote = [
-    "aiohttp>=3.10.0,<4.0",
-    "aiohttp-cors>=0.7.0,<1.0",
     "aiohttp-session>=2.12.0",
     "websockets>=13.0",
     "httpx>=0.27.0",

@@ -130,20 +130,30 @@ jobs:
           python-version: "3.13"
           cache: 'pip'
 
+      - name: Install UV
+        uses: astral-sh/setup-uv@v3
+        with:
+          version: "0.5.0"
+
       - name: Install build tools
         run: |
-          pip install uv build twine setuptools-scm
+          uv venv .venv
+          source .venv/bin/activate
+          uv pip install build twine setuptools-scm
 
       - name: Verify project configuration
         run: |
+          source .venv/bin/activate
           python -c "import setuptools_scm; print(f'Version: {setuptools_scm.get_version()}')"
 
       - name: Build source distribution
         run: |
+          source .venv/bin/activate
           python -m build --sdist --outdir dist/
 
       - name: Verify source distribution
         run: |
+          source .venv/bin/activate
           twine check dist/*.tar.gz
           ls -la dist/
 
@@ -186,25 +196,34 @@ jobs:
           python-version: ${{ matrix.python-version }}
           cache: 'pip'
 
+      - name: Install UV
+        uses: astral-sh/setup-uv@v3
+        with:
+          version: "0.5.0"
+
       - name: Install build tools
         run: |
-          pip install uv build wheel setuptools-scm
+          uv venv .venv
+          source .venv/bin/activate
+          uv pip install build wheel setuptools-scm twine
 
       - name: Build wheel
         run: |
+          source .venv/bin/activate
           python -m build --wheel --outdir dist/
 
       - name: Verify wheel
         run: |
-          python -m pip install twine
+          source .venv/bin/activate
           twine check dist/*.whl
 
       - name: Test wheel installation
         run: |
           # Test installation in clean environment
           uv venv test-wheel-env
-          uv pip install --python test-wheel-env dist/*.whl
-          uv run --python test-wheel-env python -c "import agent_zero; print(f'Wheel installed version: {agent_zero.__version__}')"
+          source test-wheel-env/bin/activate
+          pip install dist/*.whl
+          python -c "import agent_zero; print(f'Wheel installed version: {agent_zero.__version__}')"
 
       - name: Upload wheels
         uses: actions/upload-artifact@v4

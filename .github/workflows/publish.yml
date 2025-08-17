@@ -2,7 +2,14 @@ name: Build and Publish Package
 
 on:
   release:
-    types: [created]
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      publish_to_testpypi:
+        description: 'Publish to TestPyPI only'
+        required: false
+        default: false
+        type: boolean
 
 jobs:
   build-n-publish:
@@ -10,7 +17,7 @@ jobs:
     runs-on: ubuntu-latest
 
     permissions:
-      id-token: write
+      id-token: write  # For Trusted Publishing
       contents: read
 
     strategy:
@@ -47,36 +54,43 @@ jobs:
           cat pyproject.toml
 
       - name: Set up Python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
 
       - name: Install UV
-        run: |
-          curl -LsSf https://astral.sh/uv/install.sh | sh
-          echo "$HOME/.cargo/bin" >> $GITHUB_PATH
+        uses: astral-sh/setup-uv@v3
+        with:
+          version: "0.5.0"
 
       - name: Install dependencies with UV
         run: |
           uv venv .venv
           source .venv/bin/activate
-          uv pip install build setuptools wheel
-          uv pip install -e . --no-deps  # Install package without dependencies first
-          uv pip install "clickhouse-connect>=0.8.15"  # Install critical dep explicitly
-          uv pip install .  # Install remaining deps from pyproject.toml
-          uv pip install .[dev]  # Install development extras
+          uv pip install build twine
 
       - name: Build package
         run: |
           source .venv/bin/activate
-          uv pip install setuptools
           python -m build --sdist --wheel
           echo "Build successful"
-          ls -l dist
+          ls -l dist/
           twine check dist/*
 
-      - name: Publish to PyPI
-        if: matrix.python-version == '3.13'
+      - name: Test installation from built package
+        run: |
+          uv venv test-env
+          source test-env/bin/activate
+          pip install dist/*.whl
+          python -c "import agent_zero; print(f'Successfully installed: {agent_zero.__version__}')"
+
+      - name: Publish to TestPyPI (for testing)
+        if: github.event.inputs.publish_to_testpypi == 'true' || github.event_name == 'workflow_dispatch'
         uses: pypa/gh-action-pypi-publish@v1.12.3
         with:
-          password: ${{ secrets.PYPI_API_TOKEN }}
+          repository-url: https://test.pypi.org/legacy/
+          skip-existing: true
+
+      - name: Publish to PyPI (production)
+        if: github.event_name == 'release' && matrix.python-version == '3.13'
+        uses: pypa/gh-action-pypi-publish@v1.12.3
