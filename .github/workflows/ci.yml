@@ -214,31 +214,61 @@ jobs:
       - name: Install dependencies
         run: |
           uv venv .venv
-          source .venv/bin/activate
+          # Activate virtual environment based on OS
+          if [ "$RUNNER_OS" = "Windows" ]; then
+            source .venv/Scripts/activate
+          else
+            source .venv/bin/activate
+          fi
           # Install with dev extras for linting tools
           uv pip install -e .[dev]
+        shell: bash
 
       - name: Run Ruff linting
         run: |
-          source .venv/bin/activate
+          # Activate virtual environment based on OS
+          if [ "$RUNNER_OS" = "Windows" ]; then
+            source .venv/Scripts/activate
+          else
+            source .venv/bin/activate
+          fi
           ruff check agent_zero --output-format=github
         continue-on-error: true
+        shell: bash
 
       - name: Run Ruff formatting check
         run: |
-          source .venv/bin/activate
+          # Activate virtual environment based on OS
+          if [ "$RUNNER_OS" = "Windows" ]; then
+            source .venv/Scripts/activate
+          else
+            source .venv/bin/activate
+          fi
           ruff format --check agent_zero
+        shell: bash
 
       - name: Run Black formatting check
         run: |
-          source .venv/bin/activate
+          # Activate virtual environment based on OS
+          if [ "$RUNNER_OS" = "Windows" ]; then
+            source .venv/Scripts/activate
+          else
+            source .venv/bin/activate
+          fi
           black --check --diff agent_zero
+        shell: bash
 
       - name: Run MyPy type checking
         run: |
-          source .venv/bin/activate
+          # Activate virtual environment based on OS
+          if [ "$RUNNER_OS" = "Windows" ]; then
+            source .venv/Scripts/activate
+          else
+            source .venv/bin/activate
+          fi
           mypy agent_zero --show-error-codes
         continue-on-error: true
+        shell: bash
 
   # Security scanning
   security:
@@ -269,26 +299,50 @@ jobs:
       - name: Install dependencies
         run: |
           uv venv .venv
-          source .venv/bin/activate
+          # Activate virtual environment based on OS
+          if [ "$RUNNER_OS" = "Windows" ]; then
+            source .venv/Scripts/activate
+          else
+            source .venv/bin/activate
+          fi
           uv pip install -e .[security]
+        shell: bash
 
       - name: Run Bandit security scan
         run: |
-          source .venv/bin/activate
+          # Activate virtual environment based on OS
+          if [ "$RUNNER_OS" = "Windows" ]; then
+            source .venv/Scripts/activate
+          else
+            source .venv/bin/activate
+          fi
           bandit -r agent_zero -f json -o bandit-report.json
         continue-on-error: true
+        shell: bash
 
       - name: Run Safety vulnerability scan
         run: |
-          source .venv/bin/activate
+          # Activate virtual environment based on OS
+          if [ "$RUNNER_OS" = "Windows" ]; then
+            source .venv/Scripts/activate
+          else
+            source .venv/bin/activate
+          fi
           safety check --json --output safety-report.json
         continue-on-error: true
+        shell: bash
 
       - name: Run pip-audit
         run: |
-          source .venv/bin/activate
+          # Activate virtual environment based on OS
+          if [ "$RUNNER_OS" = "Windows" ]; then
+            source .venv/Scripts/activate
+          else
+            source .venv/bin/activate
+          fi
           pip-audit --format=json --output=pip-audit-report.json
         continue-on-error: true
+        shell: bash
 
       - name: Upload security scan results
         uses: actions/upload-artifact@v4
@@ -350,14 +404,26 @@ jobs:
       - name: Install dependencies and build package
         run: |
           uv venv .venv
-          source .venv/bin/activate
+          # Activate virtual environment based on OS
+          if [ "$RUNNER_OS" = "Windows" ]; then
+            source .venv/Scripts/activate
+          else
+            source .venv/bin/activate
+          fi
           uv pip install build twine
           python -m build
+        shell: bash
 
       - name: Verify package
         run: |
-          source .venv/bin/activate
+          # Activate virtual environment based on OS
+          if [ "$RUNNER_OS" = "Windows" ]; then
+            source .venv/Scripts/activate
+          else
+            source .venv/bin/activate
+          fi
           twine check dist/*
+        shell: bash
 
       - name: Upload build artifacts
         uses: actions/upload-artifact@v4
