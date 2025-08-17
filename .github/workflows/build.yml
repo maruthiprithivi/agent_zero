@@ -206,26 +206,46 @@ jobs:
       - name: Install build tools
         run: |
           uv venv .venv
-          source .venv/bin/activate
+          if [ "$RUNNER_OS" = "Windows" ]; then
+            source .venv/Scripts/activate
+          else
+            source .venv/bin/activate
+          fi
           uv pip install build wheel setuptools-scm twine
+        shell: bash
 
       - name: Build wheel
         run: |
-          source .venv/bin/activate
+          if [ "$RUNNER_OS" = "Windows" ]; then
+            source .venv/Scripts/activate
+          else
+            source .venv/bin/activate
+          fi
           python -m build --wheel --outdir dist/
+        shell: bash
 
       - name: Verify wheel
         run: |
-          source .venv/bin/activate
+          if [ "$RUNNER_OS" = "Windows" ]; then
+            source .venv/Scripts/activate
+          else
+            source .venv/bin/activate
+          fi
           twine check dist/*.whl
+        shell: bash
 
       - name: Test wheel installation
         run: |
           # Test installation in clean environment
           uv venv test-wheel-env
-          source test-wheel-env/bin/activate
+          if [ "$RUNNER_OS" = "Windows" ]; then
+            source test-wheel-env/Scripts/activate
+          else
+            source test-wheel-env/bin/activate
+          fi
           pip install dist/*.whl
           python -c "import agent_zero; print(f'Wheel installed version: {agent_zero.__version__}')"
+        shell: bash
 
       - name: Upload wheels
         uses: actions/upload-artifact@v4
