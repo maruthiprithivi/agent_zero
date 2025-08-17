@@ -757,7 +757,7 @@ class BackupManager:
                             logger.warning(f"Skipping special file type: {member.name}")
                             continue
                         safe_members.append(member)
-                    
+
                     # Extract only safe members
                     tar.extractall(temp_dir, members=safe_members)
 
@@ -874,7 +874,7 @@ class BackupManager:
                                     logger.warning(f"Skipping special file type: {member.name}")
                                     continue
                                 safe_members.append(member)
-                            
+
                             # Extract only safe members
                             tar.extractall(comp_temp_dir, members=safe_members)
 

@@ -286,7 +286,7 @@ class DistributedCache:
             # nosec B301 - Internal cache system with controlled data
             return pickle.loads(data)  # nosec B301
         else:
-            # Security: Only deserialize pickle from trusted cache data  
+            # Security: Only deserialize pickle from trusted cache data
             # nosec B301 - Internal cache system with controlled data
             return pickle.loads(data)  # nosec B301
 
