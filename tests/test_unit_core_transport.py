@@ -27,7 +27,7 @@ def test_determine_transport_remote_sse():
     from agent_zero.server.core import determine_transport
 
     cfg = UnifiedConfig.from_env(deployment_mode=DeploymentMode.REMOTE)
-    t = determine_transport(cfg, host="0.0.0.0", port=9000)
+    t = determine_transport(cfg, host="127.0.0.1", port=9000)
     assert isinstance(t, TransportType)
     assert t == TransportType.SSE
 

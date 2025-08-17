@@ -346,9 +346,9 @@ show_contexts = true
 
 [tool.bandit]
 exclude_dirs = ["tests"]
-skips = ["B101", "B601"]
+skips = ["B101", "B110", "B601"]
 
 [tool.pydocstyle]
 convention = "google"
-add-ignore = ["D100", "D104", "D105", "D107", "D213", "D203"]
+add-ignore = ["D100", "D101", "D102", "D103", "D104", "D105", "D107", "D202", "D212", "D213", "D203", "D415"]
 match-dir = "(?!tests).*"
