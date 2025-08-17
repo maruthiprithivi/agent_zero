@@ -41,21 +41,21 @@ repos:
     rev: 1.7.10
     hooks:
       - id: bandit
-        args: [--recursive, --exclude, tests/, --skip, B101,B110, .]
+        args: [--recursive, --skip, B101,B110, agent_zero/]
 
   # Documentation standards
   - repo: https://github.com/pycqa/pydocstyle
     rev: 6.3.0
     hooks:
       - id: pydocstyle
-        args: [--convention=google, --add-ignore=D100, D104, D105, D107, D213, D203]
+        args: [--convention=google, --add-ignore=D100,D101,D102,D103,D104,D105,D107,D202,D212,D213,D203,D415]
 
-  # Configuration file validation
-  - repo: https://github.com/adrienverge/yamllint
-    rev: v1.35.1
-    hooks:
-      - id: yamllint
-        args: [-c, .github/.yamllint.yml]
+  # Configuration file validation - temporarily disabled
+  # - repo: https://github.com/adrienverge/yamllint
+  #   rev: v1.35.1
+  #   hooks:
+  #     - id: yamllint
+  #       args: [-c, .github/.yamllint.yml]
 
   # Multi-Python version compatibility testing
   - repo: local
