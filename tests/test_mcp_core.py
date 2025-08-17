@@ -8,7 +8,7 @@ from clickhouse_connect.driver.client import Client
 from clickhouse_connect.driver.exceptions import ClickHouseError
 
 # Change from direct import to module import
-import agent_zero.mcp_server as mcp
+import agent_zero.server as server
 
 
 class TestMCPCoreFunctions:
@@ -104,7 +104,7 @@ class TestMCPCoreFunctions:
 
                 try:
                     # Call the function
-                    result = mcp.create_clickhouse_client()
+                    result = server.create_clickhouse_client()
 
                     # Verify results
                     assert result == mock_client
@@ -113,7 +113,7 @@ class TestMCPCoreFunctions:
                     # Test exception handling
                     mock_get_client.side_effect = ClickHouseError("Connection failed")
                     with pytest.raises(ClickHouseError):
-                        mcp.create_clickhouse_client()
+                        server.create_clickhouse_client()
                 finally:
                     # Restart the patcher for other tests
                     self.client_patcher = patch("agent_zero.mcp_server.create_clickhouse_client")
@@ -123,7 +123,7 @@ class TestMCPCoreFunctions:
     def test_list_databases(self):
         """Test listing databases."""
         # Call the function
-        result = mcp.list_databases()
+        result = server.list_databases()
 
         # Verify results
         assert result == ["testdb", "default", "system"]
@@ -132,14 +132,14 @@ class TestMCPCoreFunctions:
 
         # Test error handling
         self.mock_client.command.side_effect = ClickHouseError("Test exception")
-        result = mcp.list_databases()
+        result = server.list_databases()
         assert isinstance(result, str)
         assert "Error listing databases" in result
 
     def test_list_tables_without_like(self):
         """Test listing tables without a LIKE filter."""
         # Call the function
-        result = mcp.list_tables("testdb")
+        result = server.list_tables("testdb")
 
         # Because listing tables is complex and involves multiple steps,
         # we'll just verify that the client was created and the basic commands were called
@@ -162,14 +162,14 @@ class TestMCPCoreFunctions:
                 }
             ]
 
-            result = mcp.list_tables("testdb")
+            result = server.list_tables("testdb")
             mock_function.assert_called_once_with("testdb")
 
         # Test error handling by mocking the function directly
         with patch("agent_zero.mcp_server.list_tables") as mock_function:
             mock_function.side_effect = ClickHouseError("Test exception")
             with pytest.raises(ClickHouseError):
-                mcp.list_tables("testdb")
+                server.list_tables("testdb")
 
     def test_list_tables_with_like(self):
         """Test listing tables with a LIKE filter."""
@@ -179,7 +179,7 @@ class TestMCPCoreFunctions:
         self.mock_client.query.reset_mock()
 
         # Call the function
-        result = mcp.list_tables("testdb", like="table%")
+        result = server.list_tables("testdb", like="table%")
 
         # Verify basic interactions
         self.mock_create_client.assert_called_once()
@@ -201,7 +201,7 @@ class TestMCPCoreFunctions:
                 }
             ]
 
-            result = mcp.list_tables("testdb", like="table%")
+            result = server.list_tables("testdb", like="table%")
             mock_function.assert_called_once_with("testdb", like="table%")
 
     def test_execute_query(self):
@@ -211,7 +211,7 @@ class TestMCPCoreFunctions:
             mock_create_client.return_value = self.mock_client
 
             # Call the function
-            result = mcp.execute_query("SELECT * FROM testdb.table1")
+            result = server.execute_query("SELECT * FROM testdb.table1")
 
             # Verify results
             assert len(result) == 2
@@ -226,7 +226,7 @@ class TestMCPCoreFunctions:
 
             # Test error handling
             self.mock_client.query.side_effect = ClickHouseError("Test exception")
-            result = mcp.execute_query("SELECT * FROM testdb.table1")
+            result = server.execute_query("SELECT * FROM testdb.table1")
             assert isinstance(result, str)
             assert "error running query" in result
 
@@ -242,7 +242,7 @@ class TestMCPCoreFunctions:
             mock_executor.submit.return_value = mock_future
 
             # Call the function
-            result = mcp.run_select_query("SELECT * FROM testdb.table1")
+            result = server.run_select_query("SELECT * FROM testdb.table1")
 
             # Verify results
             assert len(result) == 2
@@ -251,11 +251,11 @@ class TestMCPCoreFunctions:
             assert result[1]["id"] == 2
             assert result[1]["name"] == "Test 2"
             mock_executor.submit.assert_called_once_with(
-                mcp.execute_query, "SELECT * FROM testdb.table1"
+                server.execute_query, "SELECT * FROM testdb.table1"
             )
 
             # Test timeout
             mock_future.result.side_effect = TimeoutError("Query timeout")
-            result = mcp.run_select_query("SELECT * FROM testdb.table1")
+            result = server.run_select_query("SELECT * FROM testdb.table1")
             assert isinstance(result, str)
             assert "Query timed out" in result

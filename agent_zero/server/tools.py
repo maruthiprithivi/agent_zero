@@ -90,6 +90,37 @@ from .query import execute_query_threaded
 logger = logging.getLogger(__name__)
 
 
+# Standalone functions for testing - these mirror the functions inside register functions
+def analyze_thread_distribution(start_time: str, end_time: str):
+    """Get thread name distribution by host - standalone version for testing."""
+    logger.info(f"Retrieving thread name distribution from {start_time} to {end_time}")
+    client = create_clickhouse_client()
+    try:
+        from agent_zero.monitoring.utility_diagnostics import get_thread_name_distributions
+
+        return get_thread_name_distributions(client, start_time, end_time)
+    except Exception as e:
+        logger.error(f"Error retrieving thread name distribution: {e!s}")
+        from agent_zero.monitoring.utility_diagnostics import format_exception
+
+        return f"Error retrieving thread name distribution: {format_exception(e)}"
+
+
+def monitor_current_merges():
+    """Get current merges information - standalone version for testing."""
+    logger.info("Retrieving current merges information")
+    client = create_clickhouse_client()
+    try:
+        from agent_zero.monitoring.parts_merges import get_current_merges
+
+        return get_current_merges(client)
+    except Exception as e:
+        logger.error(f"Error retrieving current merges: {e!s}")
+        from agent_zero.monitoring.parts_merges import format_exception
+
+        return f"Error retrieving current merges: {format_exception(e)}"
+
+
 def register_all_tools(mcp):
     """Register all MCP tools with the FastMCP instance.
 

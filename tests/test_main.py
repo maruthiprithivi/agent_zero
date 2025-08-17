@@ -157,7 +157,7 @@ class TestMain(unittest.TestCase):
         args, kwargs = self.mock_run.call_args
         server_config = kwargs["server_config"]
         self.assertEqual(server_config.cursor_mode, "agent")
-        from agent_zero.server_config import TransportType
+        from agent_zero.config import TransportType
 
         self.assertEqual(server_config.cursor_transport, TransportType.WEBSOCKET)
 
