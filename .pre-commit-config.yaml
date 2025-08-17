@@ -27,14 +27,14 @@ repos:
       - id: ruff-format
         exclude: '^agent_zero/__init__\.py$'
 
-  # Python code formatting (Black as backup/compatibility)
-  - repo: https://github.com/psf/black
-    rev: 24.8.0
-    hooks:
-      - id: black
-        language_version: python3
-        args: [--line-length=100]
-        exclude: '^agent_zero/__init__\.py$'
+  # Python code formatting (Black disabled - using ruff-format for consistency)
+  # - repo: https://github.com/psf/black
+  #   rev: 24.8.0
+  #   hooks:
+  #     - id: black
+  #       language_version: python3
+  #       args: [--line-length=100]
+  #       exclude: '^agent_zero/__init__\.py$'
 
   # Python security scanning
   - repo: https://github.com/PyCQA/bandit

@@ -193,24 +193,14 @@ known-first-party = ["agent_zero"]
 force-single-line = false
 combine-as-imports = true
 
-[tool.black]
-line-length = 100
-target-version = ['py313']
-include = '\.pyi?$'
-extend-exclude = '''
-/(
-    \.git
-  | \.mypy_cache
-  | \.pytest_cache
-  | \.ruff_cache
-  | \.venv
-  | _build
-  | buck-out
-  | build
-  | dist
-  | agent_zero/_version\.py
-)/
-'''
+[tool.ruff.format]
+# Use ruff-format for consistent formatting (Black disabled to avoid conflicts)
+quote-style = "double"
+indent-style = "space"
+skip-magic-trailing-comma = false
+line-ending = "auto"
+
+# Black configuration disabled - using ruff-format instead for consistency
 
 [tool.mypy]
 python_version = "3.13"

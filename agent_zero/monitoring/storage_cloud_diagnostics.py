@@ -1267,9 +1267,7 @@ class StorageOptimizationEngine:
 
         return sorted(
             issues, key=lambda x: (severity_order.get(x.severity, 0), x.impact_score), reverse=True
-        )[
-            :10
-        ]  # Return top 10 priority issues
+        )[:10]  # Return top 10 priority issues
 
     def _identify_cost_savings(self, report: StorageOptimizationReport) -> list[dict[str, Any]]:
         """Identify cost savings opportunities."""

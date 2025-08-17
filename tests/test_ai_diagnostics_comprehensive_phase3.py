@@ -239,9 +239,7 @@ class TestIntelligentBottleneckDetector:
         mock_hardware_instance = Mock()
         mock_profile_analyzer.return_value = mock_analyzer
         mock_hardware.return_value = mock_hardware_instance
-        mock_analyzer.get_recent_aggregated_data.return_value = (
-            []
-        )  # Return empty list for aggregations
+        mock_analyzer.get_recent_aggregated_data.return_value = []  # Return empty list for aggregations
 
         # Create detector
         detector = IntelligentBottleneckDetector(mock_client)
