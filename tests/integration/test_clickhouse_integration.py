@@ -265,40 +265,44 @@ class TestMCPToolsIntegration:
             pytest.skip(f"MCP server initialization failed: {e}")
 
     @pytest.mark.slow
-    def test_list_databases_tool(self, mcp_server):
+    @pytest.mark.asyncio
+    async def test_list_databases_tool(self, mcp_server):
         """Test list_databases MCP tool."""
         # Simulate MCP tool call
-        result = mcp_server.call_tool("list_databases", {})
+        result = await mcp_server.call_tool("list_databases", {})
 
         assert result is not None
         assert "databases" in result or isinstance(result, list)
 
     @pytest.mark.slow
-    def test_query_performance_tools(self, mcp_server):
+    @pytest.mark.asyncio
+    async def test_query_performance_tools(self, mcp_server):
         """Test query performance analysis tools."""
         # Test monitor_current_processes
         try:
-            result = mcp_server.call_tool("monitor_current_processes", {})
+            result = await mcp_server.call_tool("monitor_current_processes", {})
             assert result is not None
         except Exception:
             # May fail if no active processes
             pass
 
     @pytest.mark.slow
-    def test_resource_monitoring_tools(self, mcp_server):
+    @pytest.mark.asyncio
+    async def test_resource_monitoring_tools(self, mcp_server):
         """Test resource monitoring tools."""
         # Test monitor_cpu_usage
-        result = mcp_server.call_tool("monitor_cpu_usage", {})
+        result = await mcp_server.call_tool("monitor_cpu_usage", {})
         assert result is not None
 
     @pytest.mark.slow
-    def test_profile_events_tools(self, mcp_server):
+    @pytest.mark.asyncio
+    async def test_profile_events_tools(self, mcp_server):
         """Test ProfileEvents analysis tools."""
         end_time = datetime.now()
         start_time = end_time - timedelta(hours=1)
 
         # Test analyze_profile_events_comprehensive
-        result = mcp_server.call_tool(
+        result = await mcp_server.call_tool(
             "analyze_profile_events_comprehensive",
             {"start_time": start_time.isoformat(), "end_time": end_time.isoformat(), "limit": 10},
         )

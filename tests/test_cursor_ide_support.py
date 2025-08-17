@@ -55,7 +55,7 @@ class TestCursorIDESupport(unittest.TestCase):
     def test_cursor_mode_agent(self):
         """Test Cursor IDE in agent mode."""
         # Set up config
-        server_config = UnifiedConfig(cursor_mode="agent", cursor_transport="sse")
+        server_config = UnifiedConfig.from_env(cursor_mode="agent", cursor_transport="sse")
 
         # Run the server
         self.run_func(server_config=server_config)
@@ -70,7 +70,7 @@ class TestCursorIDESupport(unittest.TestCase):
     def test_cursor_mode_ask(self):
         """Test Cursor IDE in ask mode."""
         # Set up config
-        server_config = UnifiedConfig(cursor_mode="ask", cursor_transport="websocket")
+        server_config = UnifiedConfig.from_env(cursor_mode="ask", cursor_transport="websocket")
 
         # Run the server
         self.run_func(host="localhost", port=9000, server_config=server_config)
@@ -85,7 +85,7 @@ class TestCursorIDESupport(unittest.TestCase):
     def test_cursor_mode_edit(self):
         """Test Cursor IDE in edit mode."""
         # Set up config
-        server_config = UnifiedConfig(cursor_mode="edit")
+        server_config = UnifiedConfig.from_env(cursor_mode="edit")
 
         # Run the server
         self.run_func(server_config=server_config)
@@ -102,7 +102,7 @@ class TestCursorIDESupport(unittest.TestCase):
         os.environ["MCP_CURSOR_TRANSPORT"] = "websocket"
 
         # Create config from environment
-        server_config = UnifiedConfig()
+        server_config = UnifiedConfig.from_env()
 
         # Run the server
         self.run_func(server_config=server_config)
