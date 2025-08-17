@@ -279,8 +279,8 @@ def clickhouse_data_factory():
             for i in range(count):
                 queries.append(
                     {
-                        "query_id": f"test-query-{i+1}",
-                        "query": f"SELECT count() FROM table_{i+1}",
+                        "query_id": f"test-query-{i + 1}",
+                        "query": f"SELECT count() FROM table_{i + 1}",
                         "user": "default" if i % 2 == 0 else "admin",
                         "elapsed": round(st.floats(min_value=0.1, max_value=300.0).example(), 2),
                         "memory_usage": st.integers(min_value=1024, max_value=1073741824).example(),

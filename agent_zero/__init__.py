@@ -15,6 +15,7 @@ from agent_zero.server import (
     run,
 )
 
+
 # For backward compatibility - deprecated
 class _DeprecatedServerConfig:
     """Deprecated ServerConfig alias that issues warnings."""
@@ -26,6 +27,7 @@ class _DeprecatedServerConfig:
             stacklevel=2,
         )
         return UnifiedConfig(*args, **kwargs)
+
 
 ServerConfig = _DeprecatedServerConfig
 

@@ -45,7 +45,7 @@ def print_recommendations(recommendations: list, title: str):
             f"Confidence: {rec['confidence_score']:.1f}% | "
             f"Priority: {rec['priority_score']:.1f}"
         )
-        print(f"   Complexity: {rec['complexity']} | " f"Time: {rec['estimated_time_hours']:.1f}h")
+        print(f"   Complexity: {rec['complexity']} | Time: {rec['estimated_time_hours']:.1f}h")
         print(f"   Description: {rec['description']}")
 
         if rec.get("implementation_steps"):

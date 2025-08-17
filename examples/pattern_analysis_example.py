@@ -28,9 +28,9 @@ logger = logging.getLogger(__name__)
 
 def display_pattern_analysis_results(analysis_result, event_name: str):
     """Display comprehensive pattern analysis results in a readable format."""
-    print(f"\n{'='*80}")
+    print(f"\n{'=' * 80}")
     print(f"PATTERN ANALYSIS RESULTS FOR: {event_name}")
-    print(f"{'='*80}")
+    print(f"{'=' * 80}")
 
     # Analysis period
     start_time, end_time = analysis_result.analysis_period
@@ -68,7 +68,7 @@ def display_pattern_analysis_results(analysis_result, event_name: str):
         print("\n🌊 SEASONAL PATTERNS:")
         for i, pattern in enumerate(analysis_result.seasonal_patterns[:3]):
             print(
-                f"  Pattern {i+1}: Period={pattern.period}, Amplitude={pattern.amplitude:.2f}, Confidence={pattern.confidence:.4f}"
+                f"  Pattern {i + 1}: Period={pattern.period}, Amplitude={pattern.amplitude:.2f}, Confidence={pattern.confidence:.4f}"
             )
     else:
         print("\n🌊 SEASONAL PATTERNS: None detected")
@@ -78,7 +78,7 @@ def display_pattern_analysis_results(analysis_result, event_name: str):
         print("\n⚡ CHANGE POINTS:")
         for i, cp in enumerate(analysis_result.change_points[:5]):
             print(
-                f"  Change {i+1}: {cp.timestamp.strftime('%Y-%m-%d %H:%M:%S')} - {cp.change_type.value}"
+                f"  Change {i + 1}: {cp.timestamp.strftime('%Y-%m-%d %H:%M:%S')} - {cp.change_type.value}"
             )
             print(f"    Magnitude: {cp.magnitude:.2f}, Confidence: {cp.confidence:.4f}")
             print(f"    Before/After Mean: {cp.before_mean:.2f} → {cp.after_mean:.2f}")
@@ -149,10 +149,10 @@ def display_pattern_analysis_results(analysis_result, event_name: str):
     # Summary statistics
     print("\n📋 SUMMARY STATISTICS:")
     print(
-        f"  Anomaly Rate: {analysis_result.anomaly_rate:.4f} ({analysis_result.anomaly_rate*100:.2f}%)"
+        f"  Anomaly Rate: {analysis_result.anomaly_rate:.4f} ({analysis_result.anomaly_rate * 100:.2f}%)"
     )
     print(
-        f"  Pattern Coverage: {analysis_result.pattern_coverage:.4f} ({analysis_result.pattern_coverage*100:.2f}%)"
+        f"  Pattern Coverage: {analysis_result.pattern_coverage:.4f} ({analysis_result.pattern_coverage * 100:.2f}%)"
     )
     print(f"  Predictability Score: {analysis_result.predictability_score:.4f}")
     print(f"  Stability Score: {analysis_result.stability_score:.4f}")
@@ -160,9 +160,9 @@ def display_pattern_analysis_results(analysis_result, event_name: str):
 
 def display_anomaly_summary(anomaly_summary: dict[str, Any]):
     """Display anomaly summary across all ProfileEvents."""
-    print(f"\n{'='*80}")
+    print(f"\n{'=' * 80}")
     print("SYSTEM-WIDE ANOMALY SUMMARY")
-    print(f"{'='*80}")
+    print(f"{'=' * 80}")
 
     print("📊 Overview:")
     print(f"  Total Events Analyzed: {anomaly_summary['total_events_analyzed']}")
@@ -175,7 +175,7 @@ def display_anomaly_summary(anomaly_summary: dict[str, Any]):
         print("\n🔥 Most Anomalous Events:")
         for event_name, stats in anomaly_summary["most_anomalous_events"][:5]:
             print(
-                f"  {event_name}: {stats['total']} anomalies ({stats['anomaly_rate']*100:.2f}% rate)"
+                f"  {event_name}: {stats['total']} anomalies ({stats['anomaly_rate'] * 100:.2f}% rate)"
             )
             print(f"    Critical: {stats['critical']}, High: {stats['high']}")
 
@@ -259,7 +259,7 @@ def main():
             for event_name, result in batch_results.items():
                 print(
                     f"  {event_name}: {len(result.anomalies)} anomalies, "
-                    f"{result.anomaly_rate*100:.2f}% rate, "
+                    f"{result.anomaly_rate * 100:.2f}% rate, "
                     f"stability: {result.stability_score:.4f}"
                 )
 

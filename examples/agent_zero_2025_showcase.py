@@ -209,9 +209,9 @@ async def demonstrate_modern_python_features():
     for i, config in enumerate(server_configs):
         try:
             validated_config = analyze_server_config(config)
-            logger.info(f"  Config {i+1}: ✅ Valid - {validated_config['transport']} transport")
+            logger.info(f"  Config {i + 1}: ✅ Valid - {validated_config['transport']} transport")
         except Exception as e:
-            logger.warning(f"  Config {i+1}: ❌ Invalid - {e}")
+            logger.warning(f"  Config {i + 1}: ❌ Invalid - {e}")
 
     # Demonstrate performance context
     async with exec_manager.performance_context("demo_operation") as ctx:
@@ -318,7 +318,7 @@ async def demonstrate_ai_ml_features():
             logger.info(f"🔍 Found {len(similar)} similar queries in vector database")
             for i, query_info in enumerate(similar):
                 logger.info(
-                    f"  {i+1}. Similarity: {query_info['similarity']:.3f} - {query_info['query'][:50]}..."
+                    f"  {i + 1}. Similarity: {query_info['similarity']:.3f} - {query_info['query'][:50]}..."
                 )
         else:
             logger.info("⚠️  Vector database not available")
@@ -430,11 +430,11 @@ async def demonstrate_zero_trust_security():
 
         if auth_result["authenticated"]:
             logger.info(
-                f"  {i+1}. {user_id}: ✅ Authenticated (Level {auth_result['authorization_level']})"
+                f"  {i + 1}. {user_id}: ✅ Authenticated (Level {auth_result['authorization_level']})"
             )
         else:
             required_actions = ", ".join(auth_result["required_actions"])
-            logger.info(f"  {i+1}. {user_id}: ❌ Denied - {required_actions}")
+            logger.info(f"  {i + 1}. {user_id}: ❌ Denied - {required_actions}")
 
     # Get security dashboard
     dashboard = await security_mgr.get_security_dashboard()

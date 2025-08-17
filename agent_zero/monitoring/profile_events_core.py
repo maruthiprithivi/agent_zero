@@ -466,8 +466,8 @@ class ProfileEventsAnalyzer:
                 query_id,
                 {profile_events_clause}
             FROM clusterAllReplicas(default, system.query_log)
-            WHERE event_time >= '{start_time.strftime('%Y-%m-%d %H:%M:%S')}'
-              AND event_time <= '{end_time.strftime('%Y-%m-%d %H:%M:%S')}'
+            WHERE event_time >= '{start_time.strftime("%Y-%m-%d %H:%M:%S")}'
+              AND event_time <= '{end_time.strftime("%Y-%m-%d %H:%M:%S")}'
               AND type != 'QueryStart'
               AND user NOT ILIKE '%internal%'
               {where_filter}
@@ -639,7 +639,7 @@ class ProfileEventsAnalyzer:
             event_sums.append(f"sum(ProfileEvents['{event_name}']) AS {event_name}")
 
         query = f"""
-        SELECT {', '.join(event_sums)}
+        SELECT {", ".join(event_sums)}
         FROM clusterAllReplicas(default, system.query_log)
         WHERE event_time >= now() - toIntervalDay({days})
           AND type != 'QueryStart'

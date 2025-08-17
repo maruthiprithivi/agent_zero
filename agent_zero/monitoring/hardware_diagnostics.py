@@ -1891,7 +1891,7 @@ class ThreadPoolAnalyzer:
                     HardwareBottleneck(
                         type=HardwareBottleneckType.THREAD_CONTENTION,
                         severity=severity,
-                        description=f"High thread pool lock contention: {lock_analysis.get('total_lock_wait_us', 0)/1000:.1f}ms avg wait",
+                        description=f"High thread pool lock contention: {lock_analysis.get('total_lock_wait_us', 0) / 1000:.1f}ms avg wait",
                         efficiency_score=max(
                             0, 100 - lock_analysis.get("total_lock_wait_us", 0) / 10000
                         ),

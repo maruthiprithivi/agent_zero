@@ -348,7 +348,7 @@ class SecuritySummaryGenerator:
 
 ### Security Tools Used
 
-{', '.join(self.summary["tools_run"]) if self.summary["tools_run"] else "No tools completed successfully"}
+{", ".join(self.summary["tools_run"]) if self.summary["tools_run"] else "No tools completed successfully"}
 
 ### Key Findings
 

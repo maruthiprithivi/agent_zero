@@ -725,8 +725,8 @@ class PerformanceBaselineEngine:
             ProfileEvents.Values[indexOf(ProfileEvents.Names, '{event_name}')] as value,
             event_time
         FROM system.query_log
-        WHERE event_time >= '{start_time.strftime('%Y-%m-%d %H:%M:%S')}'
-          AND event_time <= '{end_time.strftime('%Y-%m-%d %H:%M:%S')}'
+        WHERE event_time >= '{start_time.strftime("%Y-%m-%d %H:%M:%S")}'
+          AND event_time <= '{end_time.strftime("%Y-%m-%d %H:%M:%S")}'
           AND has(ProfileEvents.Names, '{event_name}')
           AND ProfileEvents.Values[indexOf(ProfileEvents.Names, '{event_name}')] > 0
         ORDER BY event_time
@@ -1605,8 +1605,8 @@ class CorrelationAnalyzer:
                 toUnixTimestamp(event_time) as ts,
                 ProfileEvents.Values[indexOf(ProfileEvents.Names, '{event1}')] as value1
             FROM system.query_log
-            WHERE event_time >= '{start_time.strftime('%Y-%m-%d %H:%M:%S')}'
-              AND event_time <= '{end_time.strftime('%Y-%m-%d %H:%M:%S')}'
+            WHERE event_time >= '{start_time.strftime("%Y-%m-%d %H:%M:%S")}'
+              AND event_time <= '{end_time.strftime("%Y-%m-%d %H:%M:%S")}'
               AND has(ProfileEvents.Names, '{event1}')
               AND ProfileEvents.Values[indexOf(ProfileEvents.Names, '{event1}')] > 0
         ),
@@ -1615,8 +1615,8 @@ class CorrelationAnalyzer:
                 toUnixTimestamp(event_time) as ts,
                 ProfileEvents.Values[indexOf(ProfileEvents.Names, '{event2}')] as value2
             FROM system.query_log
-            WHERE event_time >= '{start_time.strftime('%Y-%m-%d %H:%M:%S')}'
-              AND event_time <= '{end_time.strftime('%Y-%m-%d %H:%M:%S')}'
+            WHERE event_time >= '{start_time.strftime("%Y-%m-%d %H:%M:%S")}'
+              AND event_time <= '{end_time.strftime("%Y-%m-%d %H:%M:%S")}'
               AND has(ProfileEvents.Names, '{event2}')
               AND ProfileEvents.Values[indexOf(ProfileEvents.Names, '{event2}')] > 0
         )
@@ -1975,8 +1975,8 @@ class PatternAnalysisEngine:
             ProfileEvents.Values[indexOf(ProfileEvents.Names, '{event_name}')] as value,
             event_time
         FROM system.query_log
-        WHERE event_time >= '{start_time.strftime('%Y-%m-%d %H:%M:%S')}'
-          AND event_time <= '{end_time.strftime('%Y-%m-%d %H:%M:%S')}'
+        WHERE event_time >= '{start_time.strftime("%Y-%m-%d %H:%M:%S")}'
+          AND event_time <= '{end_time.strftime("%Y-%m-%d %H:%M:%S")}'
           AND has(ProfileEvents.Names, '{event_name}')
           AND ProfileEvents.Values[indexOf(ProfileEvents.Names, '{event_name}')] > 0
         ORDER BY event_time
@@ -2038,8 +2038,8 @@ class PatternAnalysisEngine:
                 arrayJoin(ProfileEvents.Names) as event_name,
                 arrayJoin(ProfileEvents.Values) as event_value
             FROM system.query_log
-            WHERE event_time >= '{start_time.strftime('%Y-%m-%d %H:%M:%S')}'
-              AND event_time <= '{end_time.strftime('%Y-%m-%d %H:%M:%S')}'
+            WHERE event_time >= '{start_time.strftime("%Y-%m-%d %H:%M:%S")}'
+              AND event_time <= '{end_time.strftime("%Y-%m-%d %H:%M:%S")}'
               AND length(ProfileEvents.Names) > 0
         )
         WHERE event_value > 0

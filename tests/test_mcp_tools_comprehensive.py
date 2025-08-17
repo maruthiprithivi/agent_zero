@@ -373,9 +373,9 @@ class TestProfileEventsTools:
             for i in range(5):  # 5 events per category
                 events_by_category.append(
                     [
-                        f"{category}Event{i+1}",
+                        f"{category}Event{i + 1}",
                         st.integers(min_value=0, max_value=1000000).example(),
-                        f"{category} category event {i+1}",
+                        f"{category} category event {i + 1}",
                     ]
                 )
 

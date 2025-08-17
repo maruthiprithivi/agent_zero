@@ -361,8 +361,8 @@ class QueryExecutionAnalyzer:
         total_queries_query = f"""
         SELECT count() as total_selects
         FROM clusterAllReplicas(default, system.query_log)
-        WHERE event_time >= '{start_time.strftime('%Y-%m-%d %H:%M:%S')}'
-          AND event_time <= '{end_time.strftime('%Y-%m-%d %H:%M:%S')}'
+        WHERE event_time >= '{start_time.strftime("%Y-%m-%d %H:%M:%S")}'
+          AND event_time <= '{end_time.strftime("%Y-%m-%d %H:%M:%S")}'
           AND type != 'QueryStart'
           AND query_kind = 'Select'
           AND user NOT ILIKE '%internal%'
