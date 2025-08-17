@@ -476,7 +476,7 @@ class ProductionMCPServer:
 
         return web.json_response(info)
 
-    async def start(self, host: str = "0.0.0.0", port: int = 8505) -> None:
+    async def start(self, host: str = "127.0.0.1", port: int = 8505) -> None:
         """Start the production server."""
         # Start monitoring systems
         await self.start_monitoring()
@@ -548,7 +548,7 @@ async def run_production_server(config: dict[str, Any]) -> None:
     """
     server = ProductionMCPServer(config)
 
-    host = config.get("host", "0.0.0.0")
+    host = config.get("host", "127.0.0.1")
     port = config.get("port", 8505)
 
     await server.start(host, port)

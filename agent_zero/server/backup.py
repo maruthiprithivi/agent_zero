@@ -743,9 +743,23 @@ class BackupManager:
         """
         try:
             with tempfile.TemporaryDirectory() as temp_dir:
-                # Extract backup
+                # Extract backup with security validation
                 with tarfile.open(metadata.file_path, "r:gz") as tar:
-                    tar.extractall(temp_dir)
+                    # Validate tar members for security
+                    safe_members = []
+                    for member in tar.getmembers():
+                        # Check for path traversal attacks
+                        if member.name.startswith('/') or '..' in member.name:
+                            logger.warning(f"Skipping unsafe tar member: {member.name}")
+                            continue
+                        # Check for suspicious file types
+                        if member.isdev() or member.isfifo() or member.issym():
+                            logger.warning(f"Skipping special file type: {member.name}")
+                            continue
+                        safe_members.append(member)
+                    
+                    # Extract only safe members
+                    tar.extractall(temp_dir, members=safe_members)
 
                 if metadata.backup_type == BackupType.CONFIGURATION:
                     return await self._restore_configuration(temp_dir, config)
@@ -845,10 +859,24 @@ class BackupManager:
             for component in manifest.get("components", []):
                 component_file = backup_dir / component["file"]
                 if component_file.exists():
-                    # Extract and restore component
+                    # Extract and restore component with security validation
                     with tempfile.TemporaryDirectory() as comp_temp_dir:
                         with tarfile.open(component_file, "r:gz") as tar:
-                            tar.extractall(comp_temp_dir)
+                            # Validate tar members for security
+                            safe_members = []
+                            for member in tar.getmembers():
+                                # Check for path traversal attacks
+                                if member.name.startswith('/') or '..' in member.name:
+                                    logger.warning(f"Skipping unsafe tar member: {member.name}")
+                                    continue
+                                # Check for suspicious file types
+                                if member.isdev() or member.isfifo() or member.issym():
+                                    logger.warning(f"Skipping special file type: {member.name}")
+                                    continue
+                                safe_members.append(member)
+                            
+                            # Extract only safe members
+                            tar.extractall(comp_temp_dir, members=safe_members)
 
                         if component["type"] == "configuration":
                             comp_success = await self._restore_configuration(comp_temp_dir, config)

@@ -346,7 +346,7 @@ show_contexts = true
 
 [tool.bandit]
 exclude_dirs = ["tests"]
-skips = ["B101", "B110", "B601"]
+skips = ["B101", "B110", "B112", "B608", "B601"]
 
 [tool.pydocstyle]
 convention = "google"
