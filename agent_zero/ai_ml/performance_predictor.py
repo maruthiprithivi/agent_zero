@@ -277,7 +277,10 @@ class PerformancePredictor:
             )
 
     async def _ml_predict(
-        self, prediction_type: PredictionType, metrics: PerformanceMetrics, query: str | None
+        self,
+        prediction_type: PredictionType,
+        metrics: PerformanceMetrics,
+        query: str | None,
     ) -> PredictionResult:
         """Make ML-based prediction."""
         model = self.models[prediction_type]
@@ -326,11 +329,17 @@ class PerformancePredictor:
                 "result_rows",
             ],
             model_version=self.model_version,
-            metadata={"model_type": self.model_type.value, "query_provided": query is not None},
+            metadata={
+                "model_type": self.model_type.value,
+                "query_provided": query is not None,
+            },
         )
 
     async def _heuristic_predict(
-        self, prediction_type: PredictionType, metrics: PerformanceMetrics, query: str | None
+        self,
+        prediction_type: PredictionType,
+        metrics: PerformanceMetrics,
+        query: str | None,
     ) -> PredictionResult:
         """Make heuristic-based prediction when ML is not available."""
 
@@ -442,7 +451,10 @@ class VectorDatabaseManager:
             VECTOR_DB_AVAILABLE = False
 
     async def store_query_pattern(
-        self, query: str, performance_data: PerformanceMetrics, pattern_id: str | None = None
+        self,
+        query: str,
+        performance_data: PerformanceMetrics,
+        pattern_id: str | None = None,
     ) -> str:
         """Store query pattern with performance data."""
         if not VECTOR_DB_AVAILABLE or not self.collection:

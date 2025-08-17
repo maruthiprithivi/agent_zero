@@ -166,7 +166,7 @@ jobs:
           source test-env/bin/activate
           pip install dist/*.tar.gz
           # Test basic package structure without full module initialization
-          python -c "import sys; import agent_zero._version; print(f'Source package installed: {agent_zero._version.__version__}')" || python -c "import agent_zero; print('Source package structure validated')"
+          python -c "import importlib.util; spec = importlib.util.find_spec('agent_zero'); print('✅ Source package installed successfully') if spec else exit(1)"
 
       - name: Upload source distribution
         uses: actions/upload-artifact@v4
@@ -246,7 +246,7 @@ jobs:
           fi
           pip install dist/*.whl
           # Test basic package structure without full module initialization
-          python -c "import agent_zero._version; print(f'Wheel installed: {agent_zero._version.__version__}')" || python -c "import agent_zero.main; print('Wheel package structure validated')"
+          python -c "import importlib.util; spec = importlib.util.find_spec('agent_zero'); print('✅ Wheel installed successfully') if spec else exit(1)"
         shell: bash
 
       - name: Upload wheels

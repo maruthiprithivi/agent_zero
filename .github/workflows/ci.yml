@@ -247,16 +247,7 @@ jobs:
           ruff format --check agent_zero
         shell: bash
 
-      - name: Run Black formatting check
-        run: |
-          # Activate virtual environment based on OS
-          if [ "$RUNNER_OS" = "Windows" ]; then
-            source .venv/Scripts/activate
-          else
-            source .venv/bin/activate
-          fi
-          black --check --diff agent_zero
-        shell: bash
+      # Black formatting check removed - using only Ruff for consistency
 
       - name: Run MyPy type checking
         run: |
