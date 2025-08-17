@@ -156,13 +156,7 @@ jobs:
           uv pip install -e .[dev,test]
         shell: bash
 
-      - name: Run Docker-based tests
-        if: matrix.os == 'ubuntu-latest'
-        run: |
-          ./scripts/run-tests.sh
-
-      - name: Run tests (non-Docker)
-        if: matrix.os != 'ubuntu-latest'
+      - name: Run tests
         run: |
           # Activate virtual environment based on OS
           if [ "$RUNNER_OS" = "Windows" ]; then
@@ -170,6 +164,12 @@ jobs:
           else
             source .venv/bin/activate
           fi
+          # Set mock environment variables for testing
+          export CLICKHOUSE_HOST=mock_host
+          export CLICKHOUSE_USER=mock_user
+          export CLICKHOUSE_PASSWORD=mock_password
+          export CH_AGENT_ZERO_DEBUG=1
+          # Run tests with coverage
           pytest -v --tb=short --cov=agent_zero --cov-report=xml --cov-report=term
         shell: bash
 
@@ -345,30 +345,6 @@ jobs:
             safety-report.json
             pip-audit-report.json
 
-  # Docker testing
-  docker:
-    name: Docker Tests
-    runs-on: ubuntu-latest
-    needs: pre-flight
-    if: needs.pre-flight.outputs.should-test == 'true'
-
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Build Docker test image
-        run: |
-          docker build -f docker/Dockerfile.test -t agent-zero-test .
-
-      - name: Run tests in Docker
-        run: |
-          ./scripts/run-tests.sh
-
-      - name: Upload test results
-        uses: actions/upload-artifact@v4
-        if: always()
-        with:
-          name: docker-test-results
-          path: test-results/
 
   # Build verification
   build:
@@ -426,7 +402,7 @@ jobs:
   ci-success:
     name: CI Pipeline Success
     runs-on: ubuntu-latest
-    needs: [pre-flight, test, lint, security, docker, build]
+    needs: [pre-flight, test, lint, security, build]
     if: always()
 
     steps:
@@ -436,7 +412,6 @@ jobs:
           echo "Test: ${{ needs.test.result }}"
           echo "Lint: ${{ needs.lint.result }}"
           echo "Security: ${{ needs.security.result }}"
-          echo "Docker: ${{ needs.docker.result }}"
           echo "Build: ${{ needs.build.result }}"
 
           if [[ "${{ needs.pre-flight.result }}" == "failure" || \
@@ -458,7 +433,6 @@ jobs:
           echo "| Test | ${{ needs.test.result }} |" >> $GITHUB_STEP_SUMMARY
           echo "| Lint | ${{ needs.lint.result }} |" >> $GITHUB_STEP_SUMMARY
           echo "| Security | ${{ needs.security.result }} |" >> $GITHUB_STEP_SUMMARY
-          echo "| Docker | ${{ needs.docker.result }} |" >> $GITHUB_STEP_SUMMARY
           echo "| Build | ${{ needs.build.result }} |" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "**Branch Type:** ${{ needs.pre-flight.outputs.branch-type }}" >> $GITHUB_STEP_SUMMARY

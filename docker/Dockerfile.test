@@ -14,13 +14,14 @@ WORKDIR /app
 # Copy project files
 COPY pyproject.toml ./
 COPY README.md ./
-COPY pytest.ini ./
 COPY agent_zero/ ./agent_zero/
 COPY tests/ ./tests/
 
-# Install dependencies with dev extras
-RUN pip install --no-cache-dir -e .
-RUN pip install --no-cache-dir pytest pytest-cov pytest-html
+# Install UV for faster dependency management
+RUN pip install --no-cache-dir uv
+
+# Install dependencies with dev and test extras using UV
+RUN uv pip install --system -e .[dev,test]
 
 # Create directory for test results
 RUN mkdir -p /app/test-results
