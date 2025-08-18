@@ -145,6 +145,7 @@ jobs:
 
       - name: Create virtual environment and install dependencies
         run: |
+          # Create virtual environment with UV
           uv venv .venv
           # Activate virtual environment based on OS
           if [ "$RUNNER_OS" = "Windows" ]; then
@@ -152,8 +153,13 @@ jobs:
           else
             source .venv/bin/activate
           fi
-          # Install package with all required extras for testing
-          uv pip install -e .[dev,test]
+          # Upgrade pip and install package in editable mode (critical for imports)
+          python -m pip install --upgrade pip
+          pip install -e .[dev,test]
+          # Verify installation
+          pip list
+          echo "Testing import..."
+          python -c "import agent_zero; print('✅ agent_zero imports successfully')"
         shell: bash
 
       - name: Run tests
@@ -164,13 +170,24 @@ jobs:
           else
             source .venv/bin/activate
           fi
-          # Set mock environment variables for testing
-          export CLICKHOUSE_HOST=mock_host
-          export CLICKHOUSE_USER=mock_user
-          export CLICKHOUSE_PASSWORD=mock_password
+          # Set proper PYTHONPATH for imports
+          export PYTHONPATH="${PWD}:${PYTHONPATH}"
+          echo "PYTHONPATH: $PYTHONPATH"
+
+          # Set proper Agent Zero environment variables for testing
+          export AGENT_ZERO_CLICKHOUSE_HOST=mock_host
+          export AGENT_ZERO_CLICKHOUSE_USER=mock_user
+          export AGENT_ZERO_CLICKHOUSE_PASSWORD=mock_password
           export CH_AGENT_ZERO_DEBUG=1
-          # Run tests with coverage (exclude integration, slow, and performance tests for CI stability)
-          pytest -v --tb=short --cov=agent_zero --cov-report=xml --cov-report=term --cov-fail-under=10 -m "not integration and not slow and not performance"
+          export AGENT_ZERO_ENABLE_QUERY_LOGGING=false
+
+          # Debug test environment
+          echo "Python executable: $(which python)"
+          echo "Testing agent_zero import again..."
+          python -c "import agent_zero; print('✅ Import successful in test environment')"
+
+          # Run tests with python -m pytest for proper module resolution
+          python -m pytest --import-mode=append tests/ -v --tb=short --cov=agent_zero --cov-report=xml --cov-report=term --cov-fail-under=10 -m "not integration and not slow and not performance"
         shell: bash
 
       - name: Upload coverage to Codecov
