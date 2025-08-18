@@ -381,10 +381,13 @@ class TestHardwareMemoryAnalyzer:
 
         # Should return MemoryAnalysis object
         assert result is not None
-        assert hasattr(result, "allocation_efficiency")
-        assert hasattr(result, "fragmentation_level")
-        assert hasattr(result, "swap_usage")
-        assert hasattr(result, "numa_efficiency")
+        assert hasattr(result, "efficiency_score")
+        assert hasattr(result, "allocation_pattern_score")
+        assert hasattr(result, "page_fault_analysis")
+        assert hasattr(result, "memory_pressure_indicators")
+        assert hasattr(result, "swap_usage_analysis")
+        assert hasattr(result, "memory_fragmentation")
+        assert hasattr(result, "overcommit_analysis")
         assert hasattr(result, "bottlenecks")
         assert hasattr(result, "recommendations")
 
@@ -452,9 +455,13 @@ class TestHardwareThreadPoolAnalyzer:
 
         # Should return ThreadPoolAnalysis object
         assert result is not None
-        assert hasattr(result, "pool_utilization")
-        assert hasattr(result, "contention_level")
-        assert hasattr(result, "context_switches")
+        assert hasattr(result, "efficiency_score")
+        assert hasattr(result, "thread_utilization")
+        assert hasattr(result, "contention_analysis")
+        assert hasattr(result, "queue_efficiency")
+        assert hasattr(result, "scaling_analysis")
+        assert hasattr(result, "lock_contention")
+        assert hasattr(result, "thread_migration")
         assert hasattr(result, "bottlenecks")
         assert hasattr(result, "recommendations")
 
@@ -538,7 +545,7 @@ class TestHardwareHealthEngine:
                         assert hasattr(result, "thread_pool_analysis")
                         assert hasattr(result, "overall_health_score")
                         assert hasattr(result, "critical_bottlenecks")
-                        assert hasattr(result, "recommendations")
+                        assert hasattr(result, "optimization_priorities")
 
 
 @pytest.mark.unit
@@ -576,7 +583,7 @@ class TestHardwareDiagnosticsErrorHandling:
         from agent_zero.monitoring.hardware_diagnostics import MemoryAnalyzer
 
         mock_profile_analyzer = Mock()
-        mock_profile_analyzer.get_aggregated_events.return_value = []
+        mock_profile_analyzer.aggregate_profile_events.return_value = []
 
         analyzer = MemoryAnalyzer(mock_profile_analyzer)
 
@@ -587,7 +594,7 @@ class TestHardwareDiagnosticsErrorHandling:
 
         # Should handle empty events gracefully
         assert result is not None
-        assert hasattr(result, "allocation_efficiency")
+        assert hasattr(result, "efficiency_score")
 
     @patch.dict("os.environ", test_env)
     def test_thread_pool_analyzer_invalid_data(self):
@@ -603,7 +610,7 @@ class TestHardwareDiagnosticsErrorHandling:
             Mock(spec=ProfileEventAggregation, event_name="LocalThreadActive", event_value=-1),
         ]
 
-        mock_profile_analyzer.get_aggregated_events.return_value = mock_aggregations
+        mock_profile_analyzer.aggregate_profile_events.return_value = mock_aggregations
 
         analyzer = ThreadPoolAnalyzer(mock_profile_analyzer)
 
@@ -689,17 +696,16 @@ class TestHardwareDiagnosticsIntegration:
 
         # Test HardwareBottleneck with minimal initialization
         bottleneck = HardwareBottleneck(
-            bottleneck_type=HardwareBottleneckType.CPU_BOUND,
+            type=HardwareBottleneckType.CPU_BOUND,
             severity=HardwareSeverity.HIGH,
             description="Test",
-            affected_queries=[],
-            metrics={},
-            recommendations=[],
+            efficiency_score=75.0,
+            impact_percentage=25.0,
         )
 
-        assert bottleneck.bottleneck_type == HardwareBottleneckType.CPU_BOUND
+        assert bottleneck.type == HardwareBottleneckType.CPU_BOUND
         assert bottleneck.severity == HardwareSeverity.HIGH
-        assert isinstance(bottleneck.affected_queries, list)
+        assert isinstance(bottleneck.affected_components, list)
         assert isinstance(bottleneck.metrics, dict)
         assert isinstance(bottleneck.recommendations, list)
 
