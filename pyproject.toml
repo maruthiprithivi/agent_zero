@@ -27,7 +27,7 @@ classifiers = [
 ]
 dependencies = [
     "clickhouse-connect>=0.8.18,<1.0",
-    "mcp>=1.0.0,<2.0",
+    "mcp>=1.13.0,<2.0",
     "python-dotenv>=1.0.0,<2.0",
     "pip-system-certs>=4.0",
     # Core HTTP functionality for MCP server

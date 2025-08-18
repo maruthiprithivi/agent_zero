@@ -32,13 +32,16 @@ COPY pyproject.toml ./
 COPY README.md ./
 COPY LICENSE ./
 
-# Install Python dependencies
-RUN uv pip install --system -e .
+# Install build dependencies first (without the source code)
+RUN uv pip install --system build setuptools wheel
 
 # Copy application code
 COPY agent_zero/ ./agent_zero/
 COPY configs/ ./configs/
 COPY scripts/ ./scripts/
+
+# Install the package after copying source code
+RUN uv pip install --system -e .
 
 # Create non-root user for security
 RUN useradd --create-home --shell /bin/bash agentuser
