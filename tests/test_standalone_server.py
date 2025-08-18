@@ -5,7 +5,7 @@ This module tests the integrated functionality of the standalone server features
 including server configuration.
 """
 
-from unittest.mock import patch, MagicMock
+from unittest.mock import MagicMock, patch
 
 from agent_zero.server_config import ServerConfig
 
@@ -21,6 +21,7 @@ class TestStandaloneServer:
             port=9000,
             ssl_certfile="cert.pem",
             ssl_keyfile="key.pem",
+            ssl_enable=True,
             auth_username="admin",
             auth_password="secure_password",
         )

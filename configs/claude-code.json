@@ -1,0 +1,29 @@
+{
+  "mcpServers": {
+    "agent-zero": {
+      "command": "uv",
+      "args": [
+        "run",
+        "--with",
+        "ch-agent-zero",
+        "--python",
+        "3.13",
+        "ch-agent-zero",
+        "--ide-type",
+        "claude-code"
+      ],
+      "env": {
+        "AGENT_ZERO_CLICKHOUSE_HOST": "${AGENT_ZERO_CLICKHOUSE_HOST}",
+        "AGENT_ZERO_CLICKHOUSE_PORT": "${AGENT_ZERO_CLICKHOUSE_PORT:-8443}",
+        "AGENT_ZERO_CLICKHOUSE_USER": "${AGENT_ZERO_CLICKHOUSE_USER}",
+        "AGENT_ZERO_CLICKHOUSE_PASSWORD": "${AGENT_ZERO_CLICKHOUSE_PASSWORD}",
+        "AGENT_ZERO_CLICKHOUSE_SECURE": "${AGENT_ZERO_CLICKHOUSE_SECURE:-true}",
+        "AGENT_ZERO_CLICKHOUSE_VERIFY": "${AGENT_ZERO_CLICKHOUSE_VERIFY:-true}",
+        "AGENT_ZERO_CLICKHOUSE_CONNECT_TIMEOUT": "${AGENT_ZERO_CLICKHOUSE_CONNECT_TIMEOUT:-30}",
+        "AGENT_ZERO_CLICKHOUSE_SEND_RECEIVE_TIMEOUT": "${AGENT_ZERO_CLICKHOUSE_SEND_RECEIVE_TIMEOUT:-300}",
+        "AGENT_ZERO_ENABLE_MCP_TRACING": "${AGENT_ZERO_ENABLE_MCP_TRACING:-false}",
+        "AGENT_ZERO_IDE_TYPE": "claude_code"
+      }
+    }
+  }
+}

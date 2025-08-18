@@ -109,7 +109,7 @@ class ServerConfig:
             # If no password is set but a password file is, read from the file
             if not password and self.auth_password_file:
                 try:
-                    with open(self.auth_password_file, "r") as f:
+                    with open(self.auth_password_file) as f:
                         password = f.read().strip()
                 except Exception:
                     # If we can't read the password file, authentication is not configured

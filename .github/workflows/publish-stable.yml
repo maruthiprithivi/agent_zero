@@ -1,0 +1,392 @@
+name: Publish Stable Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      version_tag:
+        description: 'Version tag to publish (e.g., v1.0.0)'
+        required: true
+        type: string
+      skip_tests:
+        description: 'Skip tests before publishing'
+        required: false
+        default: false
+        type: boolean
+      dry_run:
+        description: 'Perform a dry run (build but do not publish)'
+        required: false
+        default: false
+        type: boolean
+
+env:
+  PYTHONUNBUFFERED: 1
+  FORCE_COLOR: 1
+
+jobs:
+  # Pre-publish validation
+  validate:
+    name: Pre-publish Validation
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+      tag: ${{ steps.version.outputs.tag }}
+      is-stable: ${{ steps.version.outputs.is-stable }}
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event.inputs.version_tag || github.ref }}
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+          cache: 'pip'
+
+      - name: Install validation tools
+        run: |
+          pip install uv setuptools-scm twine
+
+      - name: Validate version and tag
+        id: version
+        run: |
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+            TAG="${{ github.event.inputs.version_tag }}"
+            git checkout "$TAG" 2>/dev/null || {
+              echo "❌ Tag $TAG does not exist"
+              exit 1
+            }
+          else
+            TAG="${GITHUB_REF#refs/tags/}"
+          fi
+
+          echo "tag=$TAG" >> $GITHUB_OUTPUT
+
+          # Validate tag format (v1.0.0, v1.0.0-rc1, etc.)
+          if [[ ! "$TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            if [[ "$TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+(a|b|rc)[0-9]+$ ]]; then
+              echo "❌ Pre-release tags not allowed in stable publishing"
+              exit 1
+            else
+              echo "❌ Invalid tag format: $TAG (expected: v1.0.0)"
+              exit 1
+            fi
+          fi
+
+          # Extract version from tag
+          VERSION="${TAG#v}"
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "is-stable=true" >> $GITHUB_OUTPUT
+
+          echo "✅ Validated stable release: $VERSION"
+
+      - name: Verify working directory is clean
+        run: |
+          if ! git diff --quiet; then
+            echo "❌ Working directory is not clean"
+            git status
+            exit 1
+          fi
+          echo "✅ Working directory is clean"
+
+      - name: Verify version consistency
+        run: |
+          SETUPTOOLS_SCM_VERSION=$(python -m setuptools_scm --strip-dev)
+          TAG_VERSION="${{ steps.version.outputs.version }}"
+
+          echo "Tag version: $TAG_VERSION"
+          echo "Setuptools-scm version: $SETUPTOOLS_SCM_VERSION"
+
+          if [[ "$SETUPTOOLS_SCM_VERSION" != "$TAG_VERSION" ]]; then
+            echo "❌ Version mismatch: tag=$TAG_VERSION, setuptools-scm=$SETUPTOOLS_SCM_VERSION"
+            exit 1
+          fi
+
+          echo "✅ Version consistency verified"
+
+  # Run comprehensive tests
+  test:
+    name: Comprehensive Testing
+    runs-on: ${{ matrix.os }}
+    needs: validate
+    if: github.event.inputs.skip_tests != 'true'
+
+    strategy:
+      fail-fast: true
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        python-version: ["3.13"]
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ needs.validate.outputs.tag }}
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: 'pip'
+
+      - name: Install dependencies
+        run: |
+          pip install uv
+          uv venv
+          uv pip install -e .[dev,test]
+
+      - name: Run comprehensive tests
+        run: |
+          uv run pytest -v --tb=short --cov=agent_zero --cov-report=xml --cov-report=term
+
+      - name: Upload coverage (Ubuntu only)
+        if: matrix.os == 'ubuntu-latest'
+        uses: codecov/codecov-action@v4
+        with:
+          file: ./coverage.xml
+          flags: release-tests
+          name: release-coverage
+
+  # Build release artifacts
+  build:
+    name: Build Release Artifacts
+    runs-on: ubuntu-latest
+    needs: [validate, test]
+    if: always() && needs.validate.result == 'success' && (needs.test.result == 'success' || needs.test.result == 'skipped')
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ needs.validate.outputs.tag }}
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+          cache: 'pip'
+
+      - name: Install build tools
+        run: |
+          pip install uv build twine setuptools-scm
+
+      - name: Build distributions
+        run: |
+          python -m build --sdist --wheel --outdir dist/
+
+      - name: Verify distributions
+        run: |
+          twine check dist/*
+          ls -la dist/
+
+          # Verify version in built packages
+          WHEEL_VERSION=$(unzip -p dist/*.whl */METADATA | grep "^Version:" | cut -d" " -f2)
+          EXPECTED_VERSION="${{ needs.validate.outputs.version }}"
+
+          if [[ "$WHEEL_VERSION" != "$EXPECTED_VERSION" ]]; then
+            echo "❌ Built wheel version mismatch: $WHEEL_VERSION != $EXPECTED_VERSION"
+            exit 1
+          fi
+
+          echo "✅ Built artifacts verified"
+
+      - name: Test installation from wheel
+        run: |
+          uv venv test-install
+          uv pip install --python test-install dist/*.whl
+          uv run --python test-install python -c "import agent_zero; print(f'Installed version: {agent_zero.__version__}')"
+
+      - name: Upload distributions
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-distributions
+          path: dist/
+          retention-days: 90
+
+  # Publish to PyPI
+  publish:
+    name: Publish to PyPI
+    runs-on: ubuntu-latest
+    needs: [validate, test, build]
+    environment:
+      name: pypi-production
+      url: https://pypi.org/project/ch-agent-zero/
+    permissions:
+      id-token: write # Required for Trusted Publishing
+      contents: read
+
+    steps:
+      - name: Download distributions
+        uses: actions/download-artifact@v4
+        with:
+          name: release-distributions
+          path: dist/
+
+      - name: Verify distributions before publishing
+        run: |
+          ls -la dist/
+          echo "Files to be published:"
+          find dist/ -name "*.whl" -o -name "*.tar.gz" | sort
+
+      - name: Dry run check
+        if: github.event.inputs.dry_run == 'true'
+        run: |
+          echo "🔍 DRY RUN MODE - Would publish these files:"
+          find dist/ -name "*.whl" -o -name "*.tar.gz" -exec ls -lh {} \;
+          echo "✅ Dry run completed successfully"
+
+      - name: Publish to PyPI using Trusted Publishing
+        if: github.event.inputs.dry_run != 'true'
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          print-hash: true
+          verbose: true
+
+  # Create GitHub Release
+  github-release:
+    name: Create GitHub Release
+    runs-on: ubuntu-latest
+    needs: [validate, test, build, publish]
+    if: always() && needs.validate.result == 'success' && needs.publish.result == 'success'
+    permissions:
+      contents: write
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ needs.validate.outputs.tag }}
+
+      - name: Download distributions
+        uses: actions/download-artifact@v4
+        with:
+          name: release-distributions
+          path: dist/
+
+      - name: Generate release notes
+        id: release-notes
+        run: |
+          TAG="${{ needs.validate.outputs.tag }}"
+          VERSION="${{ needs.validate.outputs.version }}"
+
+          # Get previous tag for changelog
+          PREV_TAG=$(git tag --sort=-version:refname | grep -A1 "^$TAG$" | tail -n1)
+
+          cat > release-notes.md << EOF
+          # Release $VERSION
+
+          ## 📦 Installation
+
+          \`\`\`bash
+          pip install ch-agent-zero==$VERSION
+          \`\`\`
+
+          ## 🔗 PyPI Package
+
+          [View on PyPI](https://pypi.org/project/ch-agent-zero/$VERSION/)
+
+          ## 📋 What's Changed
+
+          EOF
+
+          if [[ -n "$PREV_TAG" && "$PREV_TAG" != "$TAG" ]]; then
+            echo "### Commits since $PREV_TAG:" >> release-notes.md
+            git log --oneline --no-merges "${PREV_TAG}..${TAG}" >> release-notes.md
+          else
+            echo "Initial release" >> release-notes.md
+          fi
+
+          cat >> release-notes.md << EOF
+
+          ## 🚀 Full Changelog
+
+          **Full Changelog**: https://github.com/maruthiprithivi/agent_zero/compare/${PREV_TAG:-}...${TAG}
+
+          ---
+
+          🤖 This release was automatically created by GitHub Actions.
+          EOF
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ needs.validate.outputs.tag }}
+          name: Release ${{ needs.validate.outputs.version }}
+          body_path: release-notes.md
+          files: dist/*
+          draft: false
+          prerelease: false
+          make_latest: true
+
+  # Post-publish notifications and cleanup
+  post-publish:
+    name: Post-publish Tasks
+    runs-on: ubuntu-latest
+    needs: [validate, test, build, publish, github-release]
+    if: always() && needs.publish.result == 'success'
+
+    steps:
+      - name: Publish summary
+        run: |
+          echo "## 🎉 Stable Release Published Successfully" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Version:** ${{ needs.validate.outputs.version }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Tag:** ${{ needs.validate.outputs.tag }}" >> $GITHUB_STEP_SUMMARY
+          echo "**PyPI:** https://pypi.org/project/ch-agent-zero/${{ needs.validate.outputs.version }}/" \
+            >> $GITHUB_STEP_SUMMARY
+          echo "**GitHub Release:** https://github.com/maruthiprithivi/agent_zero/releases/tag/${{ needs.validate.outputs.tag }}" \
+            >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Pipeline Status" >> $GITHUB_STEP_SUMMARY
+          echo "| Stage | Status |" >> $GITHUB_STEP_SUMMARY
+          echo "|-------|--------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Validation | ${{ needs.validate.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Testing | ${{ needs.test.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Build | ${{ needs.build.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| PyPI Publish | ${{ needs.publish.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| GitHub Release | ${{ needs.github-release.result }} |" >> $GITHUB_STEP_SUMMARY
+
+      - name: Notify completion
+        run: |
+          echo "✅ Stable release ${{ needs.validate.outputs.version }} published successfully!"
+          echo "📦 PyPI: https://pypi.org/project/ch-agent-zero/" \
+            "${{ needs.validate.outputs.version }}/"
+          echo "🏷️ GitHub: https://github.com/maruthiprithivi/agent_zero/releases/tag/" \
+            "${{ needs.validate.outputs.tag }}"
+
+  # Handle failures
+  on-failure:
+    name: Handle Publication Failure
+    runs-on: ubuntu-latest
+    needs: [validate, test, build, publish]
+    if: failure()
+
+    steps:
+      - name: Failure summary
+        run: |
+          echo "## ❌ Stable Release Publication Failed" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Attempted Version:** ${{ needs.validate.outputs.version || 'unknown' }}" \
+            >> $GITHUB_STEP_SUMMARY
+          echo "**Tag:** ${{ needs.validate.outputs.tag || 'unknown' }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Failed Stages" >> $GITHUB_STEP_SUMMARY
+          echo "| Stage | Status |" >> $GITHUB_STEP_SUMMARY
+          echo "|-------|--------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Validation | ${{ needs.validate.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Testing | ${{ needs.test.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Build | ${{ needs.build.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Publish | ${{ needs.publish.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Please check the logs above for detailed error information."
+
+      - name: Cleanup on failure
+        run: |
+          echo "🧹 Consider manual cleanup if needed:"
+          echo "- Check PyPI for partial uploads"
+          echo "- Verify git tags are correct"
+          echo "- Review GitHub releases"

@@ -4,7 +4,6 @@ import os
 import tempfile
 from unittest.mock import patch
 
-
 from agent_zero.server_config import ServerConfig
 
 
@@ -70,7 +69,9 @@ class TestServerConfig:
 
     def test_get_ssl_config_complete(self):
         """Test that get_ssl_config returns a dict when SSL is fully configured."""
-        config = ServerConfig(ssl_certfile="/path/to/cert.pem", ssl_keyfile="/path/to/key.pem")
+        config = ServerConfig(
+            ssl_certfile="/path/to/cert.pem", ssl_keyfile="/path/to/key.pem", ssl_enable=True
+        )
         ssl_config = config.get_ssl_config()
         assert ssl_config is not None
         assert ssl_config["certfile"] == "/path/to/cert.pem"
@@ -126,3 +127,41 @@ class TestServerConfig:
         """Test that get_auth_config returns None when password file is not found."""
         config = ServerConfig(auth_username="testuser", auth_password_file="/nonexistent/file.txt")
         assert config.get_auth_config() is None
+
+    def test_default_cursor_mode(self):
+        """Test the default cursor mode."""
+        config = ServerConfig()
+        assert config.cursor_mode is None
+
+    def test_cursor_mode_from_env(self):
+        """Test getting the cursor mode from environment variables."""
+        os.environ["MCP_CURSOR_MODE"] = "agent"
+        config = ServerConfig()
+        assert config.cursor_mode == "agent"
+
+    def test_cursor_mode_from_args(self):
+        """Test getting the cursor mode from constructor arguments."""
+        config = ServerConfig(cursor_mode="ask")
+        assert config.cursor_mode == "ask"
+
+    def test_default_cursor_transport(self):
+        """Test the default cursor transport."""
+        from agent_zero.server_config import TransportType
+
+        config = ServerConfig()
+        assert config.cursor_transport == TransportType.SSE
+
+    def test_cursor_transport_from_env(self):
+        """Test getting the cursor transport from environment variables."""
+        from agent_zero.server_config import TransportType
+
+        os.environ["MCP_CURSOR_TRANSPORT"] = "websocket"
+        config = ServerConfig()
+        assert config.cursor_transport == TransportType.WEBSOCKET
+
+    def test_cursor_transport_from_args(self):
+        """Test getting the cursor transport from constructor arguments."""
+        from agent_zero.server_config import TransportType
+
+        config = ServerConfig(cursor_transport="websocket")
+        assert config.cursor_transport == TransportType.WEBSOCKET

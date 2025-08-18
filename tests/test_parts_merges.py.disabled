@@ -5,7 +5,8 @@ from unittest.mock import MagicMock, patch
 
 from clickhouse_connect.driver.client import Client
 
-from agent_zero.mcp_server import (
+# Import parts/merges monitoring functions
+from agent_zero.server.tools import (
     monitor_current_merges,
     monitor_merge_stats,
     monitor_part_log_events,

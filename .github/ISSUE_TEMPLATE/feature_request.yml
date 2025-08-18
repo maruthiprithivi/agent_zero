@@ -1,0 +1,204 @@
+name: ✨ Feature Request
+description: Suggest a new feature or enhancement for Agent Zero
+title: "[Feature]: "
+labels: ["enhancement", "triage"]
+assignees: []
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thank you for suggesting a feature! This helps us improve Agent Zero.
+
+        **Note**: For urgent production issues, please use the bug report template instead.
+
+  - type: checkboxes
+    id: preflight
+    attributes:
+      label: Pre-flight Checklist
+      description: Please verify you've completed these steps
+      options:
+        - label: I have searched existing issues and discussions
+          required: true
+        - label: I have read the roadmap and this feature is not already planned
+          required: true
+        - label: This feature aligns with Agent Zero's core purpose (ClickHouse monitoring)
+          required: true
+
+  - type: dropdown
+    id: category
+    attributes:
+      label: Feature Category
+      description: What type of feature is this?
+      options:
+        - New MCP Tool
+        - Performance Enhancement
+        - Security Improvement
+        - Developer Experience
+        - Enterprise Feature
+        - Integration/Compatibility
+        - Documentation
+        - Other
+    validations:
+      required: true
+
+  - type: dropdown
+    id: priority
+    attributes:
+      label: Priority Level
+      description: How important is this feature to you?
+      options:
+        - Critical (blocking production use)
+        - High (significant impact on workflow)
+        - Medium (nice to have, improves efficiency)
+        - Low (minor enhancement)
+    validations:
+      required: true
+
+  - type: textarea
+    id: summary
+    attributes:
+      label: Feature Summary
+      description: A clear and concise description of the feature
+      placeholder: Brief summary of what you want to achieve...
+    validations:
+      required: true
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem Statement
+      description: What problem does this feature solve?
+      placeholder: |
+        Describe the problem or limitation you're experiencing:
+        - What are you trying to accomplish?
+        - What makes the current approach difficult or impossible?
+        - Who else would benefit from this feature?
+    validations:
+      required: true
+
+  - type: textarea
+    id: solution
+    attributes:
+      label: Proposed Solution
+      description: Describe your preferred solution
+      placeholder: |
+        Describe how you envision this feature working:
+        - What would the user interface look like?
+        - How would it integrate with existing functionality?
+        - What would the typical workflow be?
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternative Solutions
+      description: Have you considered any alternative approaches?
+      placeholder: |
+        Describe any alternative solutions or workarounds you've considered:
+        - Other approaches that might solve the problem
+        - Why those alternatives are insufficient
+        - Trade-offs between different approaches
+
+  - type: textarea
+    id: use_cases
+    attributes:
+      label: Use Cases
+      description: Specific scenarios where this feature would be valuable
+      placeholder: |
+        Describe specific use cases:
+        1. As a [user type], I want to [action] so that [benefit]
+        2. When [situation], I need [functionality] to [outcome]
+        3. [Another specific scenario]
+    validations:
+      required: true
+
+  - type: textarea
+    id: requirements
+    attributes:
+      label: Functional Requirements
+      description: Detailed requirements for the feature
+      placeholder: |
+        List specific requirements:
+        - [ ] Requirement 1: [detailed description]
+        - [ ] Requirement 2: [detailed description]
+        - [ ] Requirement 3: [detailed description]
+
+        Non-functional requirements:
+        - Performance: [expectations]
+        - Security: [considerations]
+        - Compatibility: [constraints]
+
+  - type: textarea
+    id: impact
+    attributes:
+      label: Impact Assessment
+      description: How would this feature affect the project?
+      placeholder: |
+        Consider the impact on:
+        - Users: [how would this improve user experience?]
+        - Performance: [any performance implications?]
+        - Compatibility: [breaking changes or compatibility concerns?]
+        - Maintenance: [ongoing maintenance requirements?]
+        - Security: [security implications or requirements?]
+
+  - type: dropdown
+    id: complexity
+    attributes:
+      label: Implementation Complexity (Your Estimate)
+      description: How complex do you think this feature would be to implement?
+      options:
+        - Low (small change, existing patterns)
+        - Medium (moderate change, some new code)
+        - High (significant change, new architecture)
+        - Very High (major architectural changes)
+
+  - type: textarea
+    id: mockup
+    attributes:
+      label: Mockups or Examples
+      description: Any mockups, code examples, or visual aids
+      placeholder: |
+        ```python
+        # Example of how the feature might be used
+        result = await agent_zero.new_feature(
+            parameter="example",
+            options={"setting": "value"}
+        )
+        ```
+
+        Or describe user interface changes, configuration examples, etc.
+
+  - type: textarea
+    id: research
+    attributes:
+      label: Research and References
+      description: Any research, similar implementations, or references
+      placeholder: |
+        - Similar features in other tools: [links or descriptions]
+        - Relevant documentation: [links]
+        - Industry standards or best practices: [references]
+        - Academic papers or technical resources: [citations]
+
+  - type: checkboxes
+    id: contribution
+    attributes:
+      label: Contribution Interest
+      description: Are you interested in contributing to this feature?
+      options:
+        - label: I am willing to help implement this feature
+        - label: I can provide testing and feedback during development
+        - label: I can help with documentation for this feature
+        - label: I can provide subject matter expertise
+
+  - type: textarea
+    id: additional
+    attributes:
+      label: Additional Context
+      description: Any other information that might be helpful
+      placeholder: |
+        - Timeline considerations
+        - Business justification
+        - Integration with specific tools or systems
+        - Regulatory or compliance requirements

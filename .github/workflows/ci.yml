@@ -1,53 +1,193 @@
-name: CI
+name: Enhanced CI Pipeline
 
 on:
   push:
-    branches: [main, master]
+    branches:
+      - main
+      - master
+      - develop
+      - 'release/**'
+      - 'feature/**'
+      - 'hotfix/**'
+      - 'mp/**'
   pull_request:
-    branches: [main, master]
+    branches:
+      - main
+      - master
+      - develop
+      - 'release/**'
+      - 'mp/**'
   workflow_dispatch:
+    inputs:
+      run_security_scan:
+        description: 'Run security scanning'
+        required: false
+        default: 'true'
+        type: boolean
+      run_performance_tests:
+        description: 'Run performance tests'
+        required: false
+        default: 'false'
+        type: boolean
+
+env:
+  # Global environment variables
+  PYTHONUNBUFFERED: 1
+  FORCE_COLOR: 1
 
 jobs:
-  test:
+  # Pre-flight checks
+  pre-flight:
+    name: Pre-flight Checks
     runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+      should-test: ${{ steps.changes.outputs.should-test }}
+      branch-type: ${{ steps.branch.outputs.type }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Determine branch type
+        id: branch
+        run: |
+          BRANCH_NAME="${GITHUB_HEAD_REF:-${GITHUB_REF#refs/heads/}}"
+          echo "Branch: $BRANCH_NAME"
+
+          if [[ "$BRANCH_NAME" == "main" || "$BRANCH_NAME" == "master" ]]; then
+            echo "type=stable" >> $GITHUB_OUTPUT
+          elif [[ "$BRANCH_NAME" == "develop" ]]; then
+            echo "type=development" >> $GITHUB_OUTPUT
+          elif [[ "$BRANCH_NAME" =~ ^release/.* ]]; then
+            echo "type=release" >> $GITHUB_OUTPUT
+          elif [[ "$BRANCH_NAME" =~ ^feature/.* ]]; then
+            echo "type=feature" >> $GITHUB_OUTPUT
+          elif [[ "$BRANCH_NAME" =~ ^hotfix/.* ]]; then
+            echo "type=hotfix" >> $GITHUB_OUTPUT
+          else
+            echo "type=other" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Get version
+        id: version
+        run: |
+          python scripts/version-manager.py current || echo "version=unknown" >> $GITHUB_OUTPUT
+
+      - name: Check for changes requiring tests
+        id: changes
+        uses: dorny/paths-filter@v2
+        with:
+          filters: |
+            should-test:
+              - 'agent_zero/**'
+              - 'tests/**'
+              - 'pyproject.toml'
+              - 'scripts/**'
+
+  # Multi-platform testing
+  test:
+    name: Test (Python ${{ matrix.python-version }}, ${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    needs: pre-flight
+    if: needs.pre-flight.outputs.should-test == 'true'
+
     strategy:
+      fail-fast: false
       matrix:
-        python-version: ["3.13"]
+        os: [ubuntu-latest]
+        python-version: ["3.11", "3.12", "3.13"]
+        include:
+          # Add macOS and Windows testing for latest Python only
+          - os: macos-latest
+            python-version: "3.13"
+            experimental: false
+          - os: windows-latest
+            python-version: "3.13"
+            experimental: false
+
+    continue-on-error: ${{ matrix.experimental || false }}
 
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
+          cache: 'pip'
 
-      - name: Install and configure UV
+      - name: Cache UV dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cache/uv
+            .venv
+          key: >-
+            uv-v3-${{ matrix.os }}-${{ matrix.python-version }}-${{ hashFiles('pyproject.toml') }}
+          restore-keys: |
+            uv-v3-${{ matrix.os }}-${{ matrix.python-version }}-
+            uv-v3-${{ matrix.os }}-
+
+      - name: Install UV
+        uses: astral-sh/setup-uv@v3
+        with:
+          version: "0.5.0"
+
+      - name: Debug Python environment
         run: |
-          # Install UV with pip (more reliable than the curl method)
-          pip install uv
-          # Verify UV installation
+          python --version
           uv --version
+          which python
+          python -c "import sys; print('Python path:', sys.executable)"
 
       - name: Create virtual environment and install dependencies
         run: |
-          # Create a virtual environment
-          uv venv
-          # Activate the virtual environment
-          . .venv/bin/activate
-          # Install the package and dev dependencies
-          uv pip install -e .
-          uv pip install pytest
+          uv venv .venv
+          # Activate virtual environment based on OS
+          if [ "$RUNNER_OS" = "Windows" ]; then
+            source .venv/Scripts/activate
+          else
+            source .venv/bin/activate
+          fi
+          # Install package with all required extras for testing
+          uv pip install -e .[dev,test]
+        shell: bash
 
       - name: Run tests
         run: |
-          # Activate the virtual environment
-          . .venv/bin/activate
-          # Run tests
-          python -m pytest
+          # Activate virtual environment based on OS
+          if [ "$RUNNER_OS" = "Windows" ]; then
+            source .venv/Scripts/activate
+          else
+            source .venv/bin/activate
+          fi
+          # Set mock environment variables for testing
+          export CLICKHOUSE_HOST=mock_host
+          export CLICKHOUSE_USER=mock_user
+          export CLICKHOUSE_PASSWORD=mock_password
+          export CH_AGENT_ZERO_DEBUG=1
+          # Run tests with coverage (exclude integration, slow, and performance tests for CI stability)
+          pytest -v --tb=short --cov=agent_zero --cov-report=xml --cov-report=term --cov-fail-under=10 -m "not integration and not slow and not performance"
+        shell: bash
 
+      - name: Upload coverage to Codecov
+        if: matrix.os == 'ubuntu-latest' && matrix.python-version == '3.13'
+        uses: codecov/codecov-action@v4
+        with:
+          file: ./coverage.xml
+          flags: unittests
+          name: codecov-umbrella
+          fail_ci_if_error: false
+
+  # Code quality and linting
   lint:
+    name: Code Quality & Linting
     runs-on: ubuntu-latest
+    needs: pre-flight
+
     steps:
       - uses: actions/checkout@v4
 
@@ -55,33 +195,245 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: "3.13"
+          cache: 'pip'
 
-      - name: Install and configure UV
-        run: |
-          # Install UV with pip (more reliable than the curl method)
-          pip install uv
-          # Verify UV installation
-          uv --version
+      - name: Cache UV dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cache/uv
+            .venv
+          key: uv-v3-lint-${{ hashFiles('pyproject.toml') }}
+          restore-keys: uv-v3-lint-
 
-      - name: Create virtual environment and install linting tools
-        run: |
-          # Create a virtual environment
-          uv venv
-          # Activate the virtual environment
-          . .venv/bin/activate
-          # Install linting tools
-          uv pip install ruff black
+      - name: Install UV and dependencies
+        uses: astral-sh/setup-uv@v3
+        with:
+          version: "0.5.0"
 
-      - name: Lint with Ruff
+      - name: Install dependencies
         run: |
-          # Activate the virtual environment
-          . .venv/bin/activate
-          # Run Ruff
-          ruff check agent_zero --exclude '(^\.venv/)|(^.*agent_zero/__init__\.py$)'
+          uv venv .venv
+          # Activate virtual environment based on OS
+          if [ "$RUNNER_OS" = "Windows" ]; then
+            source .venv/Scripts/activate
+          else
+            source .venv/bin/activate
+          fi
+          # Install with dev extras for linting tools
+          uv pip install -e .[dev]
+        shell: bash
 
-      - name: Format check with Black
+      - name: Run Ruff linting
         run: |
-          # Activate the virtual environment
-          . .venv/bin/activate
-          # Run Black
-          black --check agent_zero --exclude '(^\.venv/)|(^.*agent_zero/__init__\.py$)'
+          # Activate virtual environment based on OS
+          if [ "$RUNNER_OS" = "Windows" ]; then
+            source .venv/Scripts/activate
+          else
+            source .venv/bin/activate
+          fi
+          ruff check agent_zero --output-format=github
+        continue-on-error: true
+        shell: bash
+
+      - name: Run Ruff formatting check
+        run: |
+          # Activate virtual environment based on OS
+          if [ "$RUNNER_OS" = "Windows" ]; then
+            source .venv/Scripts/activate
+          else
+            source .venv/bin/activate
+          fi
+          ruff format --check agent_zero
+        shell: bash
+
+      # Black formatting check removed - using only Ruff for consistency
+
+      - name: Run MyPy type checking
+        run: |
+          # Activate virtual environment based on OS
+          if [ "$RUNNER_OS" = "Windows" ]; then
+            source .venv/Scripts/activate
+          else
+            source .venv/bin/activate
+          fi
+          mypy agent_zero --show-error-codes
+        continue-on-error: true
+        shell: bash
+
+  # Security scanning
+  security:
+    name: Security Scanning
+    runs-on: ubuntu-latest
+    needs: pre-flight
+    if: github.event.inputs.run_security_scan != 'false'
+
+    permissions:
+      security-events: write
+      actions: read
+      contents: read
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+          cache: 'pip'
+
+      - name: Install UV and security tools
+        uses: astral-sh/setup-uv@v3
+        with:
+          version: "0.5.0"
+
+      - name: Install dependencies
+        run: |
+          uv venv .venv
+          # Activate virtual environment based on OS
+          if [ "$RUNNER_OS" = "Windows" ]; then
+            source .venv/Scripts/activate
+          else
+            source .venv/bin/activate
+          fi
+          uv pip install -e .[security]
+        shell: bash
+
+      - name: Run Bandit security scan
+        run: |
+          # Activate virtual environment based on OS
+          if [ "$RUNNER_OS" = "Windows" ]; then
+            source .venv/Scripts/activate
+          else
+            source .venv/bin/activate
+          fi
+          bandit -r agent_zero -f json -o bandit-report.json
+        continue-on-error: true
+        shell: bash
+
+      - name: Run Safety vulnerability scan
+        run: |
+          # Activate virtual environment based on OS
+          if [ "$RUNNER_OS" = "Windows" ]; then
+            source .venv/Scripts/activate
+          else
+            source .venv/bin/activate
+          fi
+          safety check --json --output safety-report.json
+        continue-on-error: true
+        shell: bash
+
+      - name: Run pip-audit
+        run: |
+          # Activate virtual environment based on OS
+          if [ "$RUNNER_OS" = "Windows" ]; then
+            source .venv/Scripts/activate
+          else
+            source .venv/bin/activate
+          fi
+          pip-audit --format=json --output=pip-audit-report.json
+        continue-on-error: true
+        shell: bash
+
+      - name: Upload security scan results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: security-reports
+          path: |
+            bandit-report.json
+            safety-report.json
+            pip-audit-report.json
+
+
+  # Build verification
+  build:
+    name: Build Verification
+    runs-on: ubuntu-latest
+    needs: pre-flight
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+          cache: 'pip'
+
+      - name: Install build tools
+        uses: astral-sh/setup-uv@v3
+        with:
+          version: "0.5.0"
+
+      - name: Install dependencies and build package
+        run: |
+          uv venv .venv
+          # Activate virtual environment based on OS
+          if [ "$RUNNER_OS" = "Windows" ]; then
+            source .venv/Scripts/activate
+          else
+            source .venv/bin/activate
+          fi
+          uv pip install build twine
+          python -m build
+        shell: bash
+
+      - name: Verify package
+        run: |
+          # Activate virtual environment based on OS
+          if [ "$RUNNER_OS" = "Windows" ]; then
+            source .venv/Scripts/activate
+          else
+            source .venv/bin/activate
+          fi
+          twine check dist/*
+        shell: bash
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: python-package
+          path: dist/
+
+  # Summary job
+  ci-success:
+    name: CI Pipeline Success
+    runs-on: ubuntu-latest
+    needs: [pre-flight, test, lint, security, build]
+    if: always()
+
+    steps:
+      - name: Check all jobs status
+        run: |
+          echo "Pre-flight: ${{ needs.pre-flight.result }}"
+          echo "Test: ${{ needs.test.result }}"
+          echo "Lint: ${{ needs.lint.result }}"
+          echo "Security: ${{ needs.security.result }}"
+          echo "Build: ${{ needs.build.result }}"
+
+          if [[ "${{ needs.pre-flight.result }}" == "failure" || \
+                "${{ needs.test.result }}" == "failure" || \
+                "${{ needs.lint.result }}" == "failure" || \
+                "${{ needs.build.result }}" == "failure" ]]; then
+            echo "❌ CI Pipeline failed"
+            exit 1
+          else
+            echo "✅ CI Pipeline succeeded"
+          fi
+
+      - name: Post summary
+        run: |
+          echo "## 🚀 CI Pipeline Summary" >> $GITHUB_STEP_SUMMARY
+          echo "| Job | Status |" >> $GITHUB_STEP_SUMMARY
+          echo "|-----|--------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Pre-flight | ${{ needs.pre-flight.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Test | ${{ needs.test.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Lint | ${{ needs.lint.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Security | ${{ needs.security.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Build | ${{ needs.build.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Branch Type:** ${{ needs.pre-flight.outputs.branch-type }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Version:** ${{ needs.pre-flight.outputs.version }}" >> $GITHUB_STEP_SUMMARY

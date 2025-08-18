@@ -1,0 +1,150 @@
+{
+  "environment": "staging",
+  "description": "Staging environment configuration for Agent Zero",
+  "deployment_mode": "standalone",
+  "debug": false,
+  "server": {
+    "host": "0.0.0.0",
+    "port": 8505,
+    "transport": "sse",
+    "reload": false,
+    "log_level": "INFO",
+    "workers": 2
+  },
+  "clickhouse": {
+    "host": "${AGENT_ZERO_CLICKHOUSE_HOST}",
+    "port": "${AGENT_ZERO_CLICKHOUSE_PORT:-8443}",
+    "user": "${AGENT_ZERO_CLICKHOUSE_USER}",
+    "password": "${AGENT_ZERO_CLICKHOUSE_PASSWORD}",
+    "database": "${AGENT_ZERO_CLICKHOUSE_DATABASE:-staging}",
+    "secure": true,
+    "verify": true,
+    "connect_timeout": 30,
+    "send_receive_timeout": 300,
+    "pool_size": 10,
+    "max_overflow": 20,
+    "enable_client_cache": true,
+    "cache_ttl": 600,
+    "ssl_cert_path": "${AGENT_ZERO_CLICKHOUSE_SSL_CERT}",
+    "ssl_key_path": "${AGENT_ZERO_CLICKHOUSE_SSL_KEY}"
+  },
+  "security": {
+    "ssl_enable": true,
+    "ssl_certfile": "${AGENT_ZERO_SSL_CERT_FILE}",
+    "ssl_keyfile": "${AGENT_ZERO_SSL_KEY_FILE}",
+    "auth_required": true,
+    "auth_username": "${AGENT_ZERO_AUTH_USERNAME}",
+    "auth_password": "${AGENT_ZERO_AUTH_PASSWORD}",
+    "oauth_enable": false,
+    "rate_limit_enabled": true,
+    "cors_enabled": true,
+    "cors_origins": [
+      "https://staging.example.com",
+      "https://staging-admin.example.com"
+    ],
+    "security_headers": true,
+    "hsts_max_age": 31536000,
+    "content_security_policy": "default-src 'self'",
+    "x_frame_options": "DENY"
+  },
+  "features": {
+    "enable_metrics": true,
+    "enable_health_check": true,
+    "enable_profiling": false,
+    "enable_debug_endpoints": false,
+    "enable_mock_data": false,
+    "enable_hot_reload": false,
+    "real_time_analytics": true,
+    "enable_structured_output": true,
+    "enable_query_caching": true,
+    "enable_performance_monitoring": true
+  },
+  "limits": {
+    "tool_limit": 75,
+    "resource_limit": 40,
+    "max_query_rows": 5000,
+    "max_execution_seconds": 60,
+    "max_file_size_mb": 50,
+    "max_concurrent_requests": 50,
+    "rate_limit_requests": 500,
+    "rate_limit_window": 3600,
+    "memory_limit_mb": 2048
+  },
+  "logging": {
+    "level": "INFO",
+    "format": "json",
+    "enable_file_logging": true,
+    "log_file": "/var/log/agent-zero/staging.log",
+    "max_file_size_mb": 500,
+    "backup_count": 10,
+    "enable_performance_logging": true,
+    "enable_request_logging": true,
+    "enable_sql_logging": false,
+    "log_rotation": "daily",
+    "enable_centralized_logging": true,
+    "syslog_endpoint": "${AGENT_ZERO_SYSLOG_ENDPOINT}"
+  },
+  "monitoring": {
+    "enable_opentelemetry": true,
+    "enable_prometheus": true,
+    "prometheus_port": 9090,
+    "jaeger_endpoint": "${AGENT_ZERO_JAEGER_ENDPOINT}",
+    "enable_health_checks": true,
+    "health_check_interval": 60,
+    "enable_alerts": true,
+    "alert_webhook": "${AGENT_ZERO_ALERT_WEBHOOK}",
+    "metrics_retention_days": 30
+  },
+  "testing": {
+    "enable_test_mode": false,
+    "mock_clickhouse": false,
+    "test_database": null,
+    "cleanup_on_exit": false,
+    "enable_coverage": false
+  },
+  "ide_integrations": {
+    "claude_code": {
+      "transport": "sse",
+      "enable_progress_notifications": true,
+      "enable_tool_annotations": true,
+      "connection_timeout": 30
+    },
+    "cursor": {
+      "transport": "sse",
+      "agent_mode": true,
+      "websocket_fallback": true,
+      "rate_limit": 100
+    },
+    "windsurf": {
+      "plugins_enabled": true,
+      "multi_panel_support": true,
+      "connection_pool_size": 5
+    }
+  },
+  "backup": {
+    "enable_config_backup": true,
+    "backup_interval_hours": 24,
+    "backup_retention_days": 7,
+    "backup_location": "/var/backups/agent-zero"
+  },
+  "validation": {
+    "required_env_vars": [
+      "AGENT_ZERO_CLICKHOUSE_HOST",
+      "AGENT_ZERO_CLICKHOUSE_USER",
+      "AGENT_ZERO_CLICKHOUSE_PASSWORD",
+      "AGENT_ZERO_SSL_CERT_FILE",
+      "AGENT_ZERO_SSL_KEY_FILE",
+      "AGENT_ZERO_AUTH_USERNAME",
+      "AGENT_ZERO_AUTH_PASSWORD"
+    ],
+    "optional_env_vars": [
+      "AGENT_ZERO_CLICKHOUSE_DATABASE",
+      "AGENT_ZERO_JAEGER_ENDPOINT",
+      "AGENT_ZERO_ALERT_WEBHOOK",
+      "AGENT_ZERO_SYSLOG_ENDPOINT"
+    ],
+    "config_schema_version": "2.1.0",
+    "minimum_memory_mb": 1024,
+    "minimum_disk_space_gb": 10
+  }
+}

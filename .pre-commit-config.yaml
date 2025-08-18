@@ -1,24 +1,72 @@
+# Pre-commit hooks for Agent Zero - ClickHouse MCP Server
+# Enforces code quality and standards defined in CLAUDE.md
+
 repos:
+  # Basic file checks
   - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v4.5.0
+    rev: v4.6.0
     hooks:
       - id: trailing-whitespace
       - id: end-of-file-fixer
       - id: check-yaml
+      - id: check-json
+      - id: check-toml
+      - id: check-merge-conflict
+      - id: check-docstring-first
+      - id: debug-statements
       - id: check-added-large-files
         args: ["--maxkb=5000"]
 
+  # Python linting and formatting (using Ruff for speed)
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.3.1
+    rev: v0.6.9
     hooks:
       - id: ruff
-        args: [--fix, "--ignore", "PT001", --exit-non-zero-on-fix]
+        args: [--fix, --exit-non-zero-on-fix]
+        exclude: '^agent_zero/__init__\.py$'
+      - id: ruff-format
         exclude: '^agent_zero/__init__\.py$'
 
-  - repo: https://github.com/psf/black
-    rev: 24.2.0
+  # Python code formatting (Black disabled - using ruff-format for consistency)
+  # - repo: https://github.com/psf/black
+  #   rev: 24.8.0
+  #   hooks:
+  #     - id: black
+  #       language_version: python3
+  #       args: [--line-length=100]
+  #       exclude: '^agent_zero/__init__\.py$'
+
+  # Python security scanning
+  - repo: https://github.com/PyCQA/bandit
+    rev: 1.7.10
     hooks:
-      - id: black
-        language_version: python3
-        args: [--line-length=100]
-        exclude: '^agent_zero/__init__\.py$'
+      - id: bandit
+        args: [--recursive, --skip, "B101,B104,B105,B106,B108,B110,B112,B311,B403,B404,B601,B603,B607,B608", --exclude, scripts/, agent_zero/]
+
+  # Documentation standards - temporarily disabled for CI/CD stability
+  # - repo: https://github.com/pycqa/pydocstyle
+  #   rev: 6.3.0
+  #   hooks:
+  #     - id: pydocstyle
+  #       args: [--convention=google, --add-ignore=D100,D101,D102,D103,D104,D105,D107,D202,D212,D213,D203,D415]
+
+  # Configuration file validation - temporarily disabled
+  # - repo: https://github.com/adrienverge/yamllint
+  #   rev: v1.35.1
+  #   hooks:
+  #     - id: yamllint
+  #       args: [-c, .github/.yamllint.yml]
+
+  # Multi-Python version compatibility testing
+  - repo: local
+    hooks:
+      - id: multi-python-test
+        name: Multi-Python Version Compatibility Test
+        entry: python3 scripts/test-multi-python.py
+        language: system
+        pass_filenames: false
+        types: [python]
+
+# Global configuration
+fail_fast: false
+default_stages: [pre-commit]

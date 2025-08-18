@@ -1,0 +1,37 @@
+# YAML Lint configuration for Agent Zero
+# Part of the development standards defined in CLAUDE.md
+
+extends: default
+
+rules:
+  # Line length to match Python code standards
+  line-length:
+    max: 100
+    level: warning
+
+  # Indentation rules
+  indentation:
+    spaces: 2
+    indent-sequences: true
+    check-multi-line-strings: false
+
+  # Comments
+  comments:
+    min-spaces-from-content: 1
+
+  # Document start/end
+  document-start: disable
+  document-end: disable
+
+  # Trailing spaces (handled by pre-commit-hooks)
+  trailing-spaces: disable
+
+  # Brackets and braces
+  brackets:
+    min-spaces-inside: 0
+    max-spaces-inside: 1
+
+  # Truthy values (allow yes/no for GitHub Actions)
+  truthy:
+    allowed-values: ['true', 'false', 'yes', 'no', 'on', 'off']
+    check-keys: false

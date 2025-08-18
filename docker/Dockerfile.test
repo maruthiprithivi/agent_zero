@@ -1,0 +1,34 @@
+# Dockerfile for running tests in an isolated environment
+FROM python:3.13-slim
+
+# Install system dependencies
+RUN apt-get update && apt-get install -y \
+    git \
+    curl \
+    build-essential \
+    && rm -rf /var/lib/apt/lists/*
+
+# Set working directory
+WORKDIR /app
+
+# Copy project files
+COPY pyproject.toml ./
+COPY README.md ./
+COPY agent_zero/ ./agent_zero/
+COPY tests/ ./tests/
+
+# Install UV for faster dependency management
+RUN pip install --no-cache-dir uv
+
+# Install dependencies with dev and test extras using UV
+RUN uv pip install --system -e .[dev,test]
+
+# Create directory for test results
+RUN mkdir -p /app/test-results
+
+# Set environment variables for testing
+ENV PYTHONUNBUFFERED=1
+ENV CH_AGENT_ZERO_DEBUG=1
+
+# Default command runs tests
+CMD ["python", "-m", "pytest", "-v", "--tb=short", "--junitxml=/app/test-results/junit.xml", "--html=/app/test-results/report.html", "--self-contained-html", "--cov=agent_zero", "--cov-report=html:/app/test-results/coverage", "--cov-report=term", "tests/"]

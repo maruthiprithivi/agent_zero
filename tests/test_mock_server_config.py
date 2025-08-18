@@ -4,7 +4,6 @@ import os
 import tempfile
 from unittest.mock import patch
 
-
 # Import from our mock module instead of the real one
 from tests.mock_server_config import ServerConfig
 
