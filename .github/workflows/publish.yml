@@ -82,6 +82,8 @@ jobs:
           uv venv test-env
           source test-env/bin/activate
           pip install dist/*.whl
+          # Change directory to avoid importing from source
+          cd /tmp
           python -c "import agent_zero; print(f'Successfully installed: {agent_zero.__version__}')"
 
       - name: Publish to TestPyPI (for testing)
