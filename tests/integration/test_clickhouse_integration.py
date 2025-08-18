@@ -257,6 +257,19 @@ class TestMCPToolsIntegration:
     @pytest.fixture(scope="class")
     def mcp_server(self):
         """Initialize MCP server for testing."""
+        # Check if ClickHouse is available first
+        try:
+            import clickhouse_connect
+
+            # Try a quick connection test
+            client = clickhouse_connect.get_client(
+                host="localhost", port=8443, secure=True, connect_timeout=2, send_receive_timeout=5
+            )
+            client.command("SELECT 1")
+            client.close()
+        except Exception as e:
+            pytest.skip(f"ClickHouse not available for MCP integration tests: {e}")
+
         from agent_zero.server.core import initialize_mcp_server
 
         try:

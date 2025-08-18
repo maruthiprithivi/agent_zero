@@ -239,7 +239,8 @@ class TestHardwareCPUAnalyzer:
 
         mock_aggregations = [mock_agg1, mock_agg2, mock_agg3, mock_agg4, mock_agg5]
 
-        mock_profile_analyzer.get_aggregated_events.return_value = mock_aggregations
+        # Make sure the mock returns an iterable list
+        mock_profile_analyzer.aggregate_profile_events.return_value = mock_aggregations
 
         analyzer = CPUAnalyzer(mock_profile_analyzer)
 
@@ -258,7 +259,7 @@ class TestHardwareCPUAnalyzer:
         assert hasattr(result, "recommendations")
 
         # Verify analyzer called profile analyzer
-        mock_profile_analyzer.get_aggregated_events.assert_called_once()
+        mock_profile_analyzer.aggregate_profile_events.assert_called_once()
 
     @patch.dict("os.environ", test_env)
     def test_cpu_analyzer_calculate_efficiency_score(self):
@@ -292,9 +293,14 @@ class TestHardwareCPUAnalyzer:
         analyzer = CPUAnalyzer(mock_profile_analyzer)
 
         # Create mock metrics with valid instruction and cycle counts
+        mock_instructions = Mock(spec=ProfileEventAggregation)
+        mock_instructions.avg_value = 2000000
+        mock_cycles = Mock(spec=ProfileEventAggregation)
+        mock_cycles.avg_value = 1000000
+
         metrics = {
-            "Instructions": Mock(spec=ProfileEventAggregation, event_value=2000000),
-            "Cycles": Mock(spec=ProfileEventAggregation, event_value=1000000),
+            "PerfInstructions": mock_instructions,
+            "PerfCPUCycles": mock_cycles,
         }
 
         ipc = analyzer._calculate_instructions_per_cycle(metrics)
@@ -334,9 +340,13 @@ class TestHardwareMemoryAnalyzer:
         assert isinstance(profile_events, list)
         assert len(profile_events) > 0
         # Should include common memory events
-        expected_events = ["MemoryTrackingInDataParts", "MemoryMappedAlloc", "MemoryMappedFree"]
+        expected_events = [
+            "MemoryOvercommitWaitTimeMicroseconds",
+            "SoftPageFaults",
+            "ArenaAllocBytes",
+        ]
         for event in expected_events:
-            assert any(event in pe for pe in profile_events)
+            assert event in profile_events
 
     @patch.dict("os.environ", test_env)
     def test_memory_analyzer_analyze_memory_performance(self):

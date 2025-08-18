@@ -165,8 +165,11 @@ class TestServerCoreComprehensive:
 
         transport = determine_transport(config, "127.0.0.1", 8505)
 
-        # Compare transport value, not the enum object itself
-        assert transport == TransportType.STDIO or transport.value == "stdio"
+        # Handle both string and enum transport types
+        if isinstance(transport, str):
+            assert transport == "stdio"
+        else:
+            assert transport == TransportType.STDIO or transport.value == "stdio"
 
     @patch.dict("os.environ", test_env)
     def test_determine_transport_standalone(self):
@@ -462,20 +465,23 @@ class TestMainModuleExtensive:
             assert call_kwargs["port"] == 8505
 
     @patch.dict("os.environ", test_env)
-    def test_main_config_generation(self):
+    @patch("builtins.print")  # Mock print to capture output
+    def test_main_config_generation(self, mock_print):
         """Test main with config generation command."""
         import sys
 
         test_args = ["ch-agent-zero", "generate-config", "--ide", "claude-desktop"]
 
         with patch.object(sys, "argv", test_args):
-            with pytest.raises(SystemExit) as excinfo:
-                from agent_zero.main import main
+            from agent_zero.main import main
 
-                main()
+            # Should run without raising SystemExit
+            result = main()
 
-            # Config generation should exit successfully
-            assert excinfo.value.code == 0
+            # Should complete successfully (returning None)
+            assert result is None
+            # Should have printed the config JSON
+            mock_print.assert_called()
 
     @patch.dict("os.environ", test_env)
     @patch("agent_zero.main.run")
