@@ -173,7 +173,7 @@ jobs:
           uv venv test-env
           uv pip install --python test-env dist/*.tar.gz
           # Test basic package structure without full module initialization
-          uv run --python test-env python -c "import importlib.util; spec = importlib.util.find_spec('agent_zero'); print('✅ Source package installed successfully') if spec else exit(1)"
+          uv run --python test-env python -c "import importlib.util; spec = importlib.util.find_spec('agent_zero'); print('Source package installed successfully') if spec else exit(1)"
 
       - name: Upload source distribution
         uses: actions/upload-artifact@v4
@@ -236,7 +236,7 @@ jobs:
           uv venv test-wheel-env
           uv pip install --python test-wheel-env dist/*.whl
           # Test basic package structure without full module initialization
-          uv run --python test-wheel-env python -c "import importlib.util; spec = importlib.util.find_spec('agent_zero'); print('✅ Wheel installed successfully') if spec else exit(1)"
+          uv run --python test-wheel-env python -c "import importlib.util; spec = importlib.util.find_spec('agent_zero'); print('Wheel installed successfully') if spec else exit(1)"
         shell: bash
 
       - name: Upload wheels

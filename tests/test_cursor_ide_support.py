@@ -28,9 +28,8 @@ class TestCursorIDESupport(unittest.TestCase):
 
         # Apply multiple patches to ensure we don't get recursion
         self.patches = [
-            patch("agent_zero.mcp_server.mcp", self.mock_mcp),
-            patch("agent_zero.mcp_server._original_mcp", self.mock_mcp),
-            patch("agent_zero.mcp_server._original_run", self.mock_run),
+            patch("agent_zero.server.core.mcp", self.mock_mcp),
+            patch("agent_zero.server.run", self.mock_run),
         ]
 
         # Start all patches
@@ -38,7 +37,7 @@ class TestCursorIDESupport(unittest.TestCase):
             p.start()
 
         # Import run function only after patching to avoid circular imports
-        from agent_zero.mcp_server import run
+        from agent_zero.server import run
 
         self.run_func = run
 
