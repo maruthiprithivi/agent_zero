@@ -33,13 +33,16 @@ class TestUtilsActualFunctions:
 
         mock_client = Mock()
         mock_result = Mock()
+        mock_result.column_names = ["name", "value"]
         mock_result.result_rows = [["data", 123]]
         mock_client.query.return_value = mock_result
         mock_create_client.return_value = mock_client
 
         result = execute_query_with_retry(mock_client, "SELECT * FROM test")
 
-        assert result == mock_result
+        # The function returns a list of dictionaries, not the raw result
+        expected = [{"name": "data", "value": 123}]
+        assert result == expected
         mock_client.query.assert_called_once()
 
     @patch.dict("os.environ", test_env)

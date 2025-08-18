@@ -20,16 +20,13 @@ class TestCursorIDESupport(unittest.TestCase):
         # Save original environment variables
         self.original_env = os.environ.copy()
 
-        # We need to patch mcp first, then import the run function after
-        # This prevents import-time issues with circular references
-        self.mock_mcp = MagicMock()
+        # We need to patch the legacy mcp_server._original_run to intercept calls
+        # This simulates what the real code path does for Cursor IDE support
         self.mock_run = MagicMock()
-        self.mock_mcp.run = self.mock_run
 
-        # Apply multiple patches to ensure we don't get recursion
+        # Apply patches to intercept the legacy run path that handles transport
         self.patches = [
-            patch("agent_zero.server.core.mcp", self.mock_mcp),
-            patch("agent_zero.server.run", self.mock_run),
+            patch("agent_zero.mcp_server._original_run", self.mock_run),
         ]
 
         # Start all patches
