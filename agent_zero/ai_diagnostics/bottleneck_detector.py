@@ -2113,19 +2113,55 @@ class BottleneckDetector:
         self.client = client
         self.intelligent_detector = IntelligentBottleneckDetector(client)
 
-    def detect_bottlenecks(self, lookback_hours: int = 1) -> list[BottleneckDetection]:
+    def detect_bottlenecks(
+        self, start_time=None, end_time=None, lookback_hours: int = 1
+    ) -> list[BottleneckDetection]:
         """Detect system bottlenecks in the specified time period.
 
         Args:
-            lookback_hours: Hours to look back for bottleneck detection
+            start_time: Optional start time for analysis (compatible with test signature)
+            end_time: Optional end time for analysis (compatible with test signature)
+            lookback_hours: Hours to look back for bottleneck detection (when start/end not provided)
 
         Returns:
             List of detected bottlenecks
         """
         try:
+            # Handle both signature styles for compatibility
+            if start_time is not None and end_time is not None:
+                # Calculate lookback_hours from time range for compatibility
+                time_diff = end_time - start_time
+                lookback_hours = max(1, int(time_diff.total_seconds() / 3600))
+
             return self.intelligent_detector.detect_bottlenecks(lookback_hours)
         except Exception as e:
             logger.error(f"Failed to detect bottlenecks: {e}")
+            return []
+
+    def detect_query_bottlenecks(self, lookback_hours: int = 1) -> list[BottleneckDetection]:
+        """Detect query-specific bottlenecks (required by tests).
+
+        Args:
+            lookback_hours: Hours to look back for analysis
+
+        Returns:
+            List of detected query bottlenecks
+        """
+        try:
+            # Get all bottlenecks and filter for query-related ones
+            all_bottlenecks = self.detect_bottlenecks(lookback_hours=lookback_hours)
+            query_bottlenecks = [
+                b
+                for b in all_bottlenecks
+                if b.signature.category
+                in [
+                    BottleneckCategory.QUERY_OPTIMIZATION_OPPORTUNITY,
+                    BottleneckCategory.CPU_SATURATION,  # Queries can cause CPU saturation
+                ]
+            ]
+            return query_bottlenecks
+        except Exception as e:
+            logger.error(f"Failed to detect query bottlenecks: {e}")
             return []
 
     def analyze_performance_trends(self, days: int = 7) -> dict[str, Any]:

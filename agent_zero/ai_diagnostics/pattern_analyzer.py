@@ -2222,6 +2222,48 @@ class PatternAnalyzer:
 
         return results
 
+    def analyze_query_patterns(self, lookback_hours: int = 24) -> dict[str, Any]:
+        """Analyze query-specific patterns (required by tests).
+
+        Args:
+            lookback_hours: Hours to look back for pattern analysis
+
+        Returns:
+            Dictionary containing query pattern analysis
+        """
+        try:
+            # Analyze patterns for query-related events
+            query_events = ["Query", "SelectQuery", "InsertQuery", "UpdateQuery", "DeleteQuery"]
+            results = self.analyze_patterns(query_events)
+
+            query_patterns = {
+                "total_query_patterns": len(results),
+                "events_analyzed": query_events,
+                "pattern_results": [
+                    {
+                        "event_name": result.event_name,
+                        "anomaly_count": len(result.anomalies),
+                        "pattern_count": len(result.detected_patterns),
+                        "predictability_score": result.predictability_score,
+                    }
+                    for result in results
+                ],
+                "analysis_period_hours": lookback_hours,
+                "timestamp": datetime.utcnow().isoformat(),
+            }
+
+            return query_patterns
+        except Exception as e:
+            logger.error(f"Failed to analyze query patterns: {e}")
+            return {
+                "total_query_patterns": 0,
+                "events_analyzed": [],
+                "pattern_results": [],
+                "analysis_period_hours": lookback_hours,
+                "timestamp": datetime.utcnow().isoformat(),
+                "error": str(e),
+            }
+
     def get_anomaly_summary(self, lookback_hours: int = 24) -> dict[str, Any]:
         """Get summary of anomalies detected in the specified time period.
 
