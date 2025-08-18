@@ -2099,3 +2099,64 @@ def create_ai_bottleneck_detector(client: Client) -> IntelligentBottleneckDetect
     # For example, loading custom signatures, setting confidence weights, etc.
 
     return detector
+
+
+class BottleneckDetector:
+    """Main bottleneck detection class for comprehensive system analysis."""
+
+    def __init__(self, client: Client):
+        """Initialize the bottleneck detector.
+
+        Args:
+            client: ClickHouse client instance
+        """
+        self.client = client
+        self.intelligent_detector = IntelligentBottleneckDetector(client)
+
+    def detect_bottlenecks(self, lookback_hours: int = 1) -> list[BottleneckDetection]:
+        """Detect system bottlenecks in the specified time period.
+
+        Args:
+            lookback_hours: Hours to look back for bottleneck detection
+
+        Returns:
+            List of detected bottlenecks
+        """
+        try:
+            return self.intelligent_detector.detect_bottlenecks(lookback_hours)
+        except Exception as e:
+            logger.error(f"Failed to detect bottlenecks: {e}")
+            return []
+
+    def analyze_performance_trends(self, days: int = 7) -> dict[str, Any]:
+        """Analyze performance trends over the specified period.
+
+        Args:
+            days: Number of days to analyze
+
+        Returns:
+            Dictionary containing trend analysis
+        """
+        try:
+            # Use the predictive analyzer component
+            analyzer = self.intelligent_detector.predictive_analyzer
+            metrics = analyzer.analyze_performance_trends(days)
+
+            return {
+                "trend_analysis": {
+                    "forecast_score": metrics.forecast_score,
+                    "volatility_score": metrics.volatility_score,
+                    "trend_direction": metrics.trend_direction.value,
+                    "confidence": metrics.confidence,
+                },
+                "analysis_period_days": days,
+                "timestamp": datetime.utcnow().isoformat(),
+            }
+        except Exception as e:
+            logger.error(f"Failed to analyze performance trends: {e}")
+            return {
+                "trend_analysis": {},
+                "analysis_period_days": days,
+                "timestamp": datetime.utcnow().isoformat(),
+                "error": str(e),
+            }

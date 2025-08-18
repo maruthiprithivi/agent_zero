@@ -2181,3 +2181,81 @@ def create_anomaly_detection_engine(
     """
     baseline_engine = PerformanceBaselineEngine(client, lookback_days)
     return AnomalyDetectionEngine(baseline_engine)
+
+
+class PatternAnalyzer:
+    """Main pattern analysis class for comprehensive ProfileEvents analysis."""
+
+    def __init__(self, client: Client, lookback_days: int = 30):
+        """Initialize the pattern analyzer.
+
+        Args:
+            client: ClickHouse client instance
+            lookback_days: Number of days to look back for analysis
+        """
+        self.client = client
+        self.lookback_days = lookback_days
+        self.time_series_analyzer = TimeSeriesAnalyzer()
+        self.pattern_analysis_engine = PatternAnalysisEngine(client)
+
+    def analyze_patterns(self, event_names: list[str] = None) -> list[PatternAnalysisResult]:
+        """Analyze patterns for specified ProfileEvents.
+
+        Args:
+            event_names: List of ProfileEvent names to analyze
+
+        Returns:
+            List of pattern analysis results
+        """
+        if not event_names:
+            event_names = ["Query", "SelectQuery", "InsertQuery"]
+
+        results = []
+        for event_name in event_names:
+            try:
+                result = self.pattern_analysis_engine.analyze_patterns(
+                    event_name, self.lookback_days
+                )
+                results.append(result)
+            except Exception as e:
+                logger.warning(f"Failed to analyze patterns for {event_name}: {e}")
+
+        return results
+
+    def get_anomaly_summary(self, lookback_hours: int = 24) -> dict[str, Any]:
+        """Get summary of anomalies detected in the specified time period.
+
+        Args:
+            lookback_hours: Hours to look back for anomaly detection
+
+        Returns:
+            Dictionary containing anomaly summary
+        """
+        try:
+            results = self.analyze_patterns()
+            total_anomalies = sum(len(result.anomalies) for result in results)
+
+            anomaly_summary = {
+                "total_anomalies": total_anomalies,
+                "critical_anomalies": sum(
+                    1
+                    for result in results
+                    for anomaly in result.anomalies
+                    if anomaly.severity == AnomalySeverity.CRITICAL
+                ),
+                "affected_events": len([r for r in results if r.anomalies]),
+                "analysis_period": lookback_hours,
+                "timestamp": datetime.utcnow().isoformat(),
+            }
+
+            return anomaly_summary
+        except Exception as e:
+            logger.error(f"Failed to generate anomaly summary: {e}")
+            return {
+                "total_anomalies": 0,
+                "critical_anomalies": 0,
+                "affected_events": 0,
+                "analysis_period": lookback_hours,
+                "timestamp": datetime.utcnow().isoformat(),
+                "error": str(e),
+            }

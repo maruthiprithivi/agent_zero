@@ -238,9 +238,9 @@ class UnifiedConfig:
                 ssl_certfile=overrides.get("ssl_certfile") or os.getenv("AGENT_ZERO_SSL_CERTFILE"),
                 ssl_keyfile=overrides.get("ssl_keyfile") or os.getenv("AGENT_ZERO_SSL_KEYFILE"),
                 # Logging
-                enable_query_logging=cls._get_bool_env(
-                    "AGENT_ZERO_ENABLE_QUERY_LOGGING", overrides.get("enable_query_logging", False)
-                ),
+                enable_query_logging=overrides.get("enable_query_logging")
+                if "enable_query_logging" in overrides
+                else cls._get_bool_env("AGENT_ZERO_ENABLE_QUERY_LOGGING", False),
                 log_query_latency=cls._get_bool_env(
                     "AGENT_ZERO_LOG_QUERY_LATENCY", overrides.get("log_query_latency", False)
                 ),

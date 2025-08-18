@@ -641,6 +641,21 @@ class MemoryAnalyzer:
         self.profile_analyzer = profile_analyzer
         self.memory_events = self._get_memory_profile_events()
 
+    def analyze(self, lookback_hours: int = 1) -> dict[str, Any]:
+        """Analyze memory performance (compatible method for tests).
+
+        Args:
+            lookback_hours: Hours to look back for analysis
+
+        Returns:
+            Memory analysis results
+        """
+        try:
+            return self.analyze_memory_performance(lookback_hours)
+        except Exception as e:
+            logger.error(f"Memory analysis failed: {e}")
+            return {"error": str(e), "status": "failed"}
+
     def _get_memory_profile_events(self) -> list[str]:
         """Get list of memory-related ProfileEvents."""
         return [
