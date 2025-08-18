@@ -93,13 +93,28 @@ class _ServerConfigWrapper:
 
 class _ServerConfigFactory:
     def __call__(self, **kwargs):
-        # Map old environment variable names to override values for backward compatibility
         import os
 
-        # Read old env vars and map them to new parameter names
-        overrides = kwargs.copy()
+        # CRITICAL: Process direct parameters FIRST, then environment variables as fallback
+        # This ensures direct parameters always take precedence
 
-        old_to_new_mapping = {
+        # Start with default values
+        config_values = {
+            "clickhouse_host": "localhost",
+            "clickhouse_user": "default",
+            "clickhouse_password": "",
+            "server_host": "127.0.0.1",
+            "server_port": 8505,
+            "ssl_certfile": None,
+            "ssl_keyfile": None,
+            "ssl_enable": False,
+            "auth_username": None,
+            "auth_password": None,
+            "auth_password_file": None,
+        }
+
+        # Map old MCP environment variables to new parameter names (as fallback only)
+        old_to_new_env_mapping = {
             "MCP_SERVER_HOST": "server_host",
             "MCP_SERVER_PORT": "server_port",
             "MCP_SSL_CERTFILE": "ssl_certfile",
@@ -109,58 +124,69 @@ class _ServerConfigFactory:
             "MCP_AUTH_PASSWORD_FILE": "auth_password_file",
         }
 
-        for old_env_key, param_name in old_to_new_mapping.items():
-            # Only use environment variables if parameter wasn't explicitly provided
-            if old_env_key in os.environ and param_name not in overrides:
+        # Apply environment variables as fallback (lower priority)
+        for old_env_key, param_name in old_to_new_env_mapping.items():
+            if old_env_key in os.environ:
                 value = os.environ[old_env_key]
                 # Convert port to int if needed
                 if param_name == "server_port":
                     try:
                         value = int(value)
                     except ValueError:
-                        pass
-                overrides[param_name] = value
+                        value = 8505  # fallback
+                config_values[param_name] = value
 
-        # Provide a lazy config that tolerates missing ClickHouse env in tests
+        # Map old-style direct parameters to new parameter names
+        param_mapping = {
+            "host": "server_host",
+            "port": "server_port",
+            "ssl_enable": "ssl_enable",
+            "ssl_certfile": "ssl_certfile",
+            "ssl_keyfile": "ssl_keyfile",
+            "auth_username": "auth_username",
+            "auth_password": "auth_password",
+            "auth_password_file": "auth_password_file",
+        }
+
+        # Apply direct parameters (HIGHEST priority - they override everything)
+        for old_param, new_param in param_mapping.items():
+            if old_param in kwargs:
+                value = kwargs[old_param]
+                # Convert port to int if needed
+                if old_param == "port" and isinstance(value, str):
+                    value = int(value)
+                config_values[new_param] = value
+
+        # Also apply any new-style direct parameters
+        for key, value in kwargs.items():
+            if key in config_values:
+                config_values[key] = value
+
+        # Try to create UnifiedConfig first (production path)
         try:
-            unified = UnifiedConfig.from_env(**overrides)
+            # Use specific environment variables to avoid conflicts
+            unified = UnifiedConfig(
+                clickhouse_host=config_values["clickhouse_host"],
+                clickhouse_user=config_values["clickhouse_user"],
+                clickhouse_password=config_values["clickhouse_password"],
+                server_host=config_values["server_host"],
+                server_port=config_values["server_port"],
+                **{
+                    k: v
+                    for k, v in config_values.items()
+                    if k
+                    not in [
+                        "clickhouse_host",
+                        "clickhouse_user",
+                        "clickhouse_password",
+                        "server_host",
+                        "server_port",
+                    ]
+                },
+            )
         except Exception:
-            # Fallback for test environments - map old parameter names to new ones
-            default_overrides = {
-                "clickhouse_host": "localhost",
-                "clickhouse_user": "default",
-                "clickhouse_password": "",
-            }
-            # Map old parameter names to new ones for the fallback
-            param_mapping = {
-                "host": "server_host",
-                "port": "server_port",
-                "ssl_enable": "ssl_enable",
-                "ssl_certfile": "ssl_certfile",
-                "ssl_keyfile": "ssl_keyfile",
-                "auth_username": "auth_username",
-                "auth_password": "auth_password",
-                "auth_password_file": "auth_password_file",
-            }
-
-            mapped_overrides = {}
-            for old_key, value in overrides.items():
-                new_key = param_mapping.get(old_key, old_key)
-                mapped_overrides[new_key] = value
-
-            default_overrides.update(mapped_overrides)
-
-            # Ensure direct parameters take precedence over environment variables
-            for old_param, new_param in param_mapping.items():
-                if old_param in kwargs:
-                    value = kwargs[old_param]
-                    # Convert port to int if needed
-                    if old_param == "port" and isinstance(value, str):
-                        value = int(value)
-                    default_overrides[new_param] = value
-
-            # Create a minimal config without validation for tests
-            unified = type("MinimalConfig", (), default_overrides)()
+            # Fallback for test environments - create simple object
+            unified = type("MinimalConfig", (), config_values)()
 
         return _ServerConfigWrapper(unified)
 
