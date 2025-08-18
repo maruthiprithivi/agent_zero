@@ -110,6 +110,7 @@ class _ServerConfigFactory:
         }
 
         for old_env_key, param_name in old_to_new_mapping.items():
+            # Only use environment variables if parameter wasn't explicitly provided
             if old_env_key in os.environ and param_name not in overrides:
                 value = os.environ[old_env_key]
                 # Convert port to int if needed
@@ -148,6 +149,15 @@ class _ServerConfigFactory:
                 mapped_overrides[new_key] = value
 
             default_overrides.update(mapped_overrides)
+
+            # Ensure direct parameters take precedence over environment variables
+            for old_param, new_param in param_mapping.items():
+                if old_param in kwargs:
+                    value = kwargs[old_param]
+                    # Convert port to int if needed
+                    if old_param == "port" and isinstance(value, str):
+                        value = int(value)
+                    default_overrides[new_param] = value
 
             # Create a minimal config without validation for tests
             unified = type("MinimalConfig", (), default_overrides)()

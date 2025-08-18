@@ -84,6 +84,10 @@ jobs:
                       print(f"version={latest_version}")
                       print(f"upload_time={upload_time}")
                       return True
+                  elif response.status_code == 404:
+                      print(f"status=not_found")
+                      print(f"error=Package not yet published to PyPI")
+                      return True  # This is expected for new packages
                   else:
                       print(f"status=error")
                       print(f"error=HTTP {response.status_code}")
@@ -119,6 +123,10 @@ jobs:
                       print(f"status=healthy")
                       print(f"version={latest_version}")
                       return True
+                  elif response.status_code == 404:
+                      print(f"status=not_found")
+                      print(f"error=Package not yet published to TestPyPI")
+                      return True  # This is expected for new packages
                   else:
                       print(f"status=error")
                       print(f"error=HTTP {response.status_code}")
@@ -172,29 +180,36 @@ jobs:
         id: security
         run: |
           uv venv security-env
-          uv pip install --python security-env ch-agent-zero
 
           echo "## Security Scan Results" > security-report.md
           echo "" >> security-report.md
 
-          # Run safety check
-          echo "### Safety Vulnerability Scan" >> security-report.md
-          if uv run --python security-env safety check --json > safety.json 2>&1; then
-            echo "✅ No known vulnerabilities found" >> security-report.md
-          else
-            echo "⚠️ Vulnerabilities detected:" >> security-report.md
-            cat safety.json >> security-report.md
-          fi
+          # Try to install the package, but handle failure gracefully
+          if uv pip install --python security-env ch-agent-zero 2>/dev/null; then
+            echo "✅ Package ch-agent-zero installed successfully" >> security-report.md
 
-          echo "" >> security-report.md
+            # Run safety check
+            echo "### Safety Vulnerability Scan" >> security-report.md
+            if uv run --python security-env safety check --json > safety.json 2>&1; then
+              echo "✅ No known vulnerabilities found" >> security-report.md
+            else
+              echo "⚠️ Vulnerabilities detected:" >> security-report.md
+              cat safety.json >> security-report.md
+            fi
 
-          # Run pip-audit
-          echo "### Pip-audit Scan" >> security-report.md
-          if uv run --python security-env pip-audit --format=json > audit.json 2>&1; then
-            echo "✅ No audit issues found" >> security-report.md
-          else
-            echo "⚠️ Audit issues detected:" >> security-report.md
+            echo "" >> security-report.md
+
+            # Run pip-audit
+            echo "### Pip-audit Scan" >> security-report.md
+            if uv run --python security-env pip-audit --format=json > audit.json 2>&1; then
+              echo "✅ No audit issues found" >> security-report.md
+            else
+              echo "⚠️ Audit issues detected:" >> security-report.md
             cat audit.json >> security-report.md
+            fi
+          else
+            echo "ℹ️ Package ch-agent-zero not yet available on PyPI - skipping security scan" >> security-report.md
+            echo "This is expected for new packages that haven't been published yet." >> security-report.md
           fi
 
       - name: Upload security report
@@ -235,7 +250,12 @@ jobs:
               try:
                   # Get package info from PyPI
                   response = requests.get('https://pypi.org/pypi/ch-agent-zero/json', timeout=10)
-                  if response.status_code != 200:
+                  if response.status_code == 404:
+                      # Package not found - return empty metrics
+                      print("Package ch-agent-zero not found on PyPI yet")
+                      return {"status": "not_found", "message": "Package not yet published"}
+                  elif response.status_code != 200:
+                      print(f"HTTP Error: {response.status_code}")
                       return None
 
                   data = response.json()
@@ -279,10 +299,16 @@ jobs:
               with open('metrics-report.json', 'w') as f:
                   json.dump(report, f, indent=2)
 
-              print(f"Package: {metrics.get('name', 'N/A')}")
-              print(f"Version: {metrics.get('version', 'N/A')}")
-              print(f"Total Releases: {metrics.get('total_releases', 'N/A')}")
-              print(f"File Count: {metrics.get('file_count', 'N/A')}")
+              if metrics and metrics.get('status') != 'not_found':
+                  print(f"Package: {metrics.get('name', 'N/A')}")
+                  print(f"Version: {metrics.get('version', 'N/A')}")
+                  print(f"Total Releases: {metrics.get('total_releases', 'N/A')}")
+                  print(f"File Count: {metrics.get('file_count', 'N/A')}")
+              else:
+                  print("Package: ch-agent-zero (not yet published)")
+                  print("Version: N/A")
+                  print("Total Releases: 0")
+                  print("File Count: 0")
           EOF
 
           python collect_metrics.py

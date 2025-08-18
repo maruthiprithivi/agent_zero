@@ -85,7 +85,7 @@ jobs:
           pip install --upgrade pip
           pip install mkdocs-material mkdocs-mermaid2-plugin mkdocs-swagger-ui-tag
           pip install mkdocs-git-revision-date-localized-plugin mkdocs-git-committers-plugin-2
-          pip install mkdocs-macros-plugin mkdocs-table-reader-plugin mkdocs-tags-plugin
+          pip install mkdocs-macros-plugin mkdocs-table-reader-plugin mkdocs-tags
           pip install mkdocstrings[python] mkdocs-social mkdocs-minify-plugin
 
       - name: Validate MkDocs configuration
@@ -211,7 +211,7 @@ jobs:
           pip install --upgrade pip
           pip install mkdocs-material mkdocs-mermaid2-plugin mkdocs-swagger-ui-tag
           pip install mkdocs-git-revision-date-localized-plugin mkdocs-git-committers-plugin-2
-          pip install mkdocs-macros-plugin mkdocs-table-reader-plugin mkdocs-tags-plugin
+          pip install mkdocs-macros-plugin mkdocs-table-reader-plugin mkdocs-tags
           pip install mkdocstrings[python] mkdocs-social mkdocs-minify-plugin
 
           # Install Node.js dependencies for advanced features

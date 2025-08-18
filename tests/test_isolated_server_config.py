@@ -101,31 +101,47 @@ class TestIsolatedServerConfig:
 
     def test_auth_config_with_password_file(self):
         """Test that get_auth_config reads password from file when configured."""
-        with tempfile.NamedTemporaryFile(mode="w") as temp_file:
+        with tempfile.NamedTemporaryFile(mode="w", delete=False) as temp_file:
             temp_file.write("file_password")
             temp_file.flush()
+            temp_file_path = temp_file.name
 
-            config = ServerConfig(auth_username="testuser", auth_password_file=temp_file.name)
+        try:
+            config = ServerConfig(auth_username="testuser", auth_password_file=temp_file_path)
             auth_config = config.get_auth_config()
             assert auth_config is not None
             assert auth_config["username"] == "testuser"
             assert auth_config["password"] == "file_password"
+        finally:
+            # Clean up the temporary file
+            import os
+
+            if os.path.exists(temp_file_path):
+                os.unlink(temp_file_path)
 
     def test_auth_config_password_precedence(self):
         """Test that auth_password takes precedence over auth_password_file."""
-        with tempfile.NamedTemporaryFile(mode="w") as temp_file:
+        with tempfile.NamedTemporaryFile(mode="w", delete=False) as temp_file:
             temp_file.write("file_password")
             temp_file.flush()
+            temp_file_path = temp_file.name
 
+        try:
             config = ServerConfig(
                 auth_username="testuser",
                 auth_password="direct_password",
-                auth_password_file=temp_file.name,
+                auth_password_file=temp_file_path,
             )
             auth_config = config.get_auth_config()
             assert auth_config is not None
             assert auth_config["username"] == "testuser"
             assert auth_config["password"] == "direct_password"
+        finally:
+            # Clean up the temporary file
+            import os
+
+            if os.path.exists(temp_file_path):
+                os.unlink(temp_file_path)
 
     def test_auth_config_file_not_found(self):
         """Test that get_auth_config returns None when password file is not found."""
