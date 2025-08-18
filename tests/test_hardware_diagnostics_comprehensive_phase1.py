@@ -253,8 +253,11 @@ class TestHardwareCPUAnalyzer:
         assert result is not None
         assert hasattr(result, "efficiency_score")
         assert hasattr(result, "instructions_per_cycle")
-        assert hasattr(result, "branch_miss_rate")
-        assert hasattr(result, "cache_miss_rate")
+        assert hasattr(result, "cache_hit_rate")
+        assert hasattr(result, "branch_prediction_accuracy")
+        assert hasattr(result, "context_switch_overhead")
+        assert hasattr(result, "cpu_utilization")
+        assert hasattr(result, "performance_counters")
         assert hasattr(result, "bottlenecks")
         assert hasattr(result, "recommendations")
 
@@ -367,7 +370,7 @@ class TestHardwareMemoryAnalyzer:
             Mock(spec=ProfileEventAggregation, event_name="MemoryMappedFree", event_value=400000),
         ]
 
-        mock_profile_analyzer.get_aggregated_events.return_value = mock_aggregations
+        mock_profile_analyzer.aggregate_profile_events.return_value = mock_aggregations
 
         analyzer = MemoryAnalyzer(mock_profile_analyzer)
 
@@ -386,7 +389,7 @@ class TestHardwareMemoryAnalyzer:
         assert hasattr(result, "recommendations")
 
         # Verify analyzer called profile analyzer
-        mock_profile_analyzer.get_aggregated_events.assert_called_once()
+        mock_profile_analyzer.aggregate_profile_events.assert_called_once()
 
 
 @pytest.mark.unit
@@ -414,7 +417,7 @@ class TestHardwareThreadPoolAnalyzer:
         analyzer = ThreadPoolAnalyzer(mock_profile_analyzer)
 
         # Test the private method that gets thread pool profile events
-        profile_events = analyzer._get_thread_pool_profile_events()
+        profile_events = analyzer._get_thread_profile_events()
 
         assert isinstance(profile_events, list)
         assert len(profile_events) > 0
@@ -438,7 +441,7 @@ class TestHardwareThreadPoolAnalyzer:
             Mock(spec=ProfileEventAggregation, event_name="BackgroundPoolActive", event_value=4),
         ]
 
-        mock_profile_analyzer.get_aggregated_events.return_value = mock_aggregations
+        mock_profile_analyzer.aggregate_profile_events.return_value = mock_aggregations
 
         analyzer = ThreadPoolAnalyzer(mock_profile_analyzer)
 
@@ -456,7 +459,7 @@ class TestHardwareThreadPoolAnalyzer:
         assert hasattr(result, "recommendations")
 
         # Verify analyzer called profile analyzer
-        mock_profile_analyzer.get_aggregated_events.assert_called_once()
+        mock_profile_analyzer.aggregate_profile_events.assert_called_once()
 
 
 @pytest.mark.unit
@@ -526,7 +529,7 @@ class TestHardwareHealthEngine:
                         start_time = datetime.now()
                         end_time = datetime.now()
 
-                        result = engine.analyze_hardware_health(start_time, end_time)
+                        result = engine.generate_hardware_health_report(start_time, end_time)
 
                         # Should return HardwareHealthReport
                         assert result is not None
