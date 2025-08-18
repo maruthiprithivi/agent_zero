@@ -2195,6 +2195,32 @@ class BottleneckDetector:
             logger.error(f"Failed to detect memory bottlenecks: {e}")
             return []
 
+    def detect_cpu_bottlenecks(self, lookback_hours: int = 1) -> list[BottleneckDetection]:
+        """Detect CPU-specific bottlenecks (required by tests).
+
+        Args:
+            lookback_hours: Hours to look back for analysis
+
+        Returns:
+            List of detected CPU bottlenecks
+        """
+        try:
+            # Get all bottlenecks and filter for CPU-related ones
+            all_bottlenecks = self.detect_bottlenecks(lookback_hours=lookback_hours)
+            cpu_bottlenecks = [
+                b
+                for b in all_bottlenecks
+                if b.signature.category
+                in [
+                    BottleneckCategory.CPU_SATURATION,
+                    BottleneckCategory.QUERY_OPTIMIZATION_OPPORTUNITY,  # CPU-intensive queries
+                ]
+            ]
+            return cpu_bottlenecks
+        except Exception as e:
+            logger.error(f"Failed to detect CPU bottlenecks: {e}")
+            return []
+
     def analyze_performance_trends(self, days: int = 7) -> dict[str, Any]:
         """Analyze performance trends over the specified period.
 
