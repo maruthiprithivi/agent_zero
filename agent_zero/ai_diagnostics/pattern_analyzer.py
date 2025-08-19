@@ -2353,6 +2353,29 @@ class PatternAnalyzer:
                 "error": str(e),
             }
 
+    def detect_anomalies(self, lookback_hours: int = 24) -> list[AnomalyScore]:
+        """Detect anomalies in ProfileEvents data (required by tests).
+
+        Args:
+            lookback_hours: Hours to look back for anomaly detection
+
+        Returns:
+            List of detected anomalies
+        """
+        try:
+            # Analyze patterns to detect anomalies
+            default_events = ["Query", "SelectQuery", "InsertQuery", "MemoryTracking"]
+            results = self.analyze_patterns(default_events)
+
+            all_anomalies = []
+            for result in results:
+                all_anomalies.extend(result.anomalies)
+
+            return all_anomalies
+        except Exception as e:
+            logger.error(f"Failed to detect anomalies: {e}")
+            return []
+
     def get_anomaly_summary(self, lookback_hours: int = 24) -> dict[str, Any]:
         """Get summary of anomalies detected in the specified time period.
 

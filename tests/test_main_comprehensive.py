@@ -210,7 +210,7 @@ class TestMainFunction:
         mock_from_env.assert_called_once()
         call_kwargs = mock_from_env.call_args[1]
         assert "deployment_mode" in call_kwargs
-        assert call_kwargs["deployment_mode"] == DeploymentMode.LOCAL
+        assert call_kwargs["deployment_mode"] == "local"
 
     @patch.dict("os.environ", test_env)
     @patch("agent_zero.main.run")

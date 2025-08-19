@@ -2221,6 +2221,32 @@ class BottleneckDetector:
             logger.error(f"Failed to detect CPU bottlenecks: {e}")
             return []
 
+    def detect_storage_bottlenecks(self, lookback_hours: int = 1) -> list[BottleneckDetection]:
+        """Detect storage-specific bottlenecks (required by tests).
+
+        Args:
+            lookback_hours: Hours to look back for analysis
+
+        Returns:
+            List of detected storage bottlenecks
+        """
+        try:
+            # Get all bottlenecks and filter for storage-related ones
+            all_bottlenecks = self.detect_bottlenecks(lookback_hours=lookback_hours)
+            storage_bottlenecks = [
+                b
+                for b in all_bottlenecks
+                if b.signature.category
+                in [
+                    BottleneckCategory.STORAGE_LAYER_ISSUE,
+                    BottleneckCategory.IO_BOTTLENECK,  # I/O includes storage operations
+                ]
+            ]
+            return storage_bottlenecks
+        except Exception as e:
+            logger.error(f"Failed to detect storage bottlenecks: {e}")
+            return []
+
     def analyze_performance_trends(self, days: int = 7) -> dict[str, Any]:
         """Analyze performance trends over the specified period.
 
