@@ -66,14 +66,11 @@ class UnifiedConfig:
     Environment variables follow the AGENT_ZERO_* convention.
     """
 
-    # Configuration file settings
-    config_file: str | None = None
-
     # ClickHouse connection settings
     clickhouse_host: str
     clickhouse_user: str
     clickhouse_password: str
-    clickhouse_port: int = None  # Will be auto-determined from secure setting
+    clickhouse_port: int | None = None  # Will be auto-determined from secure setting
     clickhouse_secure: bool = True
     clickhouse_verify: bool = True
     clickhouse_database: str | None = None
@@ -163,6 +160,9 @@ class UnifiedConfig:
     tool_annotations_enabled: bool = True
     progress_notifications: bool = True
     completions_capability: bool = True
+
+    # Configuration file settings
+    config_file: str | None = None
 
     def __post_init__(self):
         """Validate and process configuration after initialization."""
