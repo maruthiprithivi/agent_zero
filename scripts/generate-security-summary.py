@@ -10,7 +10,7 @@ import argparse
 import json
 import os
 import sys
-from datetime import datetime
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
@@ -21,7 +21,7 @@ class SecuritySummaryGenerator:
     def __init__(self, results_dir: Path):
         self.results_dir = results_dir
         self.summary = {
-            "timestamp": datetime.utcnow().isoformat(),
+            "timestamp": datetime.now(UTC).isoformat(),
             "overall_status": "UNKNOWN",
             "total_vulnerabilities": 0,
             "critical_count": 0,

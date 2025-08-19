@@ -4,7 +4,7 @@ This module tests all the new ProfileEvents analysis MCP tools to ensure they
 work correctly and integrate with the existing system.
 """
 
-from datetime import datetime
+from datetime import UTC, datetime
 from unittest.mock import Mock, patch
 
 import pytest
@@ -267,15 +267,15 @@ class TestComprehensiveMCPTools:
         mock_query_analyzer = Mock()
         mock_query_analyzer.analyze_query_execution.return_value = {
             "analysis_period": {
-                "start_time": datetime.utcnow().isoformat(),
-                "end_time": datetime.utcnow().isoformat(),
+                "start_time": datetime.now(UTC).isoformat(),
+                "end_time": datetime.now(UTC).isoformat(),
                 "hours": 24,
             },
             "function_performance": {},
             "memory_allocation": {},
             "primary_key_usage": {},
             "null_handling": {},
-            "analysis_timestamp": datetime.utcnow().isoformat(),
+            "analysis_timestamp": datetime.now(UTC).isoformat(),
         }
 
         with (

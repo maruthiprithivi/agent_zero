@@ -17,7 +17,7 @@ import logging
 import secrets
 import uuid
 from dataclasses import dataclass, field
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
 from enum import Enum
 from typing import Any
 
@@ -184,8 +184,8 @@ class CertificateManager:
                 .issuer_name(issuer)
                 .public_key(private_key.public_key())
                 .serial_number(x509.random_serial_number())
-                .not_valid_before(datetime.utcnow())
-                .not_valid_after(datetime.utcnow() + timedelta(days=validity_days))
+                .not_valid_before(datetime.now(UTC))
+                .not_valid_after(datetime.now(UTC) + timedelta(days=validity_days))
                 .add_extension(
                     x509.SubjectAlternativeName(
                         [
@@ -209,14 +209,14 @@ class CertificateManager:
             cert_id = str(uuid.uuid4())
             self.certificates[cert_id] = {
                 "common_name": common_name,
-                "created": datetime.utcnow(),
-                "expires": datetime.utcnow() + timedelta(days=validity_days),
+                "created": datetime.now(UTC),
+                "expires": datetime.now(UTC) + timedelta(days=validity_days),
                 "cert_pem": cert_pem,
                 "key_pem": key_pem,
             }
 
             # Schedule rotation
-            rotation_date = datetime.utcnow() + timedelta(
+            rotation_date = datetime.now(UTC) + timedelta(
                 days=validity_days - 30
             )  # 30 days before expiry
             self.rotation_schedule[cert_id] = rotation_date
@@ -234,7 +234,7 @@ class CertificateManager:
     async def rotate_certificates(self) -> list[str]:
         """Rotate certificates that are due for renewal."""
         rotated = []
-        current_time = datetime.utcnow()
+        current_time = datetime.now(UTC)
 
         for cert_id, rotation_date in list(self.rotation_schedule.items()):
             if current_time >= rotation_date:
@@ -296,7 +296,7 @@ class DataEncryptionManager:
             "encrypted_data": encrypted_data.decode("ascii"),
             "key_id": key_id,
             "key_version": self.key_versions[key_id],
-            "timestamp": datetime.utcnow().isoformat(),
+            "timestamp": datetime.now(UTC).isoformat(),
         }
 
     async def decrypt_data(self, encrypted_info: dict[str, Any]) -> bytes:
@@ -387,7 +387,7 @@ class ThreatDetectionEngine:
             if re.search(pattern, query, re.IGNORECASE):
                 event = SecurityEvent(
                     event_id=str(uuid.uuid4()),
-                    timestamp=datetime.utcnow(),
+                    timestamp=datetime.now(UTC),
                     event_type="sql_injection_attempt",
                     severity=ThreatLevel.HIGH,
                     user_id=user_context.get("user_id") if user_context else None,
@@ -424,7 +424,7 @@ class ThreatDetectionEngine:
         if current_frequency > baseline.get("avg_frequency", 0) * 3:
             event = SecurityEvent(
                 event_id=str(uuid.uuid4()),
-                timestamp=datetime.utcnow(),
+                timestamp=datetime.now(UTC),
                 event_type="anomalous_behavior",
                 severity=ThreatLevel.MEDIUM,
                 user_id=user_id,
@@ -457,7 +457,7 @@ class ThreatDetectionEngine:
         if failed_attempts >= threshold:
             event = SecurityEvent(
                 event_id=str(uuid.uuid4()),
-                timestamp=datetime.utcnow(),
+                timestamp=datetime.now(UTC),
                 event_type="brute_force_attempt",
                 severity=ThreatLevel.HIGH,
                 user_id=user_id,
@@ -692,14 +692,14 @@ class ZeroTrustSecurityManager:
                 "authenticated": True,
                 "authorization_level": self._calculate_authorization_level(request_context),
                 "session_token": self._generate_session_token(request_context["user_id"]),
-                "expires": (datetime.utcnow() + timedelta(hours=8)).isoformat(),
+                "expires": (datetime.now(UTC) + timedelta(hours=8)).isoformat(),
             }
         )
 
         # Log successful authentication
         event = SecurityEvent(
             event_id=str(uuid.uuid4()),
-            timestamp=datetime.utcnow(),
+            timestamp=datetime.now(UTC),
             event_type="authentication_success",
             severity=ThreatLevel.LOW,
             user_id=request_context["user_id"],
@@ -733,14 +733,14 @@ class ZeroTrustSecurityManager:
         """Generate secure session token."""
         if not OAUTH_AVAILABLE:
             # Simple token generation
-            token_data = f"{user_id}:{datetime.utcnow().isoformat()}:{secrets.token_hex(16)}"
+            token_data = f"{user_id}:{datetime.now(UTC).isoformat()}:{secrets.token_hex(16)}"
             return hashlib.sha256(token_data.encode()).hexdigest()
 
         # JWT token generation
         payload = {
             "user_id": user_id,
-            "iat": datetime.utcnow(),
-            "exp": datetime.utcnow() + timedelta(hours=8),
+            "iat": datetime.now(UTC),
+            "exp": datetime.now(UTC) + timedelta(hours=8),
             "scope": "mcp_access",
         }
 
@@ -759,7 +759,7 @@ class ZeroTrustSecurityManager:
             threat_stats[severity] = threat_stats.get(severity, 0) + 1
 
         # Recent events (last 24 hours)
-        recent_threshold = datetime.utcnow() - timedelta(hours=24)
+        recent_threshold = datetime.now(UTC) - timedelta(hours=24)
         recent_events = [
             event for event in self.security_events if event.timestamp >= recent_threshold
         ]
@@ -776,7 +776,7 @@ class ZeroTrustSecurityManager:
                 "data_encryption": self.config.encryption_at_rest,
                 "real_time_monitoring": self.config.real_time_monitoring,
             },
-            "last_updated": datetime.utcnow().isoformat(),
+            "last_updated": datetime.now(UTC).isoformat(),
         }
 
 

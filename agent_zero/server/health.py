@@ -77,15 +77,19 @@ class OverallHealth:
 class HealthCheckManager:
     """Manages all health checks for the MCP server."""
 
-    def __init__(self, clickhouse_client_factory: Callable | None = None):
+    def __init__(
+        self, clickhouse_client_factory: Callable | None = None, config: dict | None = None
+    ):
         """Initialize health check manager.
 
         Args:
             clickhouse_client_factory: Factory function to create ClickHouse clients
+            config: Optional configuration dictionary
         """
         self.start_time = datetime.now()
         self.checks: dict[str, HealthCheck] = {}
         self.clickhouse_client_factory = clickhouse_client_factory
+        self.config = config or {}
         self._register_default_checks()
         self._background_task: asyncio.Task | None = None
         self._running = False
@@ -296,7 +300,7 @@ class HealthCheckManager:
             timestamp=datetime.now(),
             uptime_seconds=uptime,
             version=__version__,
-            deployment_mode="production",  # TODO: Get from config
+            deployment_mode=self.config.get("deployment_mode", "production"),
             services=services if include_details else [],
             metrics=metrics,
         )
@@ -490,18 +494,21 @@ class HealthCheckManager:
 health_manager: HealthCheckManager | None = None
 
 
-def get_health_manager(clickhouse_client_factory: Callable | None = None) -> HealthCheckManager:
+def get_health_manager(
+    clickhouse_client_factory: Callable | None = None, config: dict | None = None
+) -> HealthCheckManager:
     """Get or create the global health check manager.
 
     Args:
         clickhouse_client_factory: Factory function to create ClickHouse clients
+        config: Optional configuration dictionary
 
     Returns:
         Global health check manager instance
     """
     global health_manager
     if health_manager is None:
-        health_manager = HealthCheckManager(clickhouse_client_factory)
+        health_manager = HealthCheckManager(clickhouse_client_factory, config)
     return health_manager
 
 

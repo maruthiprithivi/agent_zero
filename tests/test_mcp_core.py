@@ -68,7 +68,7 @@ class TestMCPCoreFunctions:
         self.mock_client.query.side_effect = mock_query_response
 
         # Set up the client patcher
-        self.client_patcher = patch("agent_zero.mcp_server.create_clickhouse_client")
+        self.client_patcher = patch("agent_zero.server.create_clickhouse_client")
         self.mock_create_client = self.client_patcher.start()
         self.mock_create_client.return_value = self.mock_client
 
@@ -80,7 +80,7 @@ class TestMCPCoreFunctions:
     def test_create_clickhouse_client(self):
         """Test creating a ClickHouse client."""
         # Directly patch the low-level functions that create_clickhouse_client calls
-        with patch("agent_zero.mcp_server.config.get_client_config") as mock_get_config:
+        with patch("agent_zero.config.get_config") as mock_get_config:
             with patch("clickhouse_connect.get_client") as mock_get_client:
                 # Mock get_client_config response
                 mock_get_config.return_value = {
@@ -116,7 +116,7 @@ class TestMCPCoreFunctions:
                         server.create_clickhouse_client()
                 finally:
                     # Restart the patcher for other tests
-                    self.client_patcher = patch("agent_zero.mcp_server.create_clickhouse_client")
+                    self.client_patcher = patch("agent_zero.server.create_clickhouse_client")
                     self.mock_create_client = self.client_patcher.start()
                     self.mock_create_client.return_value = self.mock_client
 
@@ -148,7 +148,7 @@ class TestMCPCoreFunctions:
         assert self.mock_client.query.called
 
         # Mock the entire function for a more comprehensive test
-        with patch("agent_zero.mcp_server.list_tables") as mock_function:
+        with patch("agent_zero.server.list_tables") as mock_function:
             mock_function.return_value = [
                 {
                     "database": "testdb",
@@ -166,7 +166,7 @@ class TestMCPCoreFunctions:
             mock_function.assert_called_once_with("testdb")
 
         # Test error handling by mocking the function directly
-        with patch("agent_zero.mcp_server.list_tables") as mock_function:
+        with patch("agent_zero.server.list_tables") as mock_function:
             mock_function.side_effect = ClickHouseError("Test exception")
             with pytest.raises(ClickHouseError):
                 server.list_tables("testdb")
@@ -187,7 +187,7 @@ class TestMCPCoreFunctions:
         assert self.mock_client.query.called
 
         # Mock the entire function for a more comprehensive test
-        with patch("agent_zero.mcp_server.list_tables") as mock_function:
+        with patch("agent_zero.server.list_tables") as mock_function:
             mock_function.return_value = [
                 {
                     "database": "testdb",
@@ -207,7 +207,7 @@ class TestMCPCoreFunctions:
     def test_execute_query(self):
         """Test executing a query."""
         # Mock create_clickhouse_client
-        with patch("agent_zero.mcp_server.create_clickhouse_client") as mock_create_client:
+        with patch("agent_zero.server.create_clickhouse_client") as mock_create_client:
             mock_create_client.return_value = self.mock_client
 
             # Call the function
@@ -232,7 +232,7 @@ class TestMCPCoreFunctions:
 
     def test_run_select_query(self):
         """Test running a SELECT query."""
-        with patch("agent_zero.mcp_server.QUERY_EXECUTOR") as mock_executor:
+        with patch("agent_zero.server.query.QUERY_EXECUTOR") as mock_executor:
             # Mock submit response
             mock_future = MagicMock()
             mock_future.result.return_value = [

@@ -5,7 +5,7 @@ analysis modules work correctly together and meet production readiness standards
 """
 
 import time
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
 from unittest.mock import Mock, patch
 
 import pytest
@@ -140,7 +140,7 @@ class TestComprehensiveIntegration:
 
                 engine = PerformanceDiagnosticEngine(mock_analyzer)
 
-                end_time = datetime.utcnow()
+                end_time = datetime.now(UTC)
                 start_time = end_time - timedelta(hours=1)
 
                 # Test comprehensive report generation

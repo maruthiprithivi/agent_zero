@@ -512,7 +512,7 @@ async def get_clickhouse_metrics(metric_type: str = "performance") -> dict[str, 
         return {
             "status": "success",
             "metrics": result.result_rows,
-            "timestamp": datetime.utcnow().isoformat(),
+            "timestamp": datetime.now(UTC).isoformat(),
             "metric_type": metric_type
         }
     except ClickHouseException as e:
@@ -635,7 +635,7 @@ async def your_tool_name(
             "status": "success",
             "data": result,
             "metadata": {
-                "timestamp": datetime.utcnow().isoformat(),
+                "timestamp": datetime.now(UTC).isoformat(),
                 "execution_time_ms": int((time.time() - start_time) * 1000),
                 "tool_version": "1.0.0"
             }

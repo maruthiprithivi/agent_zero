@@ -5,7 +5,7 @@ from unittest.mock import MagicMock, patch
 
 from clickhouse_connect.driver.client import Client
 
-from agent_zero.mcp_server import (
+from agent_zero.server import (
     monitor_table_inactive_parts,
     monitor_table_stats,
 )
@@ -25,7 +25,7 @@ class TestTableStatisticsTools(unittest.TestCase):
         ]
 
         # Set up the client patcher
-        self.client_patcher = patch("agent_zero.mcp_server.create_clickhouse_client")
+        self.client_patcher = patch("agent_zero.server.create_clickhouse_client")
         self.mock_create_client = self.client_patcher.start()
         self.mock_create_client.return_value = self.mock_client
 
@@ -36,7 +36,7 @@ class TestTableStatisticsTools(unittest.TestCase):
     def test_monitor_table_stats(self):
         """Test monitoring table statistics."""
         # Mock the get_table_stats function
-        with patch("agent_zero.mcp_server.get_table_stats") as mock_function:
+        with patch("agent_zero.server.get_table_stats") as mock_function:
             # Mock successful execution - all tables in database
             mock_function.return_value = [
                 {
@@ -88,7 +88,7 @@ class TestTableStatisticsTools(unittest.TestCase):
     def test_monitor_table_inactive_parts(self):
         """Test monitoring table inactive parts."""
         # Mock the get_table_inactive_parts function
-        with patch("agent_zero.mcp_server.get_table_inactive_parts") as mock_function:
+        with patch("agent_zero.server.get_table_inactive_parts") as mock_function:
             # Mock successful execution
             mock_function.return_value = [
                 {"partition": "202403", "inactive_parts": 5, "inactive_bytes": 512000},

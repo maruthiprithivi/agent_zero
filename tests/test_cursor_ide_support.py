@@ -26,7 +26,7 @@ class TestCursorIDESupport(unittest.TestCase):
 
         # Apply patches to intercept the legacy run path that handles transport
         self.patches = [
-            patch("agent_zero.mcp_server._original_run", self.mock_run),
+            patch("agent_zero.server._original_run", self.mock_run),
         ]
 
         # Start all patches

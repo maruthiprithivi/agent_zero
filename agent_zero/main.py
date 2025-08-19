@@ -125,6 +125,21 @@ def main():
     server_group.add_argument("--ssl-enable", action="store_true", help="Enable SSL")
     server_group.add_argument("--ssl-certfile", help="SSL certificate file path")
     server_group.add_argument("--ssl-keyfile", help="SSL key file path")
+    server_group.add_argument(
+        "--cors-origins",
+        help="Comma-separated list of allowed CORS origins (e.g., 'http://localhost:3000,https://app.example.com')",
+    )
+
+    # ClickHouse configuration
+    clickhouse_group = parser.add_argument_group("ClickHouse Configuration")
+    clickhouse_group.add_argument("--clickhouse-host", help="ClickHouse host")
+    clickhouse_group.add_argument("--clickhouse-port", type=int, help="ClickHouse port")
+    clickhouse_group.add_argument("--clickhouse-user", help="ClickHouse username")
+    clickhouse_group.add_argument("--clickhouse-password", help="ClickHouse password")
+    clickhouse_group.add_argument("--clickhouse-database", help="ClickHouse database")
+    clickhouse_group.add_argument(
+        "--clickhouse-secure", action="store_true", help="Use secure connection to ClickHouse"
+    )
 
     # Authentication configuration
     auth_group = parser.add_argument_group("Authentication Configuration")
@@ -174,6 +189,23 @@ def main():
     features_group.add_argument(
         "--resource-limit", type=int, help="Maximum resources to expose (default: 50)"
     )
+
+    # Logging configuration
+    logging_group = parser.add_argument_group("Logging Configuration")
+    logging_group.add_argument(
+        "--enable-query-logging", action="store_true", help="Enable ClickHouse query logging"
+    )
+    logging_group.add_argument(
+        "--enable-mcp-tracing", action="store_true", help="Enable MCP request/response tracing"
+    )
+    logging_group.add_argument(
+        "--log-level",
+        choices=["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"],
+        help="Set logging level (default: INFO)",
+    )
+
+    # Configuration file
+    parser.add_argument("--config", help="Path to configuration file (YAML or JSON format)")
 
     # Utility commands
     parser.add_argument("--version", action="version", version="%(prog)s 0.0.1")
@@ -232,6 +264,39 @@ def main():
         config_overrides["tool_limit"] = args.tool_limit
     if hasattr(args, "resource_limit") and args.resource_limit:
         config_overrides["resource_limit"] = args.resource_limit
+
+    # CORS configuration
+    if hasattr(args, "cors_origins") and args.cors_origins:
+        # Split comma-separated origins into a list
+        config_overrides["cors_origins"] = [
+            origin.strip() for origin in args.cors_origins.split(",")
+        ]
+
+    # ClickHouse configuration
+    if hasattr(args, "clickhouse_host") and args.clickhouse_host:
+        config_overrides["clickhouse_host"] = args.clickhouse_host
+    if hasattr(args, "clickhouse_port") and args.clickhouse_port:
+        config_overrides["clickhouse_port"] = args.clickhouse_port
+    if hasattr(args, "clickhouse_user") and args.clickhouse_user:
+        config_overrides["clickhouse_user"] = args.clickhouse_user
+    if hasattr(args, "clickhouse_password") and args.clickhouse_password:
+        config_overrides["clickhouse_password"] = args.clickhouse_password
+    if hasattr(args, "clickhouse_database") and args.clickhouse_database:
+        config_overrides["clickhouse_database"] = args.clickhouse_database
+    if hasattr(args, "clickhouse_secure") and args.clickhouse_secure:
+        config_overrides["clickhouse_secure"] = args.clickhouse_secure
+
+    # Logging configuration
+    if hasattr(args, "enable_query_logging") and args.enable_query_logging:
+        config_overrides["enable_query_logging"] = True
+    if hasattr(args, "enable_mcp_tracing") and args.enable_mcp_tracing:
+        config_overrides["enable_mcp_tracing"] = True
+    if hasattr(args, "log_level") and args.log_level:
+        config_overrides["log_level"] = args.log_level
+
+    # Configuration file
+    if hasattr(args, "config") and args.config:
+        config_overrides["config_file"] = args.config
 
     try:
         server_config = UnifiedConfig.from_env(**config_overrides)

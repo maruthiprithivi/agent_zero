@@ -54,6 +54,7 @@ class TracingConfig:
     service_name: str = "agent-zero-mcp"
     service_version: str = __version__
     environment: str = "production"
+    database_name: str = "default"
     sample_rate: float = 1.0
     export_endpoint: str | None = None
     export_headers: dict[str, str] | None = None
@@ -307,7 +308,7 @@ class TracingManager:
                 attributes = {
                     "db.system": "clickhouse",
                     "db.operation": query_type,
-                    "db.name": "default",  # TODO: Get from config
+                    "db.name": self.config.database_name,
                 }
 
                 # Try to extract query from arguments
@@ -347,7 +348,7 @@ class TracingManager:
                 attributes = {
                     "db.system": "clickhouse",
                     "db.operation": query_type,
-                    "db.name": "default",  # TODO: Get from config
+                    "db.name": self.config.database_name,
                 }
 
                 # Try to extract query from arguments

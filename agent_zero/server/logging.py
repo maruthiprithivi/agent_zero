@@ -10,7 +10,7 @@ import sys
 import uuid
 from contextvars import ContextVar
 from dataclasses import asdict, dataclass, field
-from datetime import datetime
+from datetime import UTC, datetime
 from enum import Enum
 from typing import Any
 
@@ -171,7 +171,7 @@ class StructuredLogger:
                 exception_info["traceback"] = traceback.format_exc()
 
         return LogEntry(
-            timestamp=datetime.utcnow().isoformat() + "Z",
+            timestamp=datetime.now(UTC).isoformat() + "Z",
             level=level.upper(),
             message=message,
             logger_name=self.name,
@@ -452,7 +452,7 @@ class JsonFormatter(logging.Formatter):
         import json
 
         log_entry = {
-            "timestamp": datetime.utcnow().isoformat() + "Z",
+            "timestamp": datetime.now(UTC).isoformat() + "Z",
             "level": record.levelname,
             "message": record.getMessage(),
             "logger": record.name,

@@ -7,7 +7,7 @@ including server configuration.
 
 from unittest.mock import MagicMock, patch
 
-from agent_zero.server_config import ServerConfig
+from agent_zero.config.unified import UnifiedConfig
 
 
 class TestStandaloneServer:
@@ -16,9 +16,12 @@ class TestStandaloneServer:
     def test_server_config_integration(self):
         """Test that the server config can be created and used for configuration."""
         # Create a server config with custom values
-        server_config = ServerConfig(
-            host="0.0.0.0",
-            port=9000,
+        server_config = UnifiedConfig(
+            clickhouse_host="localhost",
+            clickhouse_user="default",
+            clickhouse_password="",
+            server_host="0.0.0.0",
+            server_port=9000,
             ssl_certfile="cert.pem",
             ssl_keyfile="key.pem",
             ssl_enable=True,
@@ -27,8 +30,8 @@ class TestStandaloneServer:
         )
 
         # Verify the config values
-        assert server_config.host == "0.0.0.0"
-        assert server_config.port == 9000
+        assert server_config.server_host == "0.0.0.0"
+        assert server_config.server_port == 9000
         assert server_config.ssl_certfile == "cert.pem"
         assert server_config.ssl_keyfile == "key.pem"
         assert server_config.auth_username == "admin"
@@ -47,14 +50,20 @@ class TestStandaloneServer:
     def test_mcp_server_run_integration(self):
         """Test that the run function in mcp_server.py correctly starts the MCP server."""
         # Create a server config to pass to the run function
-        server_config = ServerConfig(host="localhost", port=8088)
+        server_config = UnifiedConfig(
+            clickhouse_host="localhost",
+            clickhouse_user="default",
+            clickhouse_password="",
+            server_host="localhost",
+            server_port=8088,
+        )
 
         try:
             # Import the function to test
-            from agent_zero.mcp_server import run
+            from agent_zero.server import run
 
             # Use patching to make mcp.run return without actually starting the server
-            with patch("agent_zero.mcp_server.mcp") as mock_mcp:
+            with patch("agent_zero.server.mcp") as mock_mcp:
                 # Make a mock run method that returns immediately
                 mock_run = MagicMock(return_value=None)
                 mock_mcp.run = mock_run

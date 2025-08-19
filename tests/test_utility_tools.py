@@ -5,7 +5,7 @@ from unittest.mock import MagicMock, patch
 
 from clickhouse_connect.driver.client import Client
 
-from agent_zero.mcp_server import (
+from agent_zero.server import (
     generate_table_drop_script,
     list_user_defined_functions,
 )
@@ -19,7 +19,7 @@ class TestUtilityTools(unittest.TestCase):
         self.mock_client = MagicMock(spec=Client)
 
         # Set up the client patcher
-        self.client_patcher = patch("agent_zero.mcp_server.create_clickhouse_client")
+        self.client_patcher = patch("agent_zero.server.create_clickhouse_client")
         self.mock_create_client = self.client_patcher.start()
         self.mock_create_client.return_value = self.mock_client
 
@@ -30,7 +30,7 @@ class TestUtilityTools(unittest.TestCase):
     def test_generate_table_drop_script(self):
         """Test generating table drop script."""
         # Mock the generate_drop_tables_script function
-        with patch("agent_zero.mcp_server.generate_drop_tables_script") as mock_function:
+        with patch("agent_zero.server.generate_drop_tables_script") as mock_function:
             # Mock successful execution
             mock_function.return_value = """
 DROP TABLE IF EXISTS testdb.table1;
@@ -53,7 +53,7 @@ DROP TABLE IF EXISTS testdb.table3;
     def test_list_user_defined_functions(self):
         """Test listing user defined functions."""
         # Mock the get_user_defined_functions function
-        with patch("agent_zero.mcp_server.get_user_defined_functions") as mock_function:
+        with patch("agent_zero.server.get_user_defined_functions") as mock_function:
             # Mock successful execution
             mock_function.return_value = [
                 {

@@ -7,7 +7,7 @@ focusing on the connection handling and configuration.
 import unittest
 from unittest.mock import MagicMock, patch
 
-from agent_zero.server_config import ServerConfig
+from agent_zero.config.unified import UnifiedConfig
 
 
 class TestMCPServerIntegration(unittest.TestCase):
@@ -19,13 +19,13 @@ class TestMCPServerIntegration(unittest.TestCase):
         mock_mcp = MagicMock()
 
         # Create a server config with default values
-        server_config = ServerConfig()
+        server_config = UnifiedConfig.from_env()
 
         # Import the run function
-        from agent_zero.mcp_server import run
+        from agent_zero.server import run
 
         # Patch mcp in the module scope
-        with patch("agent_zero.mcp_server.mcp", mock_mcp):
+        with patch("agent_zero.server.mcp", mock_mcp):
             # Call the run method with mocked dependencies injected
             run(
                 host="127.0.0.1",
@@ -45,14 +45,14 @@ class TestMCPServerIntegration(unittest.TestCase):
         mock_mcp = MagicMock()
 
         # Create a server config with SSL configuration
-        server_config = ServerConfig(ssl_certfile="cert.pem", ssl_keyfile="key.pem")
+        server_config = UnifiedConfig(ssl_certfile="cert.pem", ssl_keyfile="key.pem")
         ssl_config = {"certfile": "cert.pem", "keyfile": "key.pem"}
 
         # Import the run function
-        from agent_zero.mcp_server import run
+        from agent_zero.server import run
 
         # Patch mcp in the module scope
-        with patch("agent_zero.mcp_server.mcp", mock_mcp):
+        with patch("agent_zero.server.mcp", mock_mcp):
             # Call the run method with mocked dependencies injected
             run(
                 host="127.0.0.1",
@@ -69,7 +69,7 @@ class TestMCPServerIntegration(unittest.TestCase):
                 ssl_keyfile="key.pem",
             )
 
-    @patch("agent_zero.mcp_server.create_clickhouse_client")
+    @patch("agent_zero.server.create_clickhouse_client")
     def test_client_creation(self, mock_create_client):
         """Test that the ClickHouse client is created correctly."""
         # Setup mock client
@@ -78,7 +78,7 @@ class TestMCPServerIntegration(unittest.TestCase):
         mock_create_client.return_value = mock_client
 
         # Import the necessary function
-        from agent_zero.mcp_server import list_databases
+        from agent_zero.server import list_databases
 
         # Call the function
         list_databases()

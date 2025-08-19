@@ -8,7 +8,7 @@ It serves as the foundation for all ProfileEvents-based analysis and troubleshoo
 import logging
 import statistics
 from dataclasses import dataclass, field
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
 from enum import Enum
 from typing import Any
 
@@ -705,7 +705,7 @@ class ProfileEventsAnalyzer:
             for category, events in events_by_category.items():
                 if events:
                     # Calculate time range for analysis
-                    end_time = datetime.utcnow()
+                    end_time = datetime.now(UTC)
                     start_time = end_time - timedelta(hours=hours)
 
                     category_analysis = self.aggregate_profile_events(

@@ -18,7 +18,7 @@ import time
 from collections import deque
 from contextlib import asynccontextmanager
 from dataclasses import dataclass
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
 from enum import Enum
 from typing import Any
 
@@ -337,7 +337,7 @@ class LoadBalancer:
             "weight": weight,
             "healthy": True,
             "active_connections": 0,
-            "last_health_check": datetime.utcnow(),
+            "last_health_check": datetime.now(UTC),
         }
 
         self.servers.append(server)
@@ -438,11 +438,11 @@ class LoadBalancer:
             # Update circuit breaker
             cb = self.circuit_breakers[server_id]
             cb["failure_count"] += 1
-            cb["last_failure"] = datetime.utcnow()
+            cb["last_failure"] = datetime.now(UTC)
 
             if cb["failure_count"] >= self.config.circuit_breaker_threshold:
                 cb["state"] = "open"
-                cb["next_attempt"] = datetime.utcnow() + timedelta(
+                cb["next_attempt"] = datetime.now(UTC) + timedelta(
                     seconds=self.config.circuit_breaker_timeout
                 )
                 logger.warning(f"Circuit breaker opened for server {server_id}")
@@ -450,7 +450,7 @@ class LoadBalancer:
         # Store request history
         self.request_history.append(
             {
-                "timestamp": datetime.utcnow(),
+                "timestamp": datetime.now(UTC),
                 "server_id": server_id,
                 "success": success,
                 "response_time": response_time,
@@ -464,7 +464,7 @@ class LoadBalancer:
         if cb["state"] == "closed":
             return True
         elif cb["state"] == "open":
-            if cb["next_attempt"] and datetime.utcnow() >= cb["next_attempt"]:
+            if cb["next_attempt"] and datetime.now(UTC) >= cb["next_attempt"]:
                 cb["state"] = "half_open"
                 logger.info(f"Circuit breaker half-opened for server {server_id}")
                 return True
@@ -484,7 +484,7 @@ class LoadBalancer:
                     health_endpoint = f"{server['endpoint']}/health"
                     async with session.get(health_endpoint, timeout=5) as response:
                         server["healthy"] = response.status == 200
-                        server["last_health_check"] = datetime.utcnow()
+                        server["last_health_check"] = datetime.now(UTC)
 
                         if (
                             server["healthy"]
@@ -599,12 +599,12 @@ class RealTimeAnalytics:
                 "avg_cpu_usage": df["cpu_usage"].mean(),
                 "avg_memory_usage": df["memory_usage"].mean(),
                 "avg_cache_hit_rate": df["cache_hit_rate"].mean(),
-                "timestamp": datetime.utcnow().isoformat(),
+                "timestamp": datetime.now(UTC).isoformat(),
             }
 
             # Time series analysis (last hour)
             df["timestamp"] = pd.to_datetime(df["timestamp"])
-            recent_df = df[df["timestamp"] > (datetime.utcnow() - timedelta(hours=1))]
+            recent_df = df[df["timestamp"] > (datetime.now(UTC) - timedelta(hours=1))]
 
             if not recent_df.empty:
                 # Calculate trends
@@ -638,7 +638,7 @@ class RealTimeAnalytics:
                 "error_rate": statistics.mean(error_rates),
                 "avg_cpu_usage": statistics.mean(cpu_usages),
                 "avg_memory_usage": statistics.mean(memory_usages),
-                "timestamp": datetime.utcnow().isoformat(),
+                "timestamp": datetime.now(UTC).isoformat(),
             }
 
         except Exception as e:
@@ -747,7 +747,7 @@ class PerformanceManager:
 
             # Create performance metric
             metric = PerformanceMetrics(
-                timestamp=datetime.utcnow(),
+                timestamp=datetime.now(UTC),
                 response_time=response_time,
                 throughput=1.0 / response_time if response_time > 0 else 0,
                 cpu_usage=0.0,  # Would be populated from system metrics
@@ -770,7 +770,7 @@ class PerformanceManager:
             "cache_stats": self.cache.get_stats(),
             "load_balancer_stats": self.load_balancer.get_stats(),
             "analytics_dashboard": self.analytics.get_dashboard_data(),
-            "timestamp": datetime.utcnow().isoformat(),
+            "timestamp": datetime.now(UTC).isoformat(),
         }
 
 

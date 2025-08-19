@@ -5,7 +5,7 @@ from unittest.mock import MagicMock, patch
 
 from clickhouse_connect.driver.client import Client
 
-from agent_zero.mcp_server import (
+from agent_zero.server import (
     monitor_blob_storage_stats,
     monitor_materialized_view_stats,
     monitor_s3queue_stats,
@@ -26,7 +26,7 @@ class TestSystemComponentsTools(unittest.TestCase):
         ]
 
         # Set up the client patcher
-        self.client_patcher = patch("agent_zero.mcp_server.create_clickhouse_client")
+        self.client_patcher = patch("agent_zero.server.create_clickhouse_client")
         self.mock_create_client = self.client_patcher.start()
         self.mock_create_client.return_value = self.mock_client
 
@@ -37,7 +37,7 @@ class TestSystemComponentsTools(unittest.TestCase):
     def test_monitor_blob_storage_stats(self):
         """Test monitoring blob storage statistics."""
         # Mock the get_blob_storage_stats function
-        with patch("agent_zero.mcp_server.get_blob_storage_stats") as mock_function:
+        with patch("agent_zero.server.get_blob_storage_stats") as mock_function:
             # Mock successful execution
             mock_function.return_value = [
                 {
@@ -74,7 +74,7 @@ class TestSystemComponentsTools(unittest.TestCase):
     def test_monitor_materialized_view_stats(self):
         """Test monitoring materialized view statistics."""
         # Mock the get_mv_query_stats function
-        with patch("agent_zero.mcp_server.get_mv_query_stats") as mock_function:
+        with patch("agent_zero.server.get_mv_query_stats") as mock_function:
             # Mock successful execution
             mock_function.return_value = [
                 {
@@ -111,7 +111,7 @@ class TestSystemComponentsTools(unittest.TestCase):
     def test_monitor_s3queue_stats(self):
         """Test monitoring S3 queue statistics."""
         # Mock the get_s3queue_stats function
-        with patch("agent_zero.mcp_server.get_s3queue_stats") as mock_function:
+        with patch("agent_zero.server.get_s3queue_stats") as mock_function:
             # Mock successful execution
             mock_function.return_value = [
                 {

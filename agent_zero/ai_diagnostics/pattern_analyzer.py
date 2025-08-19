@@ -17,7 +17,7 @@ import math
 import statistics
 from collections import defaultdict
 from dataclasses import dataclass, field
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
 from enum import Enum
 from typing import Any, NamedTuple
 
@@ -2249,7 +2249,7 @@ class PatternAnalyzer:
                     for result in results
                 ],
                 "analysis_period_hours": lookback_hours,
-                "timestamp": datetime.utcnow().isoformat(),
+                "timestamp": datetime.now(UTC).isoformat(),
             }
 
             return query_patterns
@@ -2260,7 +2260,7 @@ class PatternAnalyzer:
                 "events_analyzed": [],
                 "pattern_results": [],
                 "analysis_period_hours": lookback_hours,
-                "timestamp": datetime.utcnow().isoformat(),
+                "timestamp": datetime.now(UTC).isoformat(),
                 "error": str(e),
             }
 
@@ -2297,7 +2297,7 @@ class PatternAnalyzer:
                     for result in results
                 ],
                 "analysis_period_hours": lookback_hours,
-                "timestamp": datetime.utcnow().isoformat(),
+                "timestamp": datetime.now(UTC).isoformat(),
             }
 
             return temporal_analysis
@@ -2307,7 +2307,7 @@ class PatternAnalyzer:
                 "temporal_patterns_found": 0,
                 "time_based_insights": [],
                 "analysis_period_hours": lookback_hours,
-                "timestamp": datetime.utcnow().isoformat(),
+                "timestamp": datetime.now(UTC).isoformat(),
                 "error": str(e),
             }
 
@@ -2339,7 +2339,7 @@ class PatternAnalyzer:
                     for result in results
                 ],
                 "analysis_period_hours": lookback_hours,
-                "timestamp": datetime.utcnow().isoformat(),
+                "timestamp": datetime.now(UTC).isoformat(),
             }
 
             return user_analysis
@@ -2349,7 +2349,7 @@ class PatternAnalyzer:
                 "user_patterns_found": 0,
                 "user_activity_insights": [],
                 "analysis_period_hours": lookback_hours,
-                "timestamp": datetime.utcnow().isoformat(),
+                "timestamp": datetime.now(UTC).isoformat(),
                 "error": str(e),
             }
 
@@ -2399,7 +2399,7 @@ class PatternAnalyzer:
                 ),
                 "affected_events": len([r for r in results if r.anomalies]),
                 "analysis_period": lookback_hours,
-                "timestamp": datetime.utcnow().isoformat(),
+                "timestamp": datetime.now(UTC).isoformat(),
             }
 
             return anomaly_summary
@@ -2410,6 +2410,6 @@ class PatternAnalyzer:
                 "critical_anomalies": 0,
                 "affected_events": 0,
                 "analysis_period": lookback_hours,
-                "timestamp": datetime.utcnow().isoformat(),
+                "timestamp": datetime.now(UTC).isoformat(),
                 "error": str(e),
             }

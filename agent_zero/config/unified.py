@@ -66,6 +66,9 @@ class UnifiedConfig:
     Environment variables follow the AGENT_ZERO_* convention.
     """
 
+    # Configuration file settings
+    config_file: str | None = None
+
     # ClickHouse connection settings
     clickhouse_host: str
     clickhouse_user: str
@@ -83,6 +86,7 @@ class UnifiedConfig:
     deployment_mode: DeploymentMode = DeploymentMode.LOCAL
     transport: TransportType = TransportType.STDIO
     ide_type: IDEType | None = None
+    cors_origins: list[str] | None = None
 
     # Authentication settings
     auth_username: str | None = None
@@ -100,6 +104,7 @@ class UnifiedConfig:
     log_query_errors: bool = True
     log_query_warnings: bool = True
     enable_mcp_tracing: bool = False
+    log_level: str = "INFO"
 
     # Safety and behavior flags (default preserve legacy behavior)
     enable_client_cache: bool = False

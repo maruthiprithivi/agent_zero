@@ -11,7 +11,7 @@ import math
 import statistics
 from collections import defaultdict, deque
 from dataclasses import dataclass, field
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
 from enum import Enum
 from typing import Any
 
@@ -2269,13 +2269,13 @@ class BottleneckDetector:
                     "confidence": metrics.confidence,
                 },
                 "analysis_period_days": days,
-                "timestamp": datetime.utcnow().isoformat(),
+                "timestamp": datetime.now(UTC).isoformat(),
             }
         except Exception as e:
             logger.error(f"Failed to analyze performance trends: {e}")
             return {
                 "trend_analysis": {},
                 "analysis_period_days": days,
-                "timestamp": datetime.utcnow().isoformat(),
+                "timestamp": datetime.now(UTC).isoformat(),
                 "error": str(e),
             }

@@ -48,6 +48,7 @@ class MetricsConfig:
     enabled: bool = True
     include_high_cardinality: bool = False
     prefix: str = "agent_zero"
+    deployment_mode: str = "production"
     registry: Any | None = None
 
 
@@ -90,7 +91,7 @@ class MetricsManager:
         self.app_info.info(
             {
                 "version": __version__,
-                "deployment_mode": "production",  # TODO: Get from config
+                "deployment_mode": self.config.deployment_mode,
             }
         )
 

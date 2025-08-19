@@ -6,7 +6,7 @@ following the development standards defined in CLAUDE.md.
 
 import logging
 from collections.abc import Sequence
-from datetime import datetime
+from datetime import UTC, datetime
 
 from clickhouse_connect.driver.binding import format_query_value, quote_identifier
 
@@ -1195,7 +1195,7 @@ def register_profile_events_tools(mcp):
         try:
             from datetime import datetime, timedelta
 
-            end_time = datetime.utcnow()
+            end_time = datetime.now(UTC)
             period1_start = end_time - timedelta(hours=period1_hours)
             period1_end = end_time
 
@@ -1239,7 +1239,7 @@ def register_profile_events_tools(mcp):
                 ],
                 "total_events_compared": len(comparisons),
                 "anomalies_detected": len([c for c in comparisons if c.is_anomaly]),
-                "analysis_timestamp": datetime.utcnow().isoformat(),
+                "analysis_timestamp": datetime.now(UTC).isoformat(),
             }
         except Exception as e:
             logger.error(f"Error comparing ProfileEvents time periods: {e!s}")
@@ -1345,7 +1345,7 @@ def register_performance_diagnostics_tools(mcp):
         try:
             from datetime import datetime, timedelta
 
-            end_time = datetime.utcnow()
+            end_time = datetime.now(UTC)
             start_time = end_time - timedelta(hours=hours)
 
             engine = PerformanceDiagnosticEngine(client)
@@ -1385,7 +1385,7 @@ def register_performance_diagnostics_tools(mcp):
                     }
                     for b in report.bottlenecks
                 ],
-                "analysis_timestamp": datetime.utcnow().isoformat(),
+                "analysis_timestamp": datetime.now(UTC).isoformat(),
             }
         except Exception as e:
             logger.error(f"Error generating performance diagnostic report: {e!s}")
@@ -1670,7 +1670,7 @@ def register_hardware_diagnostics_tools(mcp):
         try:
             from datetime import datetime, timedelta
 
-            end_time = datetime.utcnow()
+            end_time = datetime.now(UTC)
             start_time = end_time - timedelta(hours=hours)
 
             # Create analyzer with ProfileEventsAnalyzer
@@ -1703,7 +1703,7 @@ def register_hardware_diagnostics_tools(mcp):
                     for b in cpu_analysis.bottlenecks
                 ],
                 "recommendations": cpu_analysis.recommendations,
-                "analysis_timestamp": datetime.utcnow().isoformat(),
+                "analysis_timestamp": datetime.now(UTC).isoformat(),
             }
         except Exception as e:
             logger.error(f"Error analyzing CPU performance: {e!s}")
@@ -1725,7 +1725,7 @@ def register_hardware_diagnostics_tools(mcp):
         try:
             from datetime import datetime, timedelta
 
-            end_time = datetime.utcnow()
+            end_time = datetime.now(UTC)
             start_time = end_time - timedelta(hours=hours)
 
             # Create analyzer with ProfileEventsAnalyzer
@@ -1759,7 +1759,7 @@ def register_hardware_diagnostics_tools(mcp):
                     for b in memory_analysis.bottlenecks
                 ],
                 "recommendations": memory_analysis.recommendations,
-                "analysis_timestamp": datetime.utcnow().isoformat(),
+                "analysis_timestamp": datetime.now(UTC).isoformat(),
             }
         except Exception as e:
             logger.error(f"Error analyzing memory performance: {e!s}")
@@ -1781,7 +1781,7 @@ def register_hardware_diagnostics_tools(mcp):
         try:
             from datetime import datetime, timedelta
 
-            end_time = datetime.utcnow()
+            end_time = datetime.now(UTC)
             start_time = end_time - timedelta(hours=hours)
 
             # Create analyzer with ProfileEventsAnalyzer
@@ -1815,7 +1815,7 @@ def register_hardware_diagnostics_tools(mcp):
                     for b in thread_analysis.bottlenecks
                 ],
                 "recommendations": thread_analysis.recommendations,
-                "analysis_timestamp": datetime.utcnow().isoformat(),
+                "analysis_timestamp": datetime.now(UTC).isoformat(),
             }
         except Exception as e:
             logger.error(f"Error analyzing thread pool efficiency: {e!s}")
@@ -1837,7 +1837,7 @@ def register_hardware_diagnostics_tools(mcp):
         try:
             from datetime import datetime, timedelta
 
-            end_time = datetime.utcnow()
+            end_time = datetime.now(UTC)
             start_time = end_time - timedelta(hours=hours)
 
             # Create engine with ProfileEventsAnalyzer
@@ -1887,7 +1887,7 @@ def register_hardware_diagnostics_tools(mcp):
                 ],
                 "optimization_priorities": report.optimization_priorities,
                 "performance_trends": report.performance_trends,
-                "analysis_timestamp": datetime.utcnow().isoformat(),
+                "analysis_timestamp": datetime.now(UTC).isoformat(),
             }
         except Exception as e:
             logger.error(f"Error generating hardware health report: {e!s}")
