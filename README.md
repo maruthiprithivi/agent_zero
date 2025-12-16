@@ -3,7 +3,7 @@
 🚀 **AI-Powered ClickHouse Monitoring & Analytics** - 66+ specialized tools for database performance optimization, monitoring, and intelligent diagnostics.
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Python 3.11+](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/downloads/)
+[![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
 [![Production Ready](https://img.shields.io/badge/Production-Ready-green.svg)]()
 
 ## What is Agent Zero?
@@ -119,6 +119,21 @@ helm install agent-zero agent-zero/agent-zero \
 | [**User Guide**](docs/USER_GUIDE.md) | Complete usage guide with examples |
 | [**Developer Guide**](docs/DEVELOPER_GUIDE.md) | Contributing and extending Agent Zero |
 | [**Deployment Guide**](docs/DEPLOYMENT.md) | Production deployment guide |
+
+### LLM Compatibility Testing
+
+To verify compatibility with various LLM providers (OpenAI, Anthropic, Gemini, MoonshotAI), you can run the integration suite locally:
+
+```bash
+# Export your API keys
+export OPENAI_API_KEY=sk-...
+export ANTHROPIC_API_KEY=sk-ant-...
+export GEMINI_API_KEY=...
+export MOONSHOT_API_KEY=...
+
+# Run compatibility tests
+pytest tests/llm_compatibility/
+```
 
 ## 🛠️ Architecture
 
