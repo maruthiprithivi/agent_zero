@@ -353,7 +353,8 @@ jobs:
           uv venv .venv
           source .venv/bin/activate
           uv pip install --upgrade pip setuptools wheel
-          uv pip install "clickhouse-connect>=0.8.18,<1.0" pytest pytest-asyncio pytest-mock pytest-cov coverage hypothesis factory-boy freezegun
+          # Install test dependencies including new LLM libs
+          uv pip install "clickhouse-connect>=0.8.18,<1.0" pytest pytest-asyncio pytest-mock pytest-cov coverage hypothesis factory-boy freezegun openai anthropic google-generativeai
           uv pip install -e .
         shell: bash
 
