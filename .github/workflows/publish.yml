@@ -35,24 +35,6 @@ jobs:
           TAG=${GITHUB_REF#refs/tags/}
           echo "TAG=${TAG}" >> $GITHUB_OUTPUT
 
-      - name: Set version in __init__.py
-        run: |
-          sed -i "s/^__version__ = .*/__version__ = '${{ steps.get_tag.outputs.TAG }}'/" agent_zero/__init__.py
-
-      - name: Set version in pyproject.toml
-        run: |
-          sed -i "s/^version = .*/version = '${{ steps.get_tag.outputs.TAG }}'/" pyproject.toml
-
-      - name: Update version in README.md
-        run: |
-          sed -i "s/badge\/version-[0-9]\+\.[0-9]\+\.[0-9]\+-/badge\/version-${{ steps.get_tag.outputs.TAG }}-/" README.md
-
-      - name: Check the version
-        run: |
-          cat agent_zero/__init__.py
-          echo "########################"
-          cat pyproject.toml
-
       - name: Set up Python
         uses: actions/setup-python@v5
         with:

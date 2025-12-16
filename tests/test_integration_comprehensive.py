@@ -32,15 +32,10 @@ class TestComprehensiveIntegration:
         client = Mock()
 
         # Mock successful query responses with proper iterable
-        mock_result = Mock()
-        mock_result.result_rows = [
-            ["Query", "host1", 1000, time.time()],
-            ["SelectQuery", "host1", 500, time.time()],
-            ["MarkCacheHits", "host1", 250, time.time()],
-        ]
-        mock_result.column_names = ["event_name", "hostname", "value", "timestamp"]
-        # Ensure result_rows is always iterable
-        mock_result.__iter__ = lambda x: iter(mock_result.result_rows)
+        from tests.stubs.mock_data import generate_mock_profile_events, MockClickHouseResult
+
+        events = generate_mock_profile_events(50)
+        mock_result = MockClickHouseResult(events, columns=["event_name", "hostname", "value", "timestamp"])
 
         client.query.return_value = mock_result
         client.command.return_value = ["database1", "database2"]
